@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContactsIndexRouteImport } from './routes/contacts.index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoTableRouteImport } from './routes/demo/table'
 import { Route as ContactsNewRouteImport } from './routes/contacts.new'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ContactsIndexRoute = ContactsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ContactsRoute,
 } as any)
 const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   id: '/demo/tanstack-query',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/contacts/new': typeof ContactsNewRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/contacts/': typeof ContactsIndexRoute
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -141,12 +148,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/contacts': typeof ContactsRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/contacts/$id': typeof ContactsIdRoute
   '/contacts/new': typeof ContactsNewRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/contacts': typeof ContactsIndexRoute
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -168,6 +175,7 @@ export interface FileRoutesById {
   '/contacts/new': typeof ContactsNewRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/contacts/': typeof ContactsIndexRoute
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
@@ -190,6 +198,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/demo/table'
     | '/demo/tanstack-query'
+    | '/contacts/'
     | '/api/contacts/$id'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -204,12 +213,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/contacts'
     | '/api/contacts'
     | '/contacts/$id'
     | '/contacts/new'
     | '/demo/table'
     | '/demo/tanstack-query'
+    | '/contacts'
     | '/api/contacts/$id'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/demo/table'
     | '/demo/tanstack-query'
+    | '/contacts/'
     | '/api/contacts/$id'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
@@ -276,6 +286,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/contacts/': {
+      id: '/contacts/'
+      path: '/'
+      fullPath: '/contacts/'
+      preLoaderRoute: typeof ContactsIndexRouteImport
+      parentRoute: typeof ContactsRoute
     }
     '/demo/tanstack-query': {
       id: '/demo/tanstack-query'
@@ -395,11 +412,13 @@ declare module '@tanstack/react-router' {
 interface ContactsRouteChildren {
   ContactsIdRoute: typeof ContactsIdRoute
   ContactsNewRoute: typeof ContactsNewRoute
+  ContactsIndexRoute: typeof ContactsIndexRoute
 }
 
 const ContactsRouteChildren: ContactsRouteChildren = {
   ContactsIdRoute: ContactsIdRoute,
   ContactsNewRoute: ContactsNewRoute,
+  ContactsIndexRoute: ContactsIndexRoute,
 }
 
 const ContactsRouteWithChildren = ContactsRoute._addFileChildren(
