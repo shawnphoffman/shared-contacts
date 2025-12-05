@@ -28,7 +28,6 @@ services:
       RADICALE_AUTH_TYPE: "htpasswd"
       RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt"
       RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users"
-      RADICALE_STORAGE_FILESYSTEM_FOLDER: "/data/collections"
       RADICALE_RIGHTS_TYPE: "owner_only"
     volumes:
       - radicale_data:/data
@@ -40,6 +39,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ ! -f /data/users ]; then
+          echo "Creating empty users file..."
+          touch /data/users
+          chmod 644 /data/users
+          echo "Users file created. Add users with: docker exec -it shared-contacts-radicale htpasswd -B /data/users username"
+        fi
+        exec docker-entrypoint.sh /venv/bin/radicale --config /config/config
 
   sync-service:
     build:
