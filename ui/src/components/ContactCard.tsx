@@ -9,7 +9,7 @@ interface ContactCardProps {
 
 export function ContactCard({ contact }: ContactCardProps) {
   return (
-    <Link to="/contacts/$id" params={{ id: contact.id }}>
+    <Link to="/$id" params={{ id: contact.id }}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">
         <CardHeader>
           <CardTitle className="text-xl">
@@ -56,4 +56,3 @@ export function ContactCard({ contact }: ContactCardProps) {
     </Link>
   )
 }
-

@@ -1,41 +1,111 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { Contact } from 'lucide-react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ContactCard } from '../components/ContactCard'
 import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Plus, Search } from 'lucide-react'
+import { useState } from 'react'
+import type { Contact } from '../lib/db'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/')({
+  component: ContactsIndexPage,
+})
 
-function App() {
+async function fetchContacts(): Promise<Contact[]> {
+  const response = await fetch('/api/contacts')
+  if (!response.ok) {
+    throw new Error('Failed to fetch contacts')
+  }
+  return response.json()
+}
+
+function ContactsIndexPage() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const { data: contacts = [], isLoading } = useQuery({
+    queryKey: ['contacts'],
+    queryFn: fetchContacts,
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/contacts/${id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete contact')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+    },
+  })
+
+  const filteredContacts = contacts.filter((contact) => {
+    if (!searchQuery) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      contact.full_name?.toLowerCase().includes(query) ||
+      contact.email?.toLowerCase().includes(query) ||
+      contact.phone?.includes(query) ||
+      contact.organization?.toLowerCase().includes(query)
+    )
+  })
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">Loading contacts...</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <section className="relative py-20 px-6 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10"></div>
-        <div className="relative max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <Contact className="w-24 h-24 md:w-32 md:h-32 text-cyan-400" />
-            <h1 className="text-6xl md:text-7xl font-black text-white [letter-spacing:-0.08em]">
-              <span className="text-gray-300">SHARED</span>{' '}
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                CONTACTS
-              </span>
-            </h1>
-          </div>
-          <p className="text-2xl md:text-3xl text-gray-300 mb-4 font-light">
-            Self-hosted CardDAV contact management
-          </p>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
-            Manage your contacts with a beautiful web interface. Sync with CardDAV
-            clients and keep your address book in sync across all your devices.
-          </p>
-          <div className="flex flex-col items-center gap-4">
-            <Link to="/contacts">
-              <Button size="lg" className="px-8 py-3 text-lg">
-                <Contact className="w-5 h-5 mr-2" />
-                View Contacts
-              </Button>
-            </Link>
-          </div>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Contacts</h1>
+        <Button onClick={() => navigate({ to: '/new' })}>
+          <Plus className="w-4 h-4 mr-2" />
+          New Contact
+        </Button>
+      </div>
+
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Search contacts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      </section>
+      </div>
+
+      {filteredContacts.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 mb-4">
+            {searchQuery
+              ? 'No contacts found matching your search.'
+              : 'No contacts yet. Create your first contact!'}
+          </p>
+          {!searchQuery && (
+            <Button onClick={() => navigate({ to: '/new' })}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Contact
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredContacts.map((contact) => (
+            <ContactCard key={contact.id} contact={contact} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

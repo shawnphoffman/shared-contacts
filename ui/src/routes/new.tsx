@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ContactForm } from '../components/ContactForm'
 import type { Contact } from '../lib/db'
 
-export const Route = createFileRoute('/contacts/new')({
+export const Route = createFileRoute('/new')({
   component: NewContactPage,
 })
 
@@ -29,7 +29,7 @@ function NewContactPage() {
     mutationFn: createContact,
     onSuccess: (contact) => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] })
-      navigate({ to: '/contacts/$id', params: { id: contact.id } })
+      navigate({ to: '/$id', params: { id: contact.id } })
     },
   })
 
@@ -40,9 +40,8 @@ function NewContactPage() {
         onSubmit={async (data) => {
           await mutation.mutateAsync(data)
         }}
-        onCancel={() => navigate({ to: '/contacts' })}
+        onCancel={() => navigate({ to: '/' })}
       />
     </div>
   )
 }
-

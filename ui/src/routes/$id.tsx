@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ContactForm } from '../components/ContactForm'
 import { Button } from '../components/ui/button'
@@ -15,7 +15,7 @@ import { Mail, Phone, Building, MapPin, Edit, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Contact } from '../lib/db'
 
-export const Route = createFileRoute('/contacts/$id')({
+export const Route = createFileRoute('/$id')({
   component: ContactDetailPage,
 })
 
@@ -29,7 +29,7 @@ async function fetchContact(id: string): Promise<Contact> {
 
 async function updateContact(
   id: string,
-  data: Partial<Contact>
+  data: Partial<Contact>,
 ): Promise<Contact> {
   const response = await fetch(`/api/contacts/${id}`, {
     method: 'PUT',
@@ -78,7 +78,7 @@ function ContactDetailPage() {
     mutationFn: () => deleteContact(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] })
-      navigate({ to: '/contacts' })
+      navigate({ to: '/' })
     },
   })
 
@@ -116,7 +116,9 @@ function ContactDetailPage() {
   return (
     <div className="container mx-auto p-6 max-w-2xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{contact.full_name || 'Unnamed Contact'}</h1>
+        <h1 className="text-3xl font-bold">
+          {contact.full_name || 'Unnamed Contact'}
+        </h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsEditing(true)}>
             <Edit className="w-4 h-4 mr-2" />
@@ -203,8 +205,9 @@ function ContactDetailPage() {
           <DialogHeader>
             <DialogTitle>Delete Contact</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete {contact.full_name || 'this contact'}?
-              This action cannot be undone.
+              Are you sure you want to delete{' '}
+              {contact.full_name || 'this contact'}? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -227,4 +230,3 @@ function ContactDetailPage() {
     </div>
   )
 }
-

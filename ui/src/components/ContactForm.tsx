@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -29,9 +29,17 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     ''
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isInitialMount = useRef(true)
 
-  // Calculate full_name from first_name and last_name
+  // Calculate full_name from first_name and last_name only when user edits them
   useEffect(() => {
+    // Skip recalculation on initial mount to preserve custom full_name
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
+    // Recalculate full_name when user edits first_name or last_name
     const parts = [formData.first_name, formData.last_name].filter(Boolean)
     setFullName(parts.join(' ').trim() || '')
   }, [formData.first_name, formData.last_name])
