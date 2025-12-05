@@ -29,7 +29,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture documentation
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` and set your desired values, especially:
+   Edit `.env` and set your desired values. See `.env.example` for detailed documentation of all available variables. Most importantly:
    - `POSTGRES_PASSWORD`: Strong password for PostgreSQL
    - `BETTER_AUTH_SECRET`: Generate a secure random string (e.g., `openssl rand -base64 32`)
 
