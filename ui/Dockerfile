@@ -2,49 +2,46 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Install pnpm
+RUN npm install -g pnpm
+
 # Copy package files
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY app.config.ts ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-# Using npm install to handle potential lock file version mismatches
-RUN npm install --no-audit
-
-# Copy patches directory if it exists and apply them
-COPY patches ./patches/
-RUN npm run postinstall || true
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
-COPY app ./app
+COPY . .
 
 # Build the application
-RUN npm run build
+RUN pnpm build
 
 # Production stage
 FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package files from builder to ensure lock file matches
-COPY --from=builder /app/package*.json ./
+# Install pnpm
+RUN npm install -g pnpm
 
-# Install production dependencies only
-# Using npm install instead of npm ci to handle lock file inconsistencies
-RUN npm install --omit=dev --prefer-offline --no-audit
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install all dependencies (Nitro needs them to run)
+RUN pnpm install --frozen-lockfile --prod
 
 # Copy built application output
 COPY --from=builder /app/.output ./.output
-
-# Copy config file (needed by vinxi)
-COPY --from=builder /app/app.config.ts ./app.config.ts
 
 # Expose port
 EXPOSE 3010
 
 # Set NODE_ENV
 ENV NODE_ENV=production
+ENV PORT=3010
+ENV HOST=0.0.0.0
 
-# Start the application using vinxi
-CMD ["npm", "start"]
+# Start the application using Nitro
+CMD ["node", ".output/server/index.mjs"]
 

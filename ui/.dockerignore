@@ -1,9 +1,0 @@
-node_modules
-.output
-.env
-.git
-.gitignore
-*.log
-app.config.timestamp_*.js
-*.timestamp.*
-
