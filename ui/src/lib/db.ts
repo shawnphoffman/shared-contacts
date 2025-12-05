@@ -115,7 +115,7 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
   }
 
   if (updates.length === 0) {
-    return (await getContactById(id))!
+    throw new Error('No fields to update')
   }
 
   values.push(id)

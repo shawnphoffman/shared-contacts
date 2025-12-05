@@ -68,7 +68,14 @@ export const Route = createFileRoute('/api/contacts/$id')({
           if (!contact) {
             return json({ error: 'Contact not found' }, { status: 404 })
           }
+
+          // Delete from database
           await deleteContact(params.id)
+
+          // Note: The sync service will handle deleting the vCard file from Radicale
+          // on the next sync cycle (every 5 seconds). For immediate deletion,
+          // you could trigger a sync here, but the periodic sync should handle it.
+
           return json({ message: 'Contact deleted' })
         } catch (error) {
           console.error('Error deleting contact:', error)

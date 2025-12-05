@@ -202,17 +202,10 @@ export async function syncRadicaleToDb(): Promise<void> {
       }
     }
 
-    // Check for contacts in DB that no longer exist in Radicale
-    // (This might be too aggressive - you may want to skip this)
-    // for (const [vcardId, contact] of dbContactsByVcardId.entries()) {
-    //   const fileExists = vcardFiles.some(fp => {
-    //     const content = readVCardFile(fp);
-    //     return content && extractVCardId(fp, content) === vcardId;
-    //   });
-    //   if (!fileExists) {
-    //     await deleteContact(contact.id);
-    //   }
-    // }
+    // Note: We don't delete DB contacts when vCard files are missing in Radicale
+    // because the DB is the source of truth. The syncDbToRadicale function will
+    // recreate vCard files for contacts that exist in the DB.
+    // Only delete from DB if explicitly deleted from Radicale (handled by file watcher)
 
     console.log(`Synced Radicale to DB: ${created} created, ${updated} updated`);
   } catch (error) {
