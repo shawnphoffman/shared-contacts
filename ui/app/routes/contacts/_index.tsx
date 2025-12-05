@@ -17,12 +17,20 @@ function ContactsComponent() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Contacts</h1>
-        <a
-          href="/contacts/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          Add Contact
-        </a>
+        <div className="flex gap-3">
+          <a
+            href="/contacts/import"
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Import CSV
+          </a>
+          <a
+            href="/contacts/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Add Contact
+          </a>
+        </div>
       </div>
       <ContactList contacts={contacts} />
     </div>

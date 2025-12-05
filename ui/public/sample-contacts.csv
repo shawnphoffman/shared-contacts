@@ -1,0 +1,16 @@
+Full Name,First Name,Last Name,Email,Phone,Organization,Job Title,Address,Notes
+John Doe,John,Doe,john.doe@example.com,555-0100,Acme Corp,Software Engineer,"123 Main St, Anytown, ST 12345",Met at conference 2024
+Jane Smith,Jane,Smith,jane.smith@example.com,555-0101,Tech Solutions,Product Manager,"456 Oak Ave, Somewhere, ST 67890",Follow up next week
+Bob Johnson,Bob,Johnson,bob@example.com,555-0102,Startup Inc,CEO,"789 Pine Rd, Nowhere, ST 11111",
+Alice Williams,Alice,Williams,alice.w@example.com,555-0103,Design Co,Designer,"321 Elm St, Elsewhere, ST 22222",Great designer
+Charlie Brown,Charlie,Brown,charlie@example.com,555-0104,Media Group,Journalist,"654 Maple Dr, Anywhere, ST 33333",
+Diana Prince,Diana,Prince,diana.prince@example.com,555-0105,Consulting LLC,Consultant,"987 Cedar Ln, Someplace, ST 44444",Expert in strategy
+Frank Miller,Frank,Miller,frank.m@example.com,555-0106,Finance Corp,Analyst,"147 Birch Way, Nowhere, ST 55555",
+Grace Lee,Grace,Lee,grace.lee@example.com,555-0107,Education Org,Teacher,"258 Spruce Ct, Elsewhere, ST 66666",Math teacher
+Henry Davis,Henry,Davis,henry@example.com,555-0108,Healthcare Inc,Doctor,"369 Willow Pl, Anywhere, ST 77777",
+Iris Wilson,Iris,Wilson,iris.w@example.com,555-0109,Legal Firm,Lawyer,"741 Ash St, Someplace, ST 88888",Corporate law specialist
+"John O'Connor",John,"O'Connor",john.oconnor@example.com,555-0110,Real Estate,Agent,"852 Poplar Ave, Nowhere, ST 99999",Helped with house purchase
+,Unknown,Contact,unknown@example.com,555-0111,Unknown Corp,,,
+Test Contact,Test,,test@example.com,,,,
+Minimal Contact,,,,,,"",
+
