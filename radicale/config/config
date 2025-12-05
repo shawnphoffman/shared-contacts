@@ -1,0 +1,19 @@
+[server]
+hosts = 0.0.0.0:5232
+ssl = False
+
+[auth]
+type = htpasswd
+htpasswd_filename = /data/users
+htpasswd_encryption = bcrypt
+
+[rights]
+type = owner_only
+
+[storage]
+type = filesystem
+filesystem_folder = /data/collections
+
+[logging]
+level = info
+

@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: shared-contacts-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sharedcontacts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sharedcontacts}
+      POSTGRES_DB: ${POSTGRES_DB:-sharedcontacts}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - shared-contacts-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sharedcontacts}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  radicale:
+    image: tomsquest/docker-radicale:latest
+    container_name: shared-contacts-radicale
+    environment:
+      RADICALE_SERVER_HOSTS: "0.0.0.0:5232"
+      RADICALE_SERVER_SSL: "False"
+      RADICALE_AUTH_TYPE: "htpasswd"
+      RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt"
+      RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users"
+      RADICALE_STORAGE_FILESYSTEM_FOLDER: "/data/collections"
+      RADICALE_RIGHTS_TYPE: "owner_only"
+    volumes:
+      - radicale_data:/data
+      - ./radicale/config:/config
+    ports:
+      - "${RADICALE_PORT:-5232}:5232"
+    networks:
+      - shared-contacts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  sync-service:
+    build:
+      context: ./sync-service
+      dockerfile: Dockerfile
+    container_name: shared-contacts-sync
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      RADICALE_STORAGE_PATH: /radicale-data/collections
+      SYNC_INTERVAL: ${SYNC_INTERVAL:-5000}
+    volumes:
+      - radicale_data:/radicale-data
+    networks:
+      - shared-contacts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      radicale:
+        condition: service_started
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: shared-contacts-ui
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      NODE_ENV: production
+    ports:
+      - "${UI_PORT:-3000}:3000"
+    networks:
+      - shared-contacts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  shared-contacts-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  radicale_data:
+
