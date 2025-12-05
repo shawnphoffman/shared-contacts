@@ -19,7 +19,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture documentation
 
 - Docker and Docker Compose installed
 - At least 2GB of available RAM
-- Ports 3000, 5232, and 5432 available (configurable)
+- Ports 3010, 5232, and 5432 available (configurable)
 
 ## Quick Start
 
@@ -39,7 +39,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture documentation
    ```
 
 4. **Access the management UI**:
-   - Open `http://localhost:3000` in your browser
+   - Open `http://localhost:3010` in your browser
    - Register a new account or login
 
 5. **Configure CardDAV clients**:
@@ -77,7 +77,7 @@ The sync service automatically syncs between PostgreSQL and Radicale:
 
 ### Management UI
 
-The UI is accessible at `http://localhost:3000` (configurable via `UI_PORT`).
+The UI is accessible at `http://localhost:3010` (configurable via `UI_PORT`).
 
 Authentication is handled by Better Auth:
 - Users can register and login
@@ -166,7 +166,7 @@ Migrations are automatically applied when the PostgreSQL container starts. They 
 ### Services won't start
 
 1. Check Docker logs: `docker-compose logs`
-2. Verify ports are not in use: `netstat -an | grep -E '3000|5232|5432'`
+2. Verify ports are not in use: `netstat -an | grep -E '3010|5232|5432'`
 3. Check environment variables in `.env`
 
 ### Contacts not syncing

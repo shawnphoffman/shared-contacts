@@ -71,10 +71,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3010}
       NODE_ENV: production
     ports:
-      - "${UI_PORT:-3000}:3000"
+      - "${UI_PORT:-3010}:3010"
     networks:
       - shared-contacts-network
     depends_on:

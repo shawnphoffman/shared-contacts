@@ -151,7 +151,7 @@ Better Auth automatically creates the following tables:
 
 - **PostgreSQL**: 5432 (default)
 - **Radicale**: 5232 (default)
-- **UI**: 3000 (default)
+- **UI**: 3010 (default)
 
 ## Environment Variables
 
@@ -169,7 +169,7 @@ See `.env.example` for all required environment variables.
 
 1. Copy `.env.example` to `.env` and configure
 2. Run `docker-compose up -d`
-3. Access UI at `http://localhost:3000`
+3. Access UI at `http://localhost:3010`
 4. Configure CardDAV clients to connect to `http://localhost:5232`
 
 ## Future Enhancements

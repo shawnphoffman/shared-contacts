@@ -31,7 +31,7 @@ RUN npm ci --only=production
 COPY --from=builder /app/.output ./.output
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3010
 
 # Start the application
 CMD ["node", ".output/server/index.js"]
