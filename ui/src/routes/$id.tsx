@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, notFound } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ContactForm } from '../components/ContactForm'
 import { Button } from '../components/ui/button'
@@ -16,6 +16,13 @@ import { useState } from 'react'
 import type { Contact } from '../lib/db'
 
 export const Route = createFileRoute('/$id')({
+  beforeLoad: ({ params }) => {
+    // Exclude "new" from matching this dynamic route
+    // This ensures the static /new route takes precedence
+    if (params.id === 'new') {
+      throw notFound()
+    }
+  },
   component: ContactDetailPage,
 })
 
