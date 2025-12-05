@@ -7,6 +7,7 @@ export interface VCardData {
   uid?: string;
   fn?: string; // Full name
   n?: string; // Name (structured: Family;Given;Additional;Prefix;Suffix)
+  nickname?: string;
   email?: string;
   tel?: string;
   org?: string;
@@ -70,6 +71,9 @@ function parseVCardLine(line: string, data: VCardData): void {
     case 'N':
       data.n = value;
       break;
+    case 'NICKNAME':
+      data.nickname = value;
+      break;
     case 'EMAIL':
     case 'EMAIL;TYPE=INTERNET':
       if (!data.email) {
@@ -105,6 +109,7 @@ export function generateVCard(data: VCardData, contact?: {
   full_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  nickname?: string | null;
   email?: string | null;
   phone?: string | null;
   organization?: string | null;
@@ -135,6 +140,12 @@ export function generateVCard(data: VCardData, contact?: {
     lines.push(`N:${lastName};${firstName};${additional};${prefix};${suffix}`);
   } else if (contact?.first_name || contact?.last_name) {
     lines.push(`N:${contact.last_name || ''};${contact.first_name || ''};;;`);
+  }
+
+  // Nickname
+  const nickname = data.nickname || contact?.nickname;
+  if (nickname) {
+    lines.push(`NICKNAME:${nickname}`);
   }
 
   // Email

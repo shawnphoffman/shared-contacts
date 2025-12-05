@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -13,9 +13,9 @@ interface ContactFormProps {
 
 export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
   const [formData, setFormData] = useState({
-    full_name: contact?.full_name || '',
     first_name: contact?.first_name || '',
     last_name: contact?.last_name || '',
+    nickname: contact?.nickname || '',
     email: contact?.email || '',
     phone: contact?.phone || '',
     organization: contact?.organization || '',
@@ -23,13 +23,27 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     address: contact?.address || '',
     notes: contact?.notes || '',
   })
+  const [fullName, setFullName] = useState(
+    contact?.full_name ||
+    [contact?.first_name, contact?.last_name].filter(Boolean).join(' ').trim() ||
+    ''
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Calculate full_name from first_name and last_name
+  useEffect(() => {
+    const parts = [formData.first_name, formData.last_name].filter(Boolean)
+    setFullName(parts.join(' ').trim() || '')
+  }, [formData.first_name, formData.last_name])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      await onSubmit(formData)
+      await onSubmit({
+        ...formData,
+        full_name: fullName || null,
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -39,37 +53,49 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="full_name">Full Name *</Label>
+          <Label htmlFor="first_name">First Name</Label>
+          <Input
+            id="first_name"
+            value={formData.first_name}
+            onChange={(e) =>
+              setFormData({ ...formData, first_name: e.target.value })
+            }
+          />
+        </div>
+        <div>
+          <Label htmlFor="last_name">Last Name</Label>
+          <Input
+            id="last_name"
+            value={formData.last_name}
+            onChange={(e) =>
+              setFormData({ ...formData, last_name: e.target.value })
+            }
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="full_name">Full Name</Label>
           <Input
             id="full_name"
-            value={formData.full_name}
-            onChange={(e) =>
-              setFormData({ ...formData, full_name: e.target.value })
-            }
+            value={fullName}
+            readOnly
+            disabled
+            className="bg-gray-50 cursor-not-allowed"
             required
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="first_name">First Name</Label>
-            <Input
-              id="first_name"
-              value={formData.first_name}
-              onChange={(e) =>
-                setFormData({ ...formData, first_name: e.target.value })
-              }
-            />
-          </div>
-          <div>
-            <Label htmlFor="last_name">Last Name</Label>
-            <Input
-              id="last_name"
-              value={formData.last_name}
-              onChange={(e) =>
-                setFormData({ ...formData, last_name: e.target.value })
-              }
-            />
-          </div>
+        <div>
+          <Label htmlFor="nickname">Nickname</Label>
+          <Input
+            id="nickname"
+            value={formData.nickname}
+            onChange={(e) =>
+              setFormData({ ...formData, nickname: e.target.value })
+            }
+            placeholder="Optional"
+          />
         </div>
       </div>
 

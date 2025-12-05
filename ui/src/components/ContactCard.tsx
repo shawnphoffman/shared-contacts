@@ -14,6 +14,11 @@ export function ContactCard({ contact }: ContactCardProps) {
         <CardHeader>
           <CardTitle className="text-xl">
             {contact.full_name || 'Unnamed Contact'}
+            {contact.nickname && (
+              <span className="text-base font-normal text-gray-500 ml-2">
+                ({contact.nickname})
+              </span>
+            )}
           </CardTitle>
           {contact.job_title && contact.organization && (
             <p className="text-sm text-gray-500">

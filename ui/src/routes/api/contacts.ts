@@ -22,6 +22,7 @@ export const Route = createFileRoute('/api/contacts')({
             full_name: body.full_name,
             first_name: body.first_name,
             last_name: body.last_name,
+            nickname: body.nickname,
             email: body.email,
             phone: body.phone,
             organization: body.organization,

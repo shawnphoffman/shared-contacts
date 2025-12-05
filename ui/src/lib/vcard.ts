@@ -12,6 +12,7 @@ export function generateVCard(contact: {
   full_name?: string | null
   first_name?: string | null
   last_name?: string | null
+  nickname?: string | null
   email?: string | null
   phone?: string | null
   organization?: string | null
@@ -32,6 +33,9 @@ export function generateVCard(contact: {
     `N:${lastName};${firstName};;;`,
   ]
 
+  if (contact.nickname) {
+    lines.push(`NICKNAME:${contact.nickname}`)
+  }
   if (contact.email) {
     lines.push(`EMAIL;TYPE=INTERNET:${contact.email}`)
   }

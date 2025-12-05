@@ -34,6 +34,7 @@ export interface Contact {
   full_name: string | null
   first_name: string | null
   last_name: string | null
+  nickname: string | null
   email: string | null
   phone: string | null
   organization: string | null
@@ -66,14 +67,15 @@ export async function getContactByVcardId(vcardId: string): Promise<Contact | nu
 export async function createContact(contact: Partial<Contact>): Promise<Contact> {
   const pool = getPool()
   const result = await pool.query(
-    `INSERT INTO contacts (vcard_id, full_name, first_name, last_name, email, phone, organization, job_title, address, notes, vcard_data)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `INSERT INTO contacts (vcard_id, full_name, first_name, last_name, nickname, email, phone, organization, job_title, address, notes, vcard_data)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING *`,
     [
       contact.vcard_id || null,
       contact.full_name || null,
       contact.first_name || null,
       contact.last_name || null,
+      contact.nickname || null,
       contact.email || null,
       contact.phone || null,
       contact.organization || null,
@@ -97,6 +99,7 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
     'full_name',
     'first_name',
     'last_name',
+    'nickname',
     'email',
     'phone',
     'organization',

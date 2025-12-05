@@ -184,6 +184,7 @@ export async function syncRadicaleToDb(): Promise<void> {
         full_name: fullName,
         first_name: firstName || null,
         last_name: lastName || null,
+        nickname: vcardData.nickname || null,
         email: vcardData.email || null,
         phone: vcardData.tel || null,
         organization: vcardData.org || null,
