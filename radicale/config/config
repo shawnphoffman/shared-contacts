@@ -11,7 +11,7 @@ htpasswd_encryption = bcrypt
 type = owner_only
 
 [storage]
-type = filesystem
+type = multifilesystem
 filesystem_folder = /data/collections
 
 [logging]
