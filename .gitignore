@@ -38,3 +38,7 @@ radicale_data/
 tmp/
 temp/
 
+# TanStack Start/Vinxi generated files
+app.config.timestamp_*.js
+*.timestamp.*
+
