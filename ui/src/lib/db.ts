@@ -9,9 +9,19 @@ export function getPool(): Pool {
       throw new Error('DATABASE_URL environment variable is not set')
     }
 
+    // Determine SSL configuration
+    // Disable SSL by default for Docker internal connections
+    // Only enable if explicitly requested via DATABASE_SSL env var
+    // or if the connection string contains sslmode parameter
+    const urlHasSSL = databaseUrl.includes('sslmode=')
+    const useSSL = process.env.DATABASE_SSL === 'true' || process.env.DATABASE_SSL === '1' || urlHasSSL
+    const sslConfig = useSSL
+      ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false' }
+      : false
+
     pool = new Pool({
       connectionString: databaseUrl,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      ssl: sslConfig,
       connectionTimeoutMillis: 2000,
     })
   }
