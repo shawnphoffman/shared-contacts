@@ -89,6 +89,33 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  ui-dev:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.dev
+    container_name: shared-contacts-ui-dev
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3010}
+      NODE_ENV: development
+    volumes:
+      # Mount entire ui directory for hot-reload, but exclude node_modules and build outputs
+      - ./ui:/app
+      # Preserve node_modules in container (don't override with host mount)
+      - ui-dev-node-modules:/app/node_modules
+      # Preserve build outputs
+      - ui-dev-output:/app/.output
+    ports:
+      - "${UI_PORT:-3010}:3010"
+    networks:
+      - shared-contacts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - dev
+
 networks:
   shared-contacts-network:
     driver: bridge
@@ -96,4 +123,6 @@ networks:
 volumes:
   postgres_data:
   radicale_data:
+  ui-dev-node-modules:
+  ui-dev-output:
 
