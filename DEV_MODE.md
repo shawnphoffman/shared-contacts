@@ -8,13 +8,15 @@ This project supports hot-reload development using Docker Compose profiles. Your
 
 1. **Stop the production UI container** (if running):
    ```bash
-   docker-compose stop ui
+   docker compose stop ui
    ```
 
 2. **Start services with dev profile**:
    ```bash
-   docker-compose --profile dev up -d
+   docker compose --profile dev up -d
    ```
+
+   **Note:** The production `ui` service has a `production` profile, so it won't start when using the `dev` profile, preventing port conflicts.
 
    This will:
    - Start PostgreSQL, Radicale, and sync-service (as normal)
@@ -24,7 +26,7 @@ This project supports hot-reload development using Docker Compose profiles. Your
 
 3. **View logs** to see the dev server starting:
    ```bash
-   docker-compose logs -f ui-dev
+   docker compose logs -f ui-dev
    ```
 
 4. **Access the app** at `http://localhost:3010`
@@ -38,24 +40,29 @@ This project supports hot-reload development using Docker Compose profiles. Your
 ### Stop Development Mode
 
 ```bash
-docker-compose --profile dev down
+docker compose --profile dev down
 ```
 
 Or to stop just the dev UI:
 ```bash
-docker-compose stop ui-dev
+docker compose stop ui-dev
 ```
 
-## Production Mode (Default)
+## Production Mode
 
-Production mode is unchanged and unaffected:
+Production mode uses the `production` profile:
 
 ```bash
-# Start production (default, no profile needed)
-docker-compose up -d
+# Start production with explicit profile
+docker compose --profile production up -d
+
+# Or start all services (including production UI)
+docker compose up -d
 
 # This uses the production UI container with built assets
 ```
+
+**Note:** When using the `dev` profile, the production UI service won't start automatically, preventing port conflicts.
 
 ## How It Works
 
@@ -74,15 +81,15 @@ If port 3010 is already in use:
 
 ### Changes Not Reloading
 
-1. Check that the dev container is running: `docker-compose ps`
-2. Check logs: `docker-compose logs ui-dev`
-3. Verify volumes are mounted: `docker-compose exec ui-dev ls -la /app/src`
+1. Check that the dev container is running: `docker compose ps`
+2. Check logs: `docker compose logs ui-dev`
+3. Verify volumes are mounted: `docker compose exec ui-dev ls -la /app/src`
 
 ### Node Modules Issues
 
 If you add new dependencies:
-1. Rebuild the dev container: `docker-compose build ui-dev`
-2. Restart: `docker-compose --profile dev up -d ui-dev`
+1. Rebuild the dev container: `docker compose build ui-dev`
+2. Restart: `docker compose --profile dev up -d ui-dev`
 
 ## Environment Variables
 

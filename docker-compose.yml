@@ -14,7 +14,7 @@ services:
     networks:
       - shared-contacts-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sharedcontacts}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sharedcontacts}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +39,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
+    entrypoint: [ "/bin/sh", "-c" ]
     command:
       - |
         if [ ! -f /data/users ]; then
@@ -88,6 +88,8 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    profiles:
+      - production
 
   ui-dev:
     build:
@@ -125,4 +127,5 @@ volumes:
   radicale_data:
   ui-dev-node-modules:
   ui-dev-output:
+
 
