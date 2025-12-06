@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   flexRender,
   getCoreRowModel,
@@ -18,6 +18,7 @@ import {
 } from '../components/ui/table'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { CSVUpload } from '../components/CSVUpload'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Contact } from '../lib/db'
 
@@ -35,7 +36,6 @@ async function fetchContacts(): Promise<Array<Contact>> {
 
 function ContactsIndexPage() {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
 
   const { data: contacts = [], isLoading } = useQuery({
@@ -43,19 +43,20 @@ function ContactsIndexPage() {
     queryFn: fetchContacts,
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/contacts/${id}`, {
-        method: 'DELETE',
-      })
-      if (!response.ok) {
-        throw new Error('Failed to delete contact')
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] })
-    },
-  })
+  // Delete mutation available for future use
+  // const deleteMutation = useMutation({
+  //   mutationFn: async (id: string) => {
+  //     const response = await fetch(`/api/contacts/${id}`, {
+  //       method: 'DELETE',
+  //     })
+  //     if (!response.ok) {
+  //       throw new Error('Failed to delete contact')
+  //     }
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['contacts'] })
+  //   },
+  // })
 
   const columns: Array<ColumnDef<Contact>> = [
     {
@@ -142,10 +143,10 @@ function ContactsIndexPage() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: (row, columnId, filterValue) => {
+    globalFilterFn: (row, _columnId, filterValue) => {
       const contact = row.original
-      const query = filterValue.toLowerCase()
-      return (
+      const query = String(filterValue).toLowerCase()
+      return !!(
         contact.full_name?.toLowerCase().includes(query) ||
         contact.email?.toLowerCase().includes(query) ||
         contact.phone?.includes(query) ||
@@ -176,7 +177,7 @@ function ContactsIndexPage() {
         </Button>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
@@ -186,6 +187,10 @@ function ContactsIndexPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </div>
+        <div className="border-t pt-4">
+          <h2 className="text-lg font-semibold mb-2">Import Contacts</h2>
+          <CSVUpload />
         </div>
       </div>
 
@@ -219,7 +224,7 @@ function ContactsIndexPage() {
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
+              {table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}

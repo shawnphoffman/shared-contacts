@@ -13,6 +13,7 @@ import { Route as NewRouteImport } from './routes/new'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
+import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
 
 const NewRoute = NewRouteImport.update({
@@ -35,6 +36,11 @@ const ApiContactsRoute = ApiContactsRouteImport.update({
   path: '/api/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
 const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/new': typeof NewRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
+  '/api/contacts/import': typeof ApiContactsImportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/new': typeof NewRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
+  '/api/contacts/import': typeof ApiContactsImportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,33 @@ export interface FileRoutesById {
   '/new': typeof NewRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
+  '/api/contacts/import': typeof ApiContactsImportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$id' | '/new' | '/api/contacts' | '/api/contacts/$id'
+  fullPaths:
+    | '/'
+    | '/$id'
+    | '/new'
+    | '/api/contacts'
+    | '/api/contacts/$id'
+    | '/api/contacts/import'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$id' | '/new' | '/api/contacts' | '/api/contacts/$id'
-  id: '__root__' | '/' | '/$id' | '/new' | '/api/contacts' | '/api/contacts/$id'
+  to:
+    | '/'
+    | '/$id'
+    | '/new'
+    | '/api/contacts'
+    | '/api/contacts/$id'
+    | '/api/contacts/import'
+  id:
+    | '__root__'
+    | '/'
+    | '/$id'
+    | '/new'
+    | '/api/contacts'
+    | '/api/contacts/$id'
+    | '/api/contacts/import'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -108,6 +136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/contacts/import': {
+      id: '/api/contacts/import'
+      path: '/import'
+      fullPath: '/api/contacts/import'
+      preLoaderRoute: typeof ApiContactsImportRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
     '/api/contacts/$id': {
       id: '/api/contacts/$id'
       path: '/$id'
@@ -120,10 +155,12 @@ declare module '@tanstack/react-router' {
 
 interface ApiContactsRouteChildren {
   ApiContactsIdRoute: typeof ApiContactsIdRoute
+  ApiContactsImportRoute: typeof ApiContactsImportRoute
 }
 
 const ApiContactsRouteChildren: ApiContactsRouteChildren = {
   ApiContactsIdRoute: ApiContactsIdRoute,
+  ApiContactsImportRoute: ApiContactsImportRoute,
 }
 
 const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(

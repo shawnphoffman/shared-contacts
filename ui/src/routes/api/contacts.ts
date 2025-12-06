@@ -22,12 +22,16 @@ export const Route = createFileRoute('/api/contacts')({
             full_name: body.full_name,
             first_name: body.first_name,
             last_name: body.last_name,
+            middle_name: body.middle_name,
             nickname: body.nickname,
+            maiden_name: body.maiden_name,
             email: body.email,
             phone: body.phone,
             organization: body.organization,
             job_title: body.job_title,
             address: body.address,
+            birthday: body.birthday ? new Date(body.birthday) : null,
+            homepage: body.homepage,
             notes: body.notes,
           }
 
@@ -50,4 +54,3 @@ export const Route = createFileRoute('/api/contacts')({
     },
   },
 })
-
