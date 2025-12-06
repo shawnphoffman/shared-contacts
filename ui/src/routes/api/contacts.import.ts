@@ -1,6 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { createContact, type Contact } from '../../lib/db'
+import {
+  createContact,
+  updateContact,
+  findDuplicateContact,
+  type Contact,
+} from '../../lib/db'
 import { generateVCard, extractUID } from '../../lib/vcard'
 
 /**
@@ -136,6 +141,8 @@ export const Route = createFileRoute('/api/contacts/import')({
 
           const results = {
             success: 0,
+            updated: 0,
+            skipped: 0,
             failed: 0,
             errors: [] as Array<{ row: number; error: string }>,
           }
@@ -151,20 +158,59 @@ export const Route = createFileRoute('/api/contacts/import')({
                 !contactData.email &&
                 !contactData.phone
               ) {
+                results.skipped++
                 continue
               }
+
+              // Check for existing duplicate
+              const existing = await findDuplicateContact(
+                contactData.full_name || null,
+                contactData.email || null,
+                contactData.phone || null,
+              )
 
               // Generate vCard data
               const vcardData = generateVCard(contactData)
               const vcardId = extractUID(vcardData) || undefined
 
-              await createContact({
-                ...contactData,
-                vcard_id: vcardId,
-                vcard_data: vcardData,
-              })
+              if (existing) {
+                // Merge with existing contact - prefer new non-null values
+                const mergedData: Partial<Contact> = {
+                  // Keep existing ID and timestamps
+                  id: existing.id,
+                  created_at: existing.created_at,
+                  // Merge fields - prefer new non-null values
+                  full_name: contactData.full_name || existing.full_name,
+                  first_name: contactData.first_name || existing.first_name,
+                  last_name: contactData.last_name || existing.last_name,
+                  middle_name: contactData.middle_name || existing.middle_name,
+                  nickname: contactData.nickname || existing.nickname,
+                  maiden_name: contactData.maiden_name || existing.maiden_name,
+                  email: contactData.email || existing.email,
+                  phone: contactData.phone || existing.phone,
+                  organization:
+                    contactData.organization || existing.organization,
+                  job_title: contactData.job_title || existing.job_title,
+                  address: contactData.address || existing.address,
+                  birthday: contactData.birthday || existing.birthday,
+                  homepage: contactData.homepage || existing.homepage,
+                  notes: contactData.notes || existing.notes,
+                  // Always update vCard
+                  vcard_id: vcardId,
+                  vcard_data: vcardData,
+                }
 
-              results.success++
+                await updateContact(existing.id, mergedData)
+                results.updated++
+              } else {
+                // Create new contact
+                await createContact({
+                  ...contactData,
+                  vcard_id: vcardId,
+                  vcard_data: vcardData,
+                })
+                results.success++
+              }
             } catch (error) {
               results.failed++
               results.errors.push({
@@ -175,7 +221,7 @@ export const Route = createFileRoute('/api/contacts/import')({
           }
 
           return json({
-            message: `Imported ${results.success} contacts${results.failed > 0 ? `, ${results.failed} failed` : ''}`,
+            message: `Imported ${results.success} new contacts, updated ${results.updated} existing contacts${results.skipped > 0 ? `, skipped ${results.skipped} empty rows` : ''}${results.failed > 0 ? `, ${results.failed} failed` : ''}`,
             ...results,
           })
         } catch (error) {

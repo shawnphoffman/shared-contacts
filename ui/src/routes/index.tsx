@@ -19,6 +19,7 @@ import {
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { CSVUpload } from '../components/CSVUpload'
+import { DeduplicateButton } from '../components/DeduplicateButton'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Contact } from '../lib/db'
 
@@ -188,9 +189,12 @@ function ContactsIndexPage() {
             className="pl-10"
           />
         </div>
-        <div className="border-t pt-4">
-          <h2 className="text-lg font-semibold mb-2">Import Contacts</h2>
-          <CSVUpload />
+        <div className="border-t pt-4 space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Import Contacts</h2>
+            <CSVUpload />
+          </div>
+          <DeduplicateButton />
         </div>
       </div>
 

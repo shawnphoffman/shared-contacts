@@ -81,6 +81,90 @@ export async function getContactByVcardId(
   return result.rows[0] || null
 }
 
+/**
+ * Find existing contact by email (case-insensitive)
+ */
+export async function getContactByEmail(
+  email: string,
+): Promise<Contact | null> {
+  if (!email) return null
+  const pool = getPool()
+  const result = await pool.query(
+    'SELECT * FROM contacts WHERE LOWER(email) = LOWER($1) LIMIT 1',
+    [email],
+  )
+  return result.rows[0] || null
+}
+
+/**
+ * Find existing contact by name and phone (for duplicate detection)
+ */
+export async function findDuplicateContact(
+  fullName: string | null,
+  email: string | null,
+  phone: string | null,
+): Promise<Contact | null> {
+  const pool = getPool()
+
+  // Try email first (most reliable)
+  if (email) {
+    const byEmail = await getContactByEmail(email)
+    if (byEmail) return byEmail
+  }
+
+  // Try name + phone combination
+  if (fullName && phone) {
+    const result = await pool.query(
+      'SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND phone = $2 LIMIT 1',
+      [fullName, phone],
+    )
+    if (result.rows[0]) return result.rows[0]
+  }
+
+  // Try just name (if it's a unique name)
+  if (fullName && fullName !== 'Unnamed Contact') {
+    const result = await pool.query(
+      'SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) LIMIT 1',
+      [fullName],
+    )
+    if (result.rows[0]) return result.rows[0]
+  }
+
+  return null
+}
+
+/**
+ * Merge contact data, preferring non-null values from new data
+ */
+function mergeContactData(
+  existing: Contact,
+  newData: Partial<Contact>,
+): Partial<Contact> {
+  return {
+    // Keep existing ID and timestamps
+    id: existing.id,
+    created_at: existing.created_at,
+    // Merge fields - prefer new data if it exists and is not null/empty
+    full_name: newData.full_name || existing.full_name,
+    first_name: newData.first_name || existing.first_name,
+    last_name: newData.last_name || existing.last_name,
+    middle_name: newData.middle_name || existing.middle_name,
+    nickname: newData.nickname || existing.nickname,
+    maiden_name: newData.maiden_name || existing.maiden_name,
+    email: newData.email || existing.email,
+    phone: newData.phone || existing.phone,
+    organization: newData.organization || existing.organization,
+    job_title: newData.job_title || existing.job_title,
+    address: newData.address || existing.address,
+    birthday: newData.birthday || existing.birthday,
+    homepage: newData.homepage || existing.homepage,
+    notes: newData.notes || existing.notes,
+    // Always update vCard data
+    vcard_data: newData.vcard_data || existing.vcard_data,
+    vcard_id: newData.vcard_id || existing.vcard_id,
+  }
+}
+
 export async function createContact(
   contact: Partial<Contact>,
 ): Promise<Contact> {

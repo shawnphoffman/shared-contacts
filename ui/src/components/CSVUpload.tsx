@@ -6,6 +6,8 @@ import { Upload, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 interface ImportResult {
   message: string
   success: number
+  updated: number
+  skipped: number
   failed: number
   errors?: Array<{ row: number; error: string }>
 }
@@ -111,6 +113,11 @@ export function CSVUpload() {
               <p className="text-sm font-medium text-green-800 dark:text-green-200">
                 {importMutation.data.message}
               </p>
+              {importMutation.data.updated > 0 && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  {importMutation.data.updated} existing contacts were updated
+                </p>
+              )}
               {importMutation.data.errors &&
                 importMutation.data.errors.length > 0 && (
                   <details className="mt-2">
