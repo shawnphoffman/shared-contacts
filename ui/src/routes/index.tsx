@@ -117,6 +117,26 @@ function ContactsIndexPage() {
       },
     },
     {
+      accessorKey: 'birthday',
+      header: 'Birthday',
+      cell: ({ row }) => {
+        const birthday = row.original.birthday
+        if (!birthday) {
+          return <span className="text-gray-400">—</span>
+        }
+        const date = new Date(birthday)
+        return (
+          <span>
+            {date.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
+        )
+      },
+    },
+    {
       id: 'actions',
       header: '',
       cell: ({ row }) => {

@@ -12,6 +12,16 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
+  // Format birthday for date input (YYYY-MM-DD)
+  const formatDateForInput = (date: Date | null | undefined): string => {
+    if (!date) return ''
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [formData, setFormData] = useState({
     first_name: contact?.first_name || '',
     last_name: contact?.last_name || '',
@@ -22,11 +32,15 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     job_title: contact?.job_title || '',
     address: contact?.address || '',
     notes: contact?.notes || '',
+    birthday: formatDateForInput(contact?.birthday),
   })
   const [fullName, setFullName] = useState(
     contact?.full_name ||
-    [contact?.first_name, contact?.last_name].filter(Boolean).join(' ').trim() ||
-    ''
+      [contact?.first_name, contact?.last_name]
+        .filter(Boolean)
+        .join(' ')
+        .trim() ||
+      '',
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isInitialMount = useRef(true)
@@ -51,6 +65,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
       await onSubmit({
         ...formData,
         full_name: fullName || null,
+        birthday: formData.birthday ? new Date(formData.birthday) : null,
       })
     } finally {
       setIsSubmitting(false)
@@ -167,13 +182,23 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
       </div>
 
       <div>
+        <Label htmlFor="birthday">Birthday</Label>
+        <Input
+          id="birthday"
+          type="date"
+          value={formData.birthday}
+          onChange={(e) =>
+            setFormData({ ...formData, birthday: e.target.value })
+          }
+        />
+      </div>
+
+      <div>
         <Label htmlFor="notes">Notes</Label>
         <Textarea
           id="notes"
           value={formData.notes}
-          onChange={(e) =>
-            setFormData({ ...formData, notes: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={4}
         />
       </div>
@@ -191,4 +216,3 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     </form>
   )
 }
-
