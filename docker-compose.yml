@@ -118,6 +118,7 @@ services:
       # Mount source code for live reload
       - ./ui:/app
       # Use named volume for node_modules to avoid conflicts and speed up installs
+      # If you encounter "vite: not found" errors, try removing this volume mount temporarily
       - ui_node_modules:/app/node_modules
     ports:
       - "${UI_PORT:-3030}:3030"
@@ -126,8 +127,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Only install if node_modules is empty, then start dev server
-    command: sh -c "if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules)\" ]; then pnpm install; fi && pnpm dev"
+    # Install dependencies and start dev server
+    # pnpm run ensures binaries in node_modules/.bin are found
+    command: sh -c "pnpm install && pnpm run dev"
     restart: unless-stopped
     stdin_open: true
     tty: true

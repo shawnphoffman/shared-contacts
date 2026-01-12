@@ -4,7 +4,11 @@ import { useState } from 'react'
 import { Plus, Edit, Trash2, Users } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
+import {
+  Field,
+  FieldContent,
+  FieldLabel,
+} from '../components/ui/field'
 import {
   Dialog,
   DialogContent,
@@ -283,29 +287,33 @@ function RadicaleUsersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="create-username">Username</Label>
-              <Input
-                id="create-username"
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-                placeholder="Enter username"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="create-password">Password</Label>
-              <Input
-                id="create-password"
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                placeholder="Enter password"
-              />
-            </div>
+            <Field>
+              <FieldLabel htmlFor="create-username">Username</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="create-username"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  placeholder="Enter username"
+                />
+              </FieldContent>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="create-password">Password</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="create-password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  placeholder="Enter password"
+                />
+              </FieldContent>
+            </Field>
             {error && (
               <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
                 {error}
@@ -340,18 +348,20 @@ function RadicaleUsersPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-password">New Password</Label>
-              <Input
-                id="edit-password"
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                placeholder="Enter new password"
-              />
-            </div>
+            <Field>
+              <FieldLabel htmlFor="edit-password">New Password</FieldLabel>
+              <FieldContent>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  placeholder="Enter new password"
+                />
+              </FieldContent>
+            </Field>
             {error && (
               <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
                 {error}

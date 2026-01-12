@@ -114,7 +114,14 @@ export async function syncDbToRadicale(): Promise<void> {
 			}
 
 			existingVCardIds.add(contact.vcard_id)
-			const vcardData = contact.vcard_data || generateVCard({}, contact)
+			// Generate vCard with arrays if available
+			const vcardData = contact.vcard_data || generateVCard({}, {
+				...contact,
+				phones: contact.phones || null,
+				emails: contact.emails || null,
+				addresses: contact.addresses || null,
+				urls: contact.urls || null,
+			})
 			writeVCardFile(contact.vcard_id, vcardData)
 		}
 
@@ -204,6 +211,23 @@ export async function syncRadicaleToDb(): Promise<void> {
 				}
 			}
 
+			// Convert vCard arrays to Contact arrays
+			const phones = vcardData.tels && vcardData.tels.length > 0 
+				? vcardData.tels 
+				: (vcardData.tel ? [{ value: vcardData.tel, type: 'CELL' }] : [])
+			
+			const emails = vcardData.emails && vcardData.emails.length > 0 
+				? vcardData.emails 
+				: (vcardData.email ? [{ value: vcardData.email, type: 'INTERNET' }] : [])
+			
+			const addresses = vcardData.addresses && vcardData.addresses.length > 0 
+				? vcardData.addresses 
+				: (vcardData.adr ? [{ value: vcardData.adr, type: 'HOME' }] : [])
+			
+			const urls = vcardData.urls && vcardData.urls.length > 0 
+				? vcardData.urls 
+				: (vcardData.url ? [{ value: vcardData.url, type: 'HOME' }] : [])
+
 			const contactData: Partial<Contact> = {
 				vcard_id: vcardId,
 				full_name: fullName,
@@ -212,13 +236,19 @@ export async function syncRadicaleToDb(): Promise<void> {
 				middle_name: middleName || null,
 				nickname: vcardData.nickname || null,
 				maiden_name: maidenName,
-				email: vcardData.email || null,
-				phone: vcardData.tel || null,
+				// Backward compatibility: set single values from arrays
+				email: emails.length > 0 ? emails[0].value : null,
+				phone: phones.length > 0 ? phones[0].value : null,
+				address: addresses.length > 0 ? addresses[0].value : null,
+				homepage: urls.length > 0 ? urls[0].value : null,
+				// New array fields
+				phones: phones.length > 0 ? phones : null,
+				emails: emails.length > 0 ? emails : null,
+				addresses: addresses.length > 0 ? addresses : null,
+				urls: urls.length > 0 ? urls : null,
 				organization: vcardData.org || null,
 				job_title: vcardData.title || null,
-				address: vcardData.adr || null,
 				birthday: birthday,
-				homepage: vcardData.url || null,
 				notes: notes,
 				vcard_data: vcardContent,
 			}

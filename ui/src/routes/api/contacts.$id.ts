@@ -35,11 +35,15 @@ export const Route = createFileRoute('/api/contacts/$id')({
             maiden_name: body.maiden_name,
             email: body.email,
             phone: body.phone,
+            phones: body.phones,
+            emails: body.emails,
             organization: body.organization,
             job_title: body.job_title,
             address: body.address,
+            addresses: body.addresses,
             birthday: body.birthday ? new Date(body.birthday) : null,
             homepage: body.homepage,
+            urls: body.urls,
             notes: body.notes,
           }
 
@@ -52,6 +56,10 @@ export const Route = createFileRoute('/api/contacts/$id')({
           const vcardData = generateVCard({
             ...existingContact,
             ...contactData,
+            phones: contactData.phones || existingContact.phones,
+            emails: contactData.emails || existingContact.emails,
+            addresses: contactData.addresses || existingContact.addresses,
+            urls: contactData.urls || existingContact.urls,
           })
           const vcardId = extractUID(vcardData) || existingContact.vcard_id
 

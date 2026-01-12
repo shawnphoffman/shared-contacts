@@ -34,6 +34,11 @@ export function getPool(): Pool {
   return pool
 }
 
+export interface ContactField {
+  value: string
+  type?: string
+}
+
 export interface Contact {
   id: string
   vcard_id: string | null
@@ -43,13 +48,17 @@ export interface Contact {
   middle_name: string | null
   nickname: string | null
   maiden_name: string | null
-  email: string | null
-  phone: string | null
+  email: string | null // Deprecated: use emails array
+  phone: string | null // Deprecated: use phones array
+  phones: ContactField[] | null // Multiple phone numbers
+  emails: ContactField[] | null // Multiple emails
   organization: string | null
   job_title: string | null
-  address: string | null
+  address: string | null // Deprecated: use addresses array
+  addresses: ContactField[] | null // Multiple addresses
   birthday: Date | null
-  homepage: string | null
+  homepage: string | null // Deprecated: use urls array
+  urls: ContactField[] | null // Multiple URLs
   notes: string | null
   vcard_data: string | null
   created_at: Date
@@ -61,13 +70,27 @@ export async function getAllContacts(): Promise<Contact[]> {
   const result = await pool.query(
     'SELECT * FROM contacts ORDER BY full_name, created_at DESC',
   )
-  return result.rows
+  // Parse JSONB fields
+  return result.rows.map(row => {
+    if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+    if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+    if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
+    if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+    return row
+  })
 }
 
 export async function getContactById(id: string): Promise<Contact | null> {
   const pool = getPool()
   const result = await pool.query('SELECT * FROM contacts WHERE id = $1', [id])
-  return result.rows[0] || null
+  if (!result.rows[0]) return null
+  // Parse JSONB fields
+  const row = result.rows[0]
+  if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+  if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+  if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
+  if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  return row
 }
 
 export async function getContactByVcardId(
@@ -170,8 +193,8 @@ export async function createContact(
 ): Promise<Contact> {
   const pool = getPool()
   const result = await pool.query(
-    `INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, nickname, maiden_name, email, phone, organization, job_title, address, birthday, homepage, notes, vcard_data)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    `INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, nickname, maiden_name, email, phone, phones, emails, organization, job_title, address, addresses, birthday, homepage, urls, notes, vcard_data)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
      RETURNING *`,
     [
       contact.vcard_id || null,
@@ -183,16 +206,26 @@ export async function createContact(
       contact.maiden_name || null,
       contact.email || null,
       contact.phone || null,
+      contact.phones ? JSON.stringify(contact.phones) : '[]',
+      contact.emails ? JSON.stringify(contact.emails) : '[]',
       contact.organization || null,
       contact.job_title || null,
       contact.address || null,
+      contact.addresses ? JSON.stringify(contact.addresses) : '[]',
       contact.birthday || null,
       contact.homepage || null,
+      contact.urls ? JSON.stringify(contact.urls) : '[]',
       contact.notes || null,
       contact.vcard_data || null,
     ],
   )
-  return result.rows[0]
+  // Parse JSONB fields
+  const row = result.rows[0]
+  if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+  if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+  if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
+  if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  return row
 }
 
 export async function updateContact(
@@ -214,11 +247,15 @@ export async function updateContact(
     'maiden_name',
     'email',
     'phone',
+    'phones',
+    'emails',
     'organization',
     'job_title',
     'address',
+    'addresses',
     'birthday',
     'homepage',
+    'urls',
     'notes',
     'vcard_data',
   ]
@@ -226,7 +263,12 @@ export async function updateContact(
   for (const field of fields) {
     if (contact[field] !== undefined) {
       updates.push(`${field} = $${paramIndex}`)
-      values.push(contact[field])
+      // Convert arrays to JSON strings for JSONB columns
+      if ((field === 'phones' || field === 'emails' || field === 'addresses' || field === 'urls') && Array.isArray(contact[field])) {
+        values.push(JSON.stringify(contact[field]))
+      } else {
+        values.push(contact[field])
+      }
       paramIndex++
     }
   }
@@ -240,7 +282,13 @@ export async function updateContact(
     `UPDATE contacts SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
     values,
   )
-  return result.rows[0]
+  // Parse JSONB fields
+  const row = result.rows[0]
+  if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+  if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+  if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
+  if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  return row
 }
 
 export async function deleteContact(id: string): Promise<void> {

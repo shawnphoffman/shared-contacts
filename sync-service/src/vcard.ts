@@ -3,18 +3,27 @@
  * Supports vCard 3.0 and 4.0 formats
  */
 
+export interface VCardField {
+	value: string
+	type?: string // e.g., "CELL", "WORK", "HOME", "INTERNET"
+}
+
 export interface VCardData {
 	uid?: string
 	fn?: string // Full name
 	n?: string // Name (structured: Family;Given;Additional;Prefix;Suffix)
 	nickname?: string
-	email?: string
-	tel?: string
+	email?: string // Deprecated: use emails array
+	tel?: string // Deprecated: use tels array
+	emails?: VCardField[] // Multiple emails
+	tels?: VCardField[] // Multiple phone numbers
 	org?: string
 	title?: string
-	adr?: string // Address
+	adr?: string // Deprecated: use addresses array
+	addresses?: VCardField[] // Multiple addresses
 	bday?: string // Birthday (YYYYMMDD or YYYY-MM-DD)
-	url?: string // Homepage/URL
+	url?: string // Deprecated: use urls array
+	urls?: VCardField[] // Multiple URLs
 	note?: string
 	version?: string
 }
@@ -24,7 +33,12 @@ export interface VCardData {
  */
 export function parseVCard(vcardString: string): VCardData {
 	const lines = vcardString.split(/\r?\n/)
-	const data: VCardData = {}
+	const data: VCardData = {
+		emails: [],
+		tels: [],
+		addresses: [],
+		urls: [],
+	}
 
 	let currentLine = ''
 	for (const line of lines) {
@@ -43,6 +57,20 @@ export function parseVCard(vcardString: string): VCardData {
 		parseVCardLine(currentLine, data)
 	}
 
+	// For backward compatibility, set single values from arrays
+	if (data.emails && data.emails.length > 0 && !data.email) {
+		data.email = data.emails[0].value
+	}
+	if (data.tels && data.tels.length > 0 && !data.tel) {
+		data.tel = data.tels[0].value
+	}
+	if (data.addresses && data.addresses.length > 0 && !data.adr) {
+		data.adr = data.addresses[0].value
+	}
+	if (data.url && data.urls && data.urls.length > 0 && !data.url) {
+		data.url = data.urls[0].value
+	}
+
 	return data
 }
 
@@ -57,8 +85,19 @@ function parseVCardLine(line: string, data: VCardData): void {
 	const key = line.substring(0, colonIndex).toUpperCase()
 	const value = line.substring(colonIndex + 1)
 
-	// Remove parameters from key (e.g., "TEL;TYPE=CELL:123" -> "TEL")
-	const baseKey = key.split(';')[0]
+	// Parse parameters (e.g., "TEL;TYPE=CELL;PREF=1" -> {type: "CELL", pref: "1"})
+	const parts = key.split(';')
+	const baseKey = parts[0]
+	const params: Record<string, string> = {}
+	for (let i = 1; i < parts.length; i++) {
+		const param = parts[i].split('=')
+		if (param.length === 2) {
+			params[param[0].toLowerCase()] = param[1]
+		}
+	}
+
+	// Extract type (common parameter)
+	const type = params.type || params['type=internet'] || undefined
 
 	switch (baseKey) {
 		case 'VERSION':
@@ -77,12 +116,17 @@ function parseVCardLine(line: string, data: VCardData): void {
 			data.nickname = value
 			break
 		case 'EMAIL':
-		case 'EMAIL;TYPE=INTERNET':
+			if (!data.emails) data.emails = []
+			data.emails.push({ value, type: type || 'INTERNET' })
+			// Backward compatibility
 			if (!data.email) {
 				data.email = value
 			}
 			break
 		case 'TEL':
+			if (!data.tels) data.tels = []
+			data.tels.push({ value, type: type || 'CELL' })
+			// Backward compatibility
 			if (!data.tel) {
 				data.tel = value
 			}
@@ -94,15 +138,26 @@ function parseVCardLine(line: string, data: VCardData): void {
 			data.title = value
 			break
 		case 'ADR':
+			if (!data.addresses) data.addresses = []
+			// vCard address format: ;;street;city;state;postal;country
+			// For now, we'll store the full address string, but could parse it
+			data.addresses.push({ value, type: type || 'HOME' })
+			// Backward compatibility - extract street address (3rd component)
 			if (!data.adr) {
-				data.adr = value
+				const adrParts = value.split(';')
+				data.adr = adrParts[2] || value // Street address is 3rd component
 			}
 			break
 		case 'BDAY':
 			data.bday = value
 			break
 		case 'URL':
-			data.url = value
+			if (!data.urls) data.urls = []
+			data.urls.push({ value, type: type || 'HOME' })
+			// Backward compatibility
+			if (!data.url) {
+				data.url = value
+			}
 			break
 		case 'NOTE':
 			data.note = value
@@ -130,6 +185,10 @@ export function generateVCard(
 		birthday?: Date | string | null
 		homepage?: string | null
 		notes?: string | null
+		phones?: Array<{ value: string; type?: string }> | null
+		emails?: Array<{ value: string; type?: string }> | null
+		addresses?: Array<{ value: string; type?: string }> | null
+		urls?: Array<{ value: string; type?: string }> | null
 	}
 ): string {
 	const version = data.version || '3.0'
@@ -163,16 +222,38 @@ export function generateVCard(
 		lines.push(`NICKNAME:${nickname}`)
 	}
 
-	// Email
-	const email = data.email || contact?.email
-	if (email) {
-		lines.push(`EMAIL;TYPE=INTERNET:${email}`)
+	// Emails - use arrays if available, fall back to single values
+	const emails = contact?.emails || data.emails || []
+	if (emails.length > 0) {
+		for (const email of emails) {
+			if (email.value) {
+				const type = email.type || 'INTERNET'
+				lines.push(`EMAIL;TYPE=${type}:${email.value}`)
+			}
+		}
+	} else {
+		// Backward compatibility: single email
+		const email = data.email || contact?.email
+		if (email) {
+			lines.push(`EMAIL;TYPE=INTERNET:${email}`)
+		}
 	}
 
-	// Phone
-	const phone = data.tel || contact?.phone
-	if (phone) {
-		lines.push(`TEL;TYPE=CELL:${phone}`)
+	// Phones - use arrays if available, fall back to single values
+	const phones = contact?.phones || data.tels || []
+	if (phones.length > 0) {
+		for (const phone of phones) {
+			if (phone.value) {
+				const type = phone.type || 'CELL'
+				lines.push(`TEL;TYPE=${type}:${phone.value}`)
+			}
+		}
+	} else {
+		// Backward compatibility: single phone
+		const phone = data.tel || contact?.phone
+		if (phone) {
+			lines.push(`TEL;TYPE=CELL:${phone}`)
+		}
 	}
 
 	// Organization
@@ -187,11 +268,23 @@ export function generateVCard(
 		lines.push(`TITLE:${title}`)
 	}
 
-	// Address
-	const address = data.adr || contact?.address
-	if (address) {
-		// vCard address format: ;;street;city;state;postal;country
-		lines.push(`ADR;TYPE=HOME:;;${address};;;;`)
+	// Addresses - use arrays if available, fall back to single values
+	const addresses = contact?.addresses || data.addresses || []
+	if (addresses.length > 0) {
+		for (const address of addresses) {
+			if (address.value) {
+				const type = address.type || 'HOME'
+				// vCard address format: ;;street;city;state;postal;country
+				// For now, we'll store the value as-is if it's already formatted, or wrap it
+				lines.push(`ADR;TYPE=${type}:;;${address.value};;;;`)
+			}
+		}
+	} else {
+		// Backward compatibility: single address
+		const address = data.adr || contact?.address
+		if (address) {
+			lines.push(`ADR;TYPE=HOME:;;${address};;;;`)
+		}
 	}
 
 	// Birthday
@@ -212,10 +305,21 @@ export function generateVCard(
 		lines.push(`BDAY:${bdayStr}`)
 	}
 
-	// Homepage/URL
-	const homepage = data.url || contact?.homepage
-	if (homepage) {
-		lines.push(`URL:${homepage}`)
+	// URLs - use arrays if available, fall back to single values
+	const urls = contact?.urls || data.urls || []
+	if (urls.length > 0) {
+		for (const url of urls) {
+			if (url.value) {
+				const type = url.type || 'HOME'
+				lines.push(`URL;TYPE=${type}:${url.value}`)
+			}
+		}
+	} else {
+		// Backward compatibility: single URL
+		const homepage = data.url || contact?.homepage
+		if (homepage) {
+			lines.push(`URL:${homepage}`)
+		}
 	}
 
 	// Notes (include maiden name if present)

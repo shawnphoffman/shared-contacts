@@ -27,11 +27,15 @@ export const Route = createFileRoute('/api/contacts')({
             maiden_name: body.maiden_name,
             email: body.email,
             phone: body.phone,
+            phones: body.phones,
+            emails: body.emails,
             organization: body.organization,
             job_title: body.job_title,
             address: body.address,
+            addresses: body.addresses,
             birthday: body.birthday ? new Date(body.birthday) : null,
             homepage: body.homepage,
+            urls: body.urls,
             notes: body.notes,
           }
 

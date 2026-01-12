@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
+import { Field, FieldContent, FieldLabel } from './ui/field'
 import { PhoneInput } from './PhoneInput'
-import type { Contact } from '../lib/db'
+import { MultiFieldInput } from './MultiFieldInput'
+import type { Contact, ContactField } from '../lib/db'
 
 interface ContactFormProps {
   contact?: Contact
@@ -23,18 +24,43 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     return `${year}-${month}-${day}`
   }
 
+  // Initialize arrays from contact, or migrate from single values
+  const initializeArray = (
+    array: ContactField[] | null | undefined,
+    singleValue: string | null | undefined,
+    defaultType: string,
+  ): ContactField[] => {
+    if (array && array.length > 0) {
+      return array
+    }
+    if (singleValue) {
+      return [{ value: singleValue, type: defaultType }]
+    }
+    return []
+  }
+
   const [formData, setFormData] = useState({
     first_name: contact?.first_name || '',
     last_name: contact?.last_name || '',
     nickname: contact?.nickname || '',
-    email: contact?.email || '',
-    phone: contact?.phone || '',
     organization: contact?.organization || '',
     job_title: contact?.job_title || '',
-    address: contact?.address || '',
     notes: contact?.notes || '',
     birthday: formatDateForInput(contact?.birthday),
   })
+
+  const [phones, setPhones] = useState<ContactField[]>(
+    initializeArray(contact?.phones, contact?.phone, 'CELL'),
+  )
+  const [emails, setEmails] = useState<ContactField[]>(
+    initializeArray(contact?.emails, contact?.email, 'INTERNET'),
+  )
+  const [addresses, setAddresses] = useState<ContactField[]>(
+    initializeArray(contact?.addresses, contact?.address, 'HOME'),
+  )
+  const [urls, setUrls] = useState<ContactField[]>(
+    initializeArray(contact?.urls, contact?.homepage, 'HOME'),
+  )
   const [fullName, setFullName] = useState(
     contact?.full_name ||
       [contact?.first_name, contact?.last_name]
@@ -67,6 +93,15 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         ...formData,
         full_name: fullName || null,
         birthday: formData.birthday ? new Date(formData.birthday) : null,
+        phones: phones.length > 0 ? phones : null,
+        emails: emails.length > 0 ? emails : null,
+        addresses: addresses.length > 0 ? addresses : null,
+        urls: urls.length > 0 ? urls : null,
+        // Backward compatibility: set single values from arrays
+        phone: phones.length > 0 ? phones[0].value : null,
+        email: emails.length > 0 ? emails[0].value : null,
+        address: addresses.length > 0 ? addresses[0].value : null,
+        homepage: urls.length > 0 ? urls[0].value : null,
       })
     } finally {
       setIsSubmitting(false)
@@ -76,134 +111,167 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="first_name">First Name</Label>
-          <Input
-            id="first_name"
-            value={formData.first_name}
-            onChange={(e) =>
-              setFormData({ ...formData, first_name: e.target.value })
-            }
-          />
-        </div>
-        <div>
-          <Label htmlFor="last_name">Last Name</Label>
-          <Input
-            id="last_name"
-            value={formData.last_name}
-            onChange={(e) =>
-              setFormData({ ...formData, last_name: e.target.value })
-            }
-          />
-        </div>
+        <Field>
+          <FieldLabel htmlFor="first_name">First Name</FieldLabel>
+          <FieldContent>
+            <Input
+              id="first_name"
+              value={formData.first_name}
+              onChange={(e) =>
+                setFormData({ ...formData, first_name: e.target.value })
+              }
+            />
+          </FieldContent>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="last_name">Last Name</FieldLabel>
+          <FieldContent>
+            <Input
+              id="last_name"
+              value={formData.last_name}
+              onChange={(e) =>
+                setFormData({ ...formData, last_name: e.target.value })
+              }
+            />
+          </FieldContent>
+        </Field>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="full_name">Full Name</Label>
-          <Input
-            id="full_name"
-            value={fullName}
-            readOnly
-            disabled
-            className="bg-gray-50 cursor-not-allowed"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="nickname">Nickname</Label>
-          <Input
-            id="nickname"
-            value={formData.nickname}
-            onChange={(e) =>
-              setFormData({ ...formData, nickname: e.target.value })
-            }
-            placeholder="Optional"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-          />
-        </div>
-        <div>
-          <Label htmlFor="phone">Phone</Label>
-          <PhoneInput
-            id="phone"
-            value={formData.phone}
-            onChange={(value) =>
-              setFormData({ ...formData, phone: value })
-            }
-            placeholder="Enter phone number"
-            defaultCountry="US"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="organization">Organization</Label>
-          <Input
-            id="organization"
-            value={formData.organization}
-            onChange={(e) =>
-              setFormData({ ...formData, organization: e.target.value })
-            }
-          />
-        </div>
-        <div>
-          <Label htmlFor="job_title">Job Title</Label>
-          <Input
-            id="job_title"
-            value={formData.job_title}
-            onChange={(e) =>
-              setFormData({ ...formData, job_title: e.target.value })
-            }
-          />
-        </div>
+        <Field>
+          <FieldLabel htmlFor="full_name">Full Name</FieldLabel>
+          <FieldContent>
+            <Input
+              id="full_name"
+              value={fullName}
+              readOnly
+              disabled
+              className="bg-gray-50 cursor-not-allowed"
+              required
+            />
+          </FieldContent>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="nickname">Nickname</FieldLabel>
+          <FieldContent>
+            <Input
+              id="nickname"
+              value={formData.nickname}
+              onChange={(e) =>
+                setFormData({ ...formData, nickname: e.target.value })
+              }
+              placeholder="Optional"
+            />
+          </FieldContent>
+        </Field>
       </div>
 
       <div>
-        <Label htmlFor="address">Address</Label>
-        <Input
-          id="address"
-          value={formData.address}
-          onChange={(e) =>
-            setFormData({ ...formData, address: e.target.value })
-          }
+        <MultiFieldInput
+          label="Phone Numbers"
+          fields={phones}
+          onChange={setPhones}
+          placeholder="Enter phone number"
+          inputType="tel"
+          defaultType="CELL"
+          renderInput={(field, _index, onChange) => (
+            <PhoneInput
+              value={field.value}
+              onChange={onChange}
+              placeholder="Enter phone number"
+              defaultCountry="US"
+            />
+          )}
         />
       </div>
 
       <div>
-        <Label htmlFor="birthday">Birthday</Label>
-        <Input
-          id="birthday"
-          type="date"
-          value={formData.birthday}
-          onChange={(e) =>
-            setFormData({ ...formData, birthday: e.target.value })
-          }
+        <MultiFieldInput
+          label="Email Addresses"
+          fields={emails}
+          onChange={setEmails}
+          placeholder="Enter email address"
+          inputType="email"
+          defaultType="INTERNET"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field>
+          <FieldLabel htmlFor="organization">Organization</FieldLabel>
+          <FieldContent>
+            <Input
+              id="organization"
+              value={formData.organization}
+              onChange={(e) =>
+                setFormData({ ...formData, organization: e.target.value })
+              }
+            />
+          </FieldContent>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="job_title">Job Title</FieldLabel>
+          <FieldContent>
+            <Input
+              id="job_title"
+              value={formData.job_title}
+              onChange={(e) =>
+                setFormData({ ...formData, job_title: e.target.value })
+              }
+            />
+          </FieldContent>
+        </Field>
+      </div>
+
+      <div>
+        <MultiFieldInput
+          label="Addresses"
+          fields={addresses}
+          onChange={setAddresses}
+          placeholder="Enter address"
+          inputType="text"
+          defaultType="HOME"
         />
       </div>
 
       <div>
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          rows={4}
+        <MultiFieldInput
+          label="URLs / Websites"
+          fields={urls}
+          onChange={setUrls}
+          placeholder="https://example.com"
+          inputType="url"
+          defaultType="HOME"
         />
       </div>
+
+      <Field>
+        <FieldLabel htmlFor="birthday">Birthday</FieldLabel>
+        <FieldContent>
+          <Input
+            id="birthday"
+            type="date"
+            value={formData.birthday}
+            onChange={(e) =>
+              setFormData({ ...formData, birthday: e.target.value })
+            }
+          />
+        </FieldContent>
+      </Field>
+
+      <Field>
+        <FieldLabel htmlFor="notes">Notes</FieldLabel>
+        <FieldContent>
+          <Textarea
+            id="notes"
+            value={formData.notes}
+            onChange={(e) =>
+              setFormData({ ...formData, notes: e.target.value })
+            }
+            rows={4}
+          />
+        </FieldContent>
+      </Field>
 
       <div className="flex gap-2 justify-end">
         {onCancel && (
