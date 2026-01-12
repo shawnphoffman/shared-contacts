@@ -1,12 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import {
-  updateUserPassword,
-  deleteUser,
-  ValidationError,
-  FileSystemError,
-  UserNotFoundError,
-} from '../../lib/htpasswd'
+
+const SYNC_SERVICE_URL = process.env.SYNC_SERVICE_URL || 'http://sync-service:3001'
+
+async function proxyRequest(path: string, options?: RequestInit) {
+  const url = `${SYNC_SERVICE_URL}${path}`
+  const response = await fetch(url, options)
+  const data = await response.json()
+  return { data, status: response.status }
+}
 
 export const Route = createFileRoute('/api/radicale-users/$username')({
   server: {
@@ -15,44 +17,30 @@ export const Route = createFileRoute('/api/radicale-users/$username')({
         try {
           const { username } = params
           const body = await request.json()
-          const { password } = body
-
-          if (!password) {
-            return json({ error: 'Password is required' }, { status: 400 })
-          }
-
-          await updateUserPassword(username, password)
-          return json({ username })
+          const { data, status } = await proxyRequest(
+            `/api/radicale-users/${encodeURIComponent(username)}`,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            }
+          )
+          return json(data, { status })
         } catch (error: any) {
           console.error('Error updating Radicale user:', error)
-          if (error instanceof ValidationError) {
-            return json({ error: error.message }, { status: 400 })
-          }
-          if (error instanceof UserNotFoundError) {
-            return json({ error: error.message }, { status: 404 })
-          }
-          if (error instanceof FileSystemError) {
-            return json({ error: error.message }, { status: 500 })
-          }
           return json({ error: 'Failed to update user' }, { status: 500 })
         }
       },
       DELETE: async ({ params }) => {
         try {
           const { username } = params
-          await deleteUser(username)
-          return json({ success: true })
+          const { data, status } = await proxyRequest(
+            `/api/radicale-users/${encodeURIComponent(username)}`,
+            { method: 'DELETE' }
+          )
+          return json(data, { status })
         } catch (error: any) {
           console.error('Error deleting Radicale user:', error)
-          if (error instanceof ValidationError) {
-            return json({ error: error.message }, { status: 400 })
-          }
-          if (error instanceof UserNotFoundError) {
-            return json({ error: error.message }, { status: 404 })
-          }
-          if (error instanceof FileSystemError) {
-            return json({ error: error.message }, { status: 500 })
-          }
           return json({ error: 'Failed to delete user' }, { status: 500 })
         }
       },

@@ -55,7 +55,7 @@ psql -U postgres -d sharedcontacts -f migrations/01_init_schema.sql
 pnpm dev
 ```
 
-The UI will be available at `http://localhost:3010`
+The UI will be available at `http://localhost:3030`
 
 ## Environment Variables
 
@@ -85,16 +85,16 @@ The UI will be available at `http://localhost:3010`
 
 ### Port Already in Use
 
-If port 3010 is already in use:
+If port 3030 is already in use:
 
 1. Change the port in `package.json`:
    ```json
-   "dev": "vite dev --port 3011"
+   "dev": "vite dev --port 3031"
    ```
 
 2. Or set the port via environment variable:
    ```bash
-   PORT=3011 pnpm dev
+   PORT=3031 pnpm dev
    ```
 
 ## Development Workflow

@@ -35,11 +35,11 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/.output ./.output
 
 # Expose port
-EXPOSE 3010
+EXPOSE 3030
 
 # Set NODE_ENV
 ENV NODE_ENV=production
-ENV PORT=3010
+ENV PORT=3030
 ENV HOST=0.0.0.0
 
 # Start the application using Nitro

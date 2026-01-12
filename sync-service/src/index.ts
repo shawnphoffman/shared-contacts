@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { closePool } from './db';
 import { syncDbToRadicale, syncRadicaleToDb, startWatchingRadicale, startPeriodicSync } from './sync';
+import { startApiServer } from './api';
 
 async function main() {
   console.log('Starting Shared Contacts Sync Service...');
@@ -8,6 +9,9 @@ async function main() {
   console.log(`SYNC_INTERVAL: ${process.env.SYNC_INTERVAL || '5000'}ms`);
 
   try {
+    // Start API server
+    startApiServer();
+
     // Initial sync: Radicale → DB (in case there are existing contacts)
     console.log('Performing initial sync...');
     await syncRadicaleToDb();

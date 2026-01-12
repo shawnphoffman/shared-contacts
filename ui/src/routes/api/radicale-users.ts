@@ -1,53 +1,38 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import {
-  getUsers,
-  createUser,
-  ValidationError,
-  FileSystemError,
-  UserExistsError,
-} from '../../lib/htpasswd'
+
+const SYNC_SERVICE_URL = process.env.SYNC_SERVICE_URL || 'http://sync-service:3001'
+
+async function proxyRequest(path: string, options?: RequestInit) {
+  const url = `${SYNC_SERVICE_URL}${path}`
+  const response = await fetch(url, options)
+  const data = await response.json()
+  return { data, status: response.status }
+}
 
 export const Route = createFileRoute('/api/radicale-users')({
   server: {
     handlers: {
       GET: async () => {
         try {
-          const users = await getUsers()
-          return json(users)
+          const { data, status } = await proxyRequest('/api/radicale-users')
+          return json(data, { status })
         } catch (error: any) {
           console.error('Error fetching Radicale users:', error)
-          if (error instanceof FileSystemError) {
-            return json({ error: error.message }, { status: 500 })
-          }
           return json({ error: 'Failed to fetch users' }, { status: 500 })
         }
       },
       POST: async ({ request }) => {
         try {
           const body = await request.json()
-          const { username, password } = body
-
-          if (!username || !password) {
-            return json(
-              { error: 'Username and password are required' },
-              { status: 400 },
-            )
-          }
-
-          await createUser(username, password)
-          return json({ username }, { status: 201 })
+          const { data, status } = await proxyRequest('/api/radicale-users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          })
+          return json(data, { status })
         } catch (error: any) {
           console.error('Error creating Radicale user:', error)
-          if (error instanceof ValidationError) {
-            return json({ error: error.message }, { status: 400 })
-          }
-          if (error instanceof UserExistsError) {
-            return json({ error: error.message }, { status: 409 })
-          }
-          if (error instanceof FileSystemError) {
-            return json({ error: error.message }, { status: 500 })
-          }
           return json({ error: 'Failed to create user' }, { status: 500 })
         }
       },
