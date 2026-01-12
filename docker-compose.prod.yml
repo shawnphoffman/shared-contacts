@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: shared-contacts-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sharedcontacts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-sharedcontacts}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - shared-contacts-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sharedcontacts}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+    labels:
+      - "com.sharedcontacts.service=postgres"
+      - "com.sharedcontacts.description=PostgreSQL database"
+
+  radicale:
+    image: tomsquest/docker-radicale:latest
+    container_name: shared-contacts-radicale
+    environment:
+      RADICALE_SERVER_HOSTS: "0.0.0.0:5232"
+      RADICALE_SERVER_SSL: "False"
+      RADICALE_AUTH_TYPE: "htpasswd"
+      RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt"
+      RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users"
+      RADICALE_RIGHTS_TYPE: "owner_only"
+    volumes:
+      - radicale_data:/data
+      - ./radicale/config:/config:ro
+    ports:
+      - "${RADICALE_PORT:-5232}:5232"
+    networks:
+      - shared-contacts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        if [ ! -f /data/users ]; then
+          echo "Creating empty users file..."
+          touch /data/users
+          chmod 666 /data/users
+          echo "Users file created. Add users with: docker exec -it shared-contacts-radicale htpasswd -B /data/users username"
+        fi
+        exec docker-entrypoint.sh /venv/bin/radicale --config /config/config
+    restart: always
+    labels:
+      - "com.sharedcontacts.service=radicale"
+      - "com.sharedcontacts.description=CardDAV server"
+
+  sync-service:
+    build:
+      context: .
+      dockerfile: ./sync-service/Dockerfile
+    container_name: shared-contacts-sync
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      RADICALE_STORAGE_PATH: /radicale-data/collections
+      RADICALE_USERS_FILE: /radicale-data/users
+      SYNC_INTERVAL: ${SYNC_INTERVAL:-5000}
+      API_PORT: ${API_PORT:-3001}
+    volumes:
+      - radicale_data:/radicale-data
+    ports:
+      - "${API_PORT:-3001}:3001"
+    networks:
+      - shared-contacts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      radicale:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: always
+    labels:
+      - "com.sharedcontacts.service=sync"
+      - "com.sharedcontacts.description=Database and CardDAV sync service"
+
+  ui:
+    build:
+      context: .
+      dockerfile: ./ui/Dockerfile
+    container_name: shared-contacts-ui
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3030}
+      NODE_ENV: production
+      SYNC_SERVICE_URL: http://sync-service:3001
+      PORT: 3030
+      HOST: 0.0.0.0
+    ports:
+      - "${UI_PORT:-3030}:3030"
+    networks:
+      - shared-contacts-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sync-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3030/', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: always
+    labels:
+      - "com.sharedcontacts.service=ui"
+      - "com.sharedcontacts.description=Web management interface"
+
+networks:
+  shared-contacts-network:
+    driver: bridge
+    name: shared-contacts-network
+
+volumes:
+  postgres_data:
+    name: shared-contacts-postgres-data
+  radicale_data:
+    name: shared-contacts-radicale-data
