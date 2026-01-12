@@ -3,6 +3,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
+import { PhoneInput } from './PhoneInput'
 import type { Contact } from '../lib/db'
 
 interface ContactFormProps {
@@ -136,13 +137,14 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         </div>
         <div>
           <Label htmlFor="phone">Phone</Label>
-          <Input
+          <PhoneInput
             id="phone"
-            type="tel"
             value={formData.phone}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
+            onChange={(value) =>
+              setFormData({ ...formData, phone: value })
             }
+            placeholder="Enter phone number"
+            defaultCountry="US"
           />
         </div>
       </div>

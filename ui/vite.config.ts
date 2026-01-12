@@ -10,6 +10,14 @@ const config = defineConfig({
   server: {
     port: 3030,
     host: '0.0.0.0',
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
+    hmr: {
+      host: 'localhost',
+      port: 3030,
+    },
   },
   plugins: [
     devtools(),

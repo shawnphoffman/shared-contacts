@@ -18,8 +18,10 @@ import {
 } from '../components/ui/table'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { Checkbox } from '../components/ui/checkbox'
 import { CSVUpload } from '../components/CSVUpload'
 import { DeduplicateButton } from '../components/DeduplicateButton'
+import { MergeButton } from '../components/MergeButton'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Contact } from '../lib/db'
 
@@ -38,6 +40,7 @@ async function fetchContacts(): Promise<Array<Contact>> {
 function ContactsIndexPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ['contacts'],
@@ -60,6 +63,28 @@ function ContactsIndexPage() {
   // })
 
   const columns: Array<ColumnDef<Contact>> = [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: 'full_name',
       header: 'Name',
@@ -164,6 +189,9 @@ function ContactsIndexPage() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    enableRowSelection: true,
+    getRowId: (row) => row.id,
+    onRowSelectionChange: setRowSelection,
     globalFilterFn: (row, _columnId, filterValue) => {
       const contact = row.original
       const query = String(filterValue).toLowerCase()
@@ -177,8 +205,13 @@ function ContactsIndexPage() {
     },
     state: {
       globalFilter: searchQuery,
+      rowSelection,
     },
   })
+
+  const selectedContactIds = Object.keys(rowSelection).filter(
+    (id) => rowSelection[id],
+  )
 
   if (isLoading) {
     return (
@@ -215,6 +248,12 @@ function ContactsIndexPage() {
             <CSVUpload />
           </div>
           <DeduplicateButton />
+          {selectedContactIds.length >= 2 && (
+            <MergeButton
+              contactIds={selectedContactIds}
+              onMergeSuccess={() => setRowSelection({})}
+            />
+          )}
         </div>
       </div>
 

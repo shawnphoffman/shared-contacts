@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
 import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
+import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
 import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
 import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
@@ -56,6 +57,11 @@ const ApiRadicaleUsersUsernameRoute =
     path: '/$username',
     getParentRoute: () => ApiRadicaleUsersRoute,
   } as any)
+const ApiContactsMergeRoute = ApiContactsMergeRouteImport.update({
+  id: '/merge',
+  path: '/merge',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
 const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
+  '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
 }
 export interface FileRoutesByTo {
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
+  '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
 }
 export interface FileRoutesById {
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
+  '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
 }
 export interface FileRouteTypes {
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/import'
+    | '/api/contacts/merge'
     | '/api/radicale-users/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/import'
+    | '/api/contacts/merge'
     | '/api/radicale-users/$username'
   id:
     | '__root__'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/import'
+    | '/api/contacts/merge'
     | '/api/radicale-users/$username'
   fileRoutesById: FileRoutesById
 }
@@ -208,6 +220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRadicaleUsersUsernameRouteImport
       parentRoute: typeof ApiRadicaleUsersRoute
     }
+    '/api/contacts/merge': {
+      id: '/api/contacts/merge'
+      path: '/merge'
+      fullPath: '/api/contacts/merge'
+      preLoaderRoute: typeof ApiContactsMergeRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
     '/api/contacts/import': {
       id: '/api/contacts/import'
       path: '/import'
@@ -236,12 +255,14 @@ interface ApiContactsRouteChildren {
   ApiContactsIdRoute: typeof ApiContactsIdRoute
   ApiContactsDeduplicateRoute: typeof ApiContactsDeduplicateRoute
   ApiContactsImportRoute: typeof ApiContactsImportRoute
+  ApiContactsMergeRoute: typeof ApiContactsMergeRoute
 }
 
 const ApiContactsRouteChildren: ApiContactsRouteChildren = {
   ApiContactsIdRoute: ApiContactsIdRoute,
   ApiContactsDeduplicateRoute: ApiContactsDeduplicateRoute,
   ApiContactsImportRoute: ApiContactsImportRoute,
+  ApiContactsMergeRoute: ApiContactsMergeRoute,
 }
 
 const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(
