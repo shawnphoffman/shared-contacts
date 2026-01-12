@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Mail, Phone, Building, MapPin } from 'lucide-react'
 import type { Contact } from '../lib/db'
+import { formatPhoneNumber } from '../lib/utils'
 
 interface ContactCardProps {
   contact: Contact
@@ -36,7 +37,7 @@ export function ContactCard({ contact }: ContactCardProps) {
           {contact.phone && (
             <div className="flex items-center gap-2 text-sm">
               <Phone className="w-4 h-4 text-gray-400" />
-              <span>{contact.phone}</span>
+              <span>{formatPhoneNumber(contact.phone)}</span>
             </div>
           )}
           {contact.organization && !contact.job_title && (

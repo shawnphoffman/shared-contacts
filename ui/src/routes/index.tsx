@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-table'
 import { Plus, Search } from 'lucide-react'
 import { useState } from 'react'
-import { parsePhoneNumberWithError } from 'libphonenumber-js'
+import { formatPhoneNumber } from '../lib/utils'
 import {
   Table,
   TableBody,
@@ -143,14 +143,7 @@ function ContactsIndexPage() {
         if (!phone) {
           return <span className="text-gray-400">—</span>
         }
-
-        try {
-          const phoneNumber = parsePhoneNumberWithError(phone, 'US')
-          return <span>{phoneNumber.formatNational()}</span>
-        } catch {
-          // If parsing fails, return the original phone number
-          return <span>{phone}</span>
-        }
+        return <span>{formatPhoneNumber(phone)}</span>
       },
     },
     {

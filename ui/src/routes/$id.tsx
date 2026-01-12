@@ -11,9 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog'
-import { Mail, Phone, Building, MapPin, Edit, Trash2 } from 'lucide-react'
+import { Mail, Phone, Building, MapPin, Edit, Trash2, Globe } from 'lucide-react'
 import { useState } from 'react'
 import type { Contact } from '../lib/db'
+import { formatPhoneNumber } from '../lib/utils'
 
 export const Route = createFileRoute('/$id')({
   beforeLoad: ({ params }) => {
@@ -153,31 +154,71 @@ function ContactDetailPage() {
           <CardTitle>Contact Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {contact.email && (
+          {((contact.emails && contact.emails.length > 0) || contact.email) && (
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <a
-                  href={`mailto:${contact.email}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {contact.email}
-                </a>
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-1">Email{contact.emails && contact.emails.length > 1 ? 's' : ''}</p>
+                <div className="space-y-1">
+                  {contact.emails && contact.emails.length > 0
+                    ? contact.emails.map((email, index) => (
+                        <div key={index}>
+                          <a
+                            href={`mailto:${email.value}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            {email.value}
+                            {email.type && (
+                              <span className="text-gray-500 text-xs ml-2">
+                                ({email.type})
+                              </span>
+                            )}
+                          </a>
+                        </div>
+                      ))
+                    : contact.email && (
+                        <a
+                          href={`mailto:${contact.email}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {contact.email}
+                        </a>
+                      )}
+                </div>
               </div>
             </div>
           )}
-          {contact.phone && (
+          {((contact.phones && contact.phones.length > 0) || contact.phone) && (
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Phone</p>
-                <a
-                  href={`tel:${contact.phone}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {contact.phone}
-                </a>
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-1">Phone{contact.phones && contact.phones.length > 1 ? 's' : ''}</p>
+                <div className="space-y-1">
+                  {contact.phones && contact.phones.length > 0
+                    ? contact.phones.map((phone, index) => (
+                        <div key={index}>
+                          <a
+                            href={`tel:${phone.value}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            {formatPhoneNumber(phone.value)}
+                            {phone.type && (
+                              <span className="text-gray-500 text-xs ml-2">
+                                ({phone.type})
+                              </span>
+                            )}
+                          </a>
+                        </div>
+                      ))
+                    : contact.phone && (
+                        <a
+                          href={`tel:${contact.phone}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {formatPhoneNumber(contact.phone)}
+                        </a>
+                      )}
+                </div>
               </div>
             </div>
           )}
@@ -196,12 +237,67 @@ function ContactDetailPage() {
               <p>{contact.job_title}</p>
             </div>
           )}
-          {contact.address && (
+          {((contact.addresses && contact.addresses.length > 0) || contact.address) && (
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Address</p>
-                <p>{contact.address}</p>
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-1">Address{contact.addresses && contact.addresses.length > 1 ? 'es' : ''}</p>
+                <div className="space-y-1">
+                  {contact.addresses && contact.addresses.length > 0
+                    ? contact.addresses.map((address, index) => (
+                        <div key={index}>
+                          <p className="whitespace-pre-line">
+                            {address.value}
+                            {address.type && (
+                              <span className="text-gray-500 text-xs ml-2">
+                                ({address.type})
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      ))
+                    : contact.address && (
+                        <p>{contact.address}</p>
+                      )}
+                </div>
+              </div>
+            </div>
+          )}
+          {((contact.urls && contact.urls.length > 0) || contact.homepage) && (
+            <div className="flex items-center gap-3">
+              <Globe className="w-5 h-5 text-gray-400" />
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-1">URL{contact.urls && contact.urls.length > 1 ? 's' : ''}</p>
+                <div className="space-y-1">
+                  {contact.urls && contact.urls.length > 0
+                    ? contact.urls.map((url, index) => (
+                        <div key={index}>
+                          <a
+                            href={url.value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {url.value}
+                            {url.type && (
+                              <span className="text-gray-500 text-xs ml-2">
+                                ({url.type})
+                              </span>
+                            )}
+                          </a>
+                        </div>
+                      ))
+                    : contact.homepage && (
+                        <a
+                          href={contact.homepage}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {contact.homepage}
+                        </a>
+                      )}
+                </div>
               </div>
             </div>
           )}
