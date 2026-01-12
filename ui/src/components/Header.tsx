@@ -1,5 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import { Users } from 'lucide-react'
+import { NotebookTabs, Users } from 'lucide-react'
+
+import { ThemeToggle } from './ThemeToggle'
 
 // import { useState } from 'react'
 // import { Menu, X, Contact } from 'lucide-react'
@@ -9,7 +11,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="p-4 flex items-center justify-between bg-gray-800 text-white shadow-lg">
+      <header className="p-4 flex items-center justify-between bg-background border-b border-border shadow-lg">
         {/* Hamburger menu button - commented out for now */}
         {/* <button
           onClick={() => setIsOpen(true)}
@@ -18,21 +20,25 @@ export default function Header() {
         >
           <Menu size={24} />
         </button> */}
-        <h1 className="text-xl font-semibold">
-          <Link to="/">Shared Contacts</Link>
+        <h1 className="text-xl font-semibold flex items-center gap-2">
+          <Link to="/" className="text-foreground flex items-center gap-2">
+            <NotebookTabs className="w-5 h-5" />
+            <span>Shared Contacts</span>
+          </Link>
         </h1>
         <nav className="flex items-center gap-4">
           <Link
             to="/radicale-users"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
             activeProps={{
               className:
-                'flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-700',
+                'flex items-center gap-2 px-3 py-2 rounded-lg bg-accent text-accent-foreground',
             }}
           >
             <Users className="w-4 h-4" />
             <span>CardDAV Users</span>
           </Link>
+          <ThemeToggle />
         </nav>
       </header>
 
