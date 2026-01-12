@@ -45,7 +45,9 @@ services:
         if [ ! -f /data/users ]; then
           echo "Creating empty users file..."
           touch /data/users
-          chmod 644 /data/users
+          # chmod 666 allows both radicale and ui containers to read/write
+          # This is necessary since both containers share the volume but may run as different users
+          chmod 666 /data/users
           echo "Users file created. Add users with: docker exec -it shared-contacts-radicale htpasswd -B /data/users username"
         fi
         exec docker-entrypoint.sh /venv/bin/radicale --config /config/config
@@ -80,6 +82,9 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3010}
       NODE_ENV: production
+      RADICALE_USERS_FILE: /radicale-data/users
+    volumes:
+      - radicale_data:/radicale-data
     ports:
       - "${UI_PORT:-3010}:3010"
     networks:
@@ -101,6 +106,7 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3010}
       NODE_ENV: development
+      RADICALE_USERS_FILE: /radicale-data/users
     volumes:
       # Mount entire ui directory for hot-reload, but exclude node_modules and build outputs
       - ./ui:/app
@@ -108,6 +114,8 @@ services:
       - ui-dev-node-modules:/app/node_modules
       # Preserve build outputs
       - ui-dev-output:/app/.output
+      # Mount radicale data for user management
+      - radicale_data:/radicale-data
     ports:
       - "${UI_PORT:-3010}:3010"
     networks:

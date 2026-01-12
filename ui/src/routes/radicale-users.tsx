@@ -1,0 +1,418 @@
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { Plus, Edit, Trash2, Users } from 'lucide-react'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table'
+
+export const Route = createFileRoute('/radicale-users')({
+  component: RadicaleUsersPage,
+})
+
+interface RadicaleUser {
+  username: string
+}
+
+async function fetchUsers(): Promise<RadicaleUser[]> {
+  const response = await fetch('/api/radicale-users')
+  if (!response.ok) {
+    throw new Error('Failed to fetch users')
+  }
+  return response.json()
+}
+
+async function createUser(
+  username: string,
+  password: string,
+): Promise<RadicaleUser> {
+  const response = await fetch('/api/radicale-users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to create user')
+  }
+  return response.json()
+}
+
+async function updateUserPassword(
+  username: string,
+  password: string,
+): Promise<void> {
+  const response = await fetch(
+    `/api/radicale-users/${encodeURIComponent(username)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    },
+  )
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to update user')
+  }
+}
+
+async function deleteUser(username: string): Promise<void> {
+  const response = await fetch(
+    `/api/radicale-users/${encodeURIComponent(username)}`,
+    {
+      method: 'DELETE',
+    },
+  )
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to delete user')
+  }
+}
+
+function RadicaleUsersPage() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [formData, setFormData] = useState({ username: '', password: '' })
+  const [error, setError] = useState<string | null>(null)
+
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['radicale-users'],
+    queryFn: fetchUsers,
+  })
+
+  const createMutation = useMutation({
+    mutationFn: ({
+      username,
+      password,
+    }: {
+      username: string
+      password: string
+    }) => createUser(username, password),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
+      setIsCreateDialogOpen(false)
+      setFormData({ username: '', password: '' })
+      setError(null)
+    },
+    onError: (err: Error) => {
+      setError(err.message)
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({
+      username,
+      password,
+    }: {
+      username: string
+      password: string
+    }) => updateUserPassword(username, password),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
+      setIsEditDialogOpen(false)
+      setSelectedUser(null)
+      setFormData({ username: '', password: '' })
+      setError(null)
+    },
+    onError: (err: Error) => {
+      setError(err.message)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
+      setIsDeleteDialogOpen(false)
+      setSelectedUser(null)
+      setError(null)
+    },
+    onError: (err: Error) => {
+      setError(err.message)
+    },
+  })
+
+  const handleCreate = () => {
+    setError(null)
+    if (!formData.username || !formData.password) {
+      setError('Username and password are required')
+      return
+    }
+    createMutation.mutate({
+      username: formData.username,
+      password: formData.password,
+    })
+  }
+
+  const handleUpdate = () => {
+    setError(null)
+    if (!selectedUser || !formData.password) {
+      setError('Password is required')
+      return
+    }
+    updateMutation.mutate({
+      username: selectedUser,
+      password: formData.password,
+    })
+  }
+
+  const handleDelete = () => {
+    if (!selectedUser) return
+    deleteMutation.mutate(selectedUser)
+  }
+
+  const openEditDialog = (username: string) => {
+    setSelectedUser(username)
+    setFormData({ username: '', password: '' })
+    setError(null)
+    setIsEditDialogOpen(true)
+  }
+
+  const openDeleteDialog = (username: string) => {
+    setSelectedUser(username)
+    setError(null)
+    setIsDeleteDialogOpen(true)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">Loading users...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-3">
+          <Users className="w-8 h-8" />
+          <h1 className="text-3xl font-bold">Radicale Users</h1>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          New User
+        </Button>
+      </div>
+
+      <p className="text-gray-600 mb-6">
+        Manage CardDAV users who can sync contacts via Radicale. These users are
+        separate from the web UI authentication.
+      </p>
+
+      {users.length === 0 ? (
+        <div className="text-center py-12 border rounded-lg">
+          <p className="text-gray-500 mb-4">No Radicale users yet.</p>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create First User
+          </Button>
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Username</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.username}>
+                  <TableCell className="font-medium">{user.username}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(user.username)}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Change Password
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDeleteDialog(user.username)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Create User Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Radicale User</DialogTitle>
+            <DialogDescription>
+              Create a new user account for CardDAV synchronization. This user
+              will be able to sync contacts via Radicale.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="create-username">Username</Label>
+              <Input
+                id="create-username"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+                placeholder="Enter username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-password">Password</Label>
+              <Input
+                id="create-password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder="Enter password"
+              />
+            </div>
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                {error}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCreateDialogOpen(false)
+                setFormData({ username: '', password: '' })
+                setError(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+              {createMutation.isPending ? 'Creating...' : 'Create User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Update the password for user: <strong>{selectedUser}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">New Password</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder="Enter new password"
+              />
+            </div>
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                {error}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditDialogOpen(false)
+                setSelectedUser(null)
+                setFormData({ username: '', password: '' })
+                setError(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Updating...' : 'Update Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete user{' '}
+              <strong>{selectedUser}</strong>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false)
+                setSelectedUser(null)
+                setError(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

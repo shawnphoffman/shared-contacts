@@ -9,14 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
+import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
 import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
 import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
 
+const RadicaleUsersRoute = RadicaleUsersRouteImport.update({
+  id: '/radicale-users',
+  path: '/radicale-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -32,11 +40,22 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
+  id: '/api/radicale-users',
+  path: '/api/radicale-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiContactsRoute = ApiContactsRouteImport.update({
   id: '/api/contacts',
   path: '/api/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRadicaleUsersUsernameRoute =
+  ApiRadicaleUsersUsernameRouteImport.update({
+    id: '/$username',
+    path: '/$username',
+    getParentRoute: () => ApiRadicaleUsersRoute,
+  } as any)
 const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -57,29 +76,38 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
   '/new': typeof NewRoute
+  '/radicale-users': typeof RadicaleUsersRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
+  '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
+  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
   '/new': typeof NewRoute
+  '/radicale-users': typeof RadicaleUsersRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
+  '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
+  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
   '/new': typeof NewRoute
+  '/radicale-users': typeof RadicaleUsersRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
+  '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
+  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -87,39 +115,57 @@ export interface FileRouteTypes {
     | '/'
     | '/$id'
     | '/new'
+    | '/radicale-users'
     | '/api/contacts'
+    | '/api/radicale-users'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/import'
+    | '/api/radicale-users/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$id'
     | '/new'
+    | '/radicale-users'
     | '/api/contacts'
+    | '/api/radicale-users'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/import'
+    | '/api/radicale-users/$username'
   id:
     | '__root__'
     | '/'
     | '/$id'
     | '/new'
+    | '/radicale-users'
     | '/api/contacts'
+    | '/api/radicale-users'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/import'
+    | '/api/radicale-users/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IdRoute: typeof IdRoute
   NewRoute: typeof NewRoute
+  RadicaleUsersRoute: typeof RadicaleUsersRoute
   ApiContactsRoute: typeof ApiContactsRouteWithChildren
+  ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/radicale-users': {
+      id: '/radicale-users'
+      path: '/radicale-users'
+      fullPath: '/radicale-users'
+      preLoaderRoute: typeof RadicaleUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/new': {
       id: '/new'
       path: '/new'
@@ -141,12 +187,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/radicale-users': {
+      id: '/api/radicale-users'
+      path: '/api/radicale-users'
+      fullPath: '/api/radicale-users'
+      preLoaderRoute: typeof ApiRadicaleUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/contacts': {
       id: '/api/contacts'
       path: '/api/contacts'
       fullPath: '/api/contacts'
       preLoaderRoute: typeof ApiContactsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/radicale-users/$username': {
+      id: '/api/radicale-users/$username'
+      path: '/$username'
+      fullPath: '/api/radicale-users/$username'
+      preLoaderRoute: typeof ApiRadicaleUsersUsernameRouteImport
+      parentRoute: typeof ApiRadicaleUsersRoute
     }
     '/api/contacts/import': {
       id: '/api/contacts/import'
@@ -188,11 +248,24 @@ const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(
   ApiContactsRouteChildren,
 )
 
+interface ApiRadicaleUsersRouteChildren {
+  ApiRadicaleUsersUsernameRoute: typeof ApiRadicaleUsersUsernameRoute
+}
+
+const ApiRadicaleUsersRouteChildren: ApiRadicaleUsersRouteChildren = {
+  ApiRadicaleUsersUsernameRoute: ApiRadicaleUsersUsernameRoute,
+}
+
+const ApiRadicaleUsersRouteWithChildren =
+  ApiRadicaleUsersRoute._addFileChildren(ApiRadicaleUsersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdRoute: IdRoute,
   NewRoute: NewRoute,
+  RadicaleUsersRoute: RadicaleUsersRoute,
   ApiContactsRoute: ApiContactsRouteWithChildren,
+  ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

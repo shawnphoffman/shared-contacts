@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { Users } from 'lucide-react'
 
 // import { useState } from 'react'
 // import { Menu, X, Contact } from 'lucide-react'
@@ -8,7 +9,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="p-4 flex items-center bg-gray-800 text-white shadow-lg">
+      <header className="p-4 flex items-center justify-between bg-gray-800 text-white shadow-lg">
         {/* Hamburger menu button - commented out for now */}
         {/* <button
           onClick={() => setIsOpen(true)}
@@ -20,6 +21,19 @@ export default function Header() {
         <h1 className="text-xl font-semibold">
           <Link to="/">Shared Contacts</Link>
         </h1>
+        <nav className="flex items-center gap-4">
+          <Link
+            to="/radicale-users"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            activeProps={{
+              className:
+                'flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-700',
+            }}
+          >
+            <Users className="w-4 h-4" />
+            <span>CardDAV Users</span>
+          </Link>
+        </nav>
       </header>
 
       {/* Expanding sidebar menu - commented out for now */}
