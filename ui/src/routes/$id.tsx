@@ -46,7 +46,14 @@ async function updateContact(
     body: JSON.stringify(data),
   })
   if (!response.ok) {
-    throw new Error('Failed to update contact')
+    const errorText = await response.text()
+    let errorData
+    try {
+      errorData = JSON.parse(errorText)
+    } catch {
+      errorData = { error: errorText }
+    }
+    throw new Error(errorData.error || 'Failed to update contact')
   }
   return response.json()
 }

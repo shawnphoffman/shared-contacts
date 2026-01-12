@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { NotebookTabs, Users } from 'lucide-react'
+import { NotebookTabs, Users, Upload } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 
@@ -27,6 +27,17 @@ export default function Header() {
           </Link>
         </h1>
         <nav className="flex items-center gap-4">
+          <Link
+            to="/import"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+            activeProps={{
+              className:
+                'flex items-center gap-2 px-3 py-2 rounded-lg bg-accent text-accent-foreground',
+            }}
+          >
+            <Upload className="w-4 h-4" />
+            <span>Import</span>
+          </Link>
           <Link
             to="/radicale-users"
             className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"

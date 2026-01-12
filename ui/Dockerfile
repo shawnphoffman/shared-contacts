@@ -6,13 +6,13 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY ui/package.json ui/pnpm-lock.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
-COPY . .
+COPY ui/ .
 
 # Build the application
 RUN pnpm build
@@ -26,13 +26,16 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY ui/package.json ui/pnpm-lock.yaml ./
 
 # Install all dependencies (Nitro needs them to run)
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built application output
 COPY --from=builder /app/.output ./.output
+
+# Copy migrations directory (needed for runtime migrations)
+COPY migrations ./migrations
 
 # Expose port
 EXPOSE 3030

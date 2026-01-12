@@ -10,12 +10,28 @@ import {
 const app = express()
 const PORT = process.env.API_PORT || 3001
 
+// Track when migrations are complete
+let migrationsComplete = false
+
+export function setMigrationsComplete() {
+  migrationsComplete = true
+}
+
 app.use(cors())
 app.use(express.json())
 
-// Health check
+// Health check (always returns ok once server is running)
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' })
+})
+
+// Readiness check (only returns ok after migrations complete)
+app.get('/ready', (_req: Request, res: Response) => {
+  if (migrationsComplete) {
+    res.json({ status: 'ready', migrations: 'complete' })
+  } else {
+    res.status(503).json({ status: 'not ready', migrations: 'pending' })
+  }
 })
 
 // Get all Radicale users

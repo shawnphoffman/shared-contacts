@@ -54,8 +54,8 @@ services:
 
   sync-service:
     build:
-      context: ./sync-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./sync-service/Dockerfile
     container_name: shared-contacts-sync
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
@@ -74,12 +74,18 @@ services:
         condition: service_healthy
       radicale:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
 
   ui:
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./ui/Dockerfile
     container_name: shared-contacts-ui
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
@@ -94,14 +100,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      sync-service:
+        condition: service_healthy
     restart: unless-stopped
     profiles:
       - production
 
   ui-dev:
     build:
-      context: ./ui
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: ./ui/Dockerfile.dev
     container_name: shared-contacts-ui-dev
     working_dir: /app
     environment:
@@ -126,6 +134,8 @@ services:
       - shared-contacts-network
     depends_on:
       postgres:
+        condition: service_healthy
+      sync-service:
         condition: service_healthy
     # Install dependencies and start dev server
     # pnpm run ensures binaries in node_modules/.bin are found

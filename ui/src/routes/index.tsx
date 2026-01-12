@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table'
 import { Plus, Search } from 'lucide-react'
 import { useState } from 'react'
+import { parsePhoneNumberWithError } from 'libphonenumber-js'
 import {
   Table,
   TableBody,
@@ -19,7 +20,6 @@ import {
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
-import { CSVUpload } from '../components/CSVUpload'
 import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -116,33 +116,6 @@ function ContactsIndexPage() {
       },
     },
     {
-      accessorKey: 'phone',
-      header: 'Phone',
-      cell: ({ row }) => {
-        const phone = row.original.phone
-        return phone ? (
-          <span>{phone}</span>
-        ) : (
-          <span className="text-gray-400">—</span>
-        )
-      },
-    },
-    {
-      accessorKey: 'organization',
-      header: 'Organization',
-      cell: ({ row }) => {
-        const contact = row.original
-        return (
-          <div>
-            {contact.organization && <div>{contact.organization}</div>}
-            {contact.job_title && (
-              <div className="text-sm text-gray-500">{contact.job_title}</div>
-            )}
-          </div>
-        )
-      },
-    },
-    {
       accessorKey: 'birthday',
       header: 'Birthday',
       cell: ({ row }) => {
@@ -159,6 +132,39 @@ function ContactsIndexPage() {
               day: 'numeric',
             })}
           </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'phone',
+      header: 'Phone',
+      cell: ({ row }) => {
+        const phone = row.original.phone
+        if (!phone) {
+          return <span className="text-gray-400">—</span>
+        }
+
+        try {
+          const phoneNumber = parsePhoneNumberWithError(phone, 'US')
+          return <span>{phoneNumber.formatNational()}</span>
+        } catch {
+          // If parsing fails, return the original phone number
+          return <span>{phone}</span>
+        }
+      },
+    },
+    {
+      accessorKey: 'organization',
+      header: 'Organization',
+      cell: ({ row }) => {
+        const contact = row.original
+        return (
+          <div>
+            {contact.organization && <div>{contact.organization}</div>}
+            {contact.job_title && (
+              <div className="text-sm text-gray-500">{contact.job_title}</div>
+            )}
+          </div>
         )
       },
     },
@@ -202,16 +208,19 @@ function ContactsIndexPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto p-6 gap-4 flex flex-col">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Contacts</h1>
-        <Button onClick={() => navigate({ to: '/new' })}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Contact
-        </Button>
+        <div className="flex items-center gap-2">
+          <DeduplicateButton />
+          <Button onClick={() => navigate({ to: '/new' })}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Contact
+          </Button>
+        </div>
       </div>
 
-      <div className="mb-6 space-y-4">
+      <div className="space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
@@ -222,19 +231,16 @@ function ContactsIndexPage() {
             className="pl-10"
           />
         </div>
-        <div className="border-t pt-4 space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold mb-2">Import Contacts</h2>
-            <CSVUpload />
+        {selectedContactIds.length >= 2 && (
+          <div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-end">
+            <div className="w-full sm:w-auto">
+              <MergeButton
+                contactIds={selectedContactIds}
+                onMergeSuccess={() => setRowSelection({})}
+              />
+            </div>
           </div>
-          <DeduplicateButton />
-          {selectedContactIds.length >= 2 && (
-            <MergeButton
-              contactIds={selectedContactIds}
-              onMergeSuccess={() => setRowSelection({})}
-            />
-          )}
-        </div>
+        )}
       </div>
 
       {contacts.length === 0 && !searchQuery ? (

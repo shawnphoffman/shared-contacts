@@ -3,14 +3,17 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
+COPY sync-service/package*.json ./
+COPY sync-service/tsconfig.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy source code
-COPY src ./src
+COPY sync-service/src ./src
+
+# Copy migrations directory (needed for runtime migrations)
+COPY migrations ./migrations
 
 # Build TypeScript
 RUN npm run build
