@@ -10,7 +10,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-sharedcontacts}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d:ro
+      # Migrations are handled by sync-service, not postgres init
+      # - ./migrations:/docker-entrypoint-initdb.d:ro
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     networks:

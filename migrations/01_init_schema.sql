@@ -30,7 +30,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create trigger to automatically update updated_at
+-- Create trigger to automatically update updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_contacts_updated_at ON contacts;
 CREATE TRIGGER update_contacts_updated_at BEFORE UPDATE ON contacts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
