@@ -1,7 +1,7 @@
-version: '3.8'
+name: shared-contacts-prod
 
 services:
-  postgres:
+  shared-contacts-postgres:
     image: postgres:15-alpine
     container_name: shared-contacts-postgres
     environment:
@@ -14,7 +14,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     networks:
-      - shared-contacts-network
+      - shared-contacts-prod-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sharedcontacts}" ]
       interval: 10s
@@ -26,107 +26,52 @@ services:
       - "com.sharedcontacts.service=postgres"
       - "com.sharedcontacts.description=PostgreSQL database"
 
-  radicale:
-    build:
-      context: ./radicale
-      dockerfile: Dockerfile
-    container_name: shared-contacts-radicale
+  shared-contacts-app:
+    image: ghcr.io/shawnphoffman/shared-contacts:latest
+    # To use a specific version, replace :latest with :v1.0.0 or :main
+    container_name: shared-contacts-app
     environment:
+      # Database connection
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD}@shared-contacts-postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      # Radicale configuration
       RADICALE_SERVER_HOSTS: "0.0.0.0:5232"
       RADICALE_SERVER_SSL: "False"
       RADICALE_AUTH_TYPE: "htpasswd"
       RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt"
       RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users"
-    volumes:
-      - radicale_data:/data
-      - ./radicale/config:/config:ro
-    ports:
-      - "${RADICALE_PORT:-5232}:5232"
-    networks:
-      - shared-contacts-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-    entrypoint: ["/init-radicale.sh"]
-    restart: always
-    labels:
-      - "com.sharedcontacts.service=radicale"
-      - "com.sharedcontacts.description=CardDAV server"
-      # Traefik labels for CardDAV server
-      # Uncomment and customize these labels for your Traefik setup
-      # - "traefik.enable=true"
-      # - "traefik.http.routers.radicale.rule=Host(`carddav.example.com`) || Host(`contacts.example.com`) && PathPrefix(`/carddav`)"
-      # - "traefik.http.routers.radicale.entrypoints=websecure"
-      # - "traefik.http.routers.radicale.tls.certresolver=letsencrypt"
-      # - "traefik.http.routers.radicale.middlewares=radicale-stripprefix"
-      # - "traefik.http.middlewares.radicale-stripprefix.stripprefix.prefixes=/carddav"
-      # - "traefik.http.services.radicale.loadbalancer.server.port=5232"
-
-  sync-service:
-    build:
-      context: .
-      dockerfile: ./sync-service/Dockerfile
-    container_name: shared-contacts-sync
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
-      RADICALE_STORAGE_PATH: /radicale-data/collections
-      RADICALE_USERS_FILE: /radicale-data/users
+      RADICALE_STORAGE_PATH: /data/collections
+      RADICALE_USERS_FILE: /data/users
+      # Sync service configuration
       SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
       API_PORT: ${API_PORT:-3001}
-    volumes:
-      - radicale_data:/radicale-data
-    ports:
-      - "${API_PORT:-3001}:3001"
-    networks:
-      - shared-contacts-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      radicale:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    restart: always
-    labels:
-      - "com.sharedcontacts.service=sync"
-      - "com.sharedcontacts.description=Database and CardDAV sync service"
-
-  ui:
-    build:
-      context: .
-      dockerfile: ./ui/Dockerfile
-    container_name: shared-contacts-ui
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      # UI configuration
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3030}
       NODE_ENV: production
-      SYNC_SERVICE_URL: http://sync-service:3001
+      SYNC_SERVICE_URL: http://localhost:3001
       PORT: 3030
       HOST: 0.0.0.0
+    volumes:
+      - radicale_data:/data
     ports:
+      - "${RADICALE_PORT:-5232}:5232"
+      - "${API_PORT:-3001}:3001"
       - "${UI_PORT:-3030}:3030"
     networks:
-      - shared-contacts-network
+      - shared-contacts-prod-network
     depends_on:
-      postgres:
-        condition: service_healthy
-      sync-service:
+      shared-contacts-postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3030/', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     restart: always
     labels:
-      - "com.sharedcontacts.service=ui"
-      - "com.sharedcontacts.description=Web management interface"
+      - "com.sharedcontacts.service=app"
+      - "com.sharedcontacts.description=Combined application (Radicale, Sync Service, UI)"
       # Traefik labels for web UI
       # Uncomment and customize these labels for your Traefik setup
       # - "traefik.enable=true"
@@ -134,11 +79,17 @@ services:
       # - "traefik.http.routers.ui.entrypoints=websecure"
       # - "traefik.http.routers.ui.tls.certresolver=letsencrypt"
       # - "traefik.http.services.ui.loadbalancer.server.port=3030"
+      # Traefik labels for CardDAV server
+      # - "traefik.http.routers.radicale.rule=Host(`carddav.example.com`) || Host(`contacts.example.com`) && PathPrefix(`/carddav`)"
+      # - "traefik.http.routers.radicale.entrypoints=websecure"
+      # - "traefik.http.routers.radicale.tls.certresolver=letsencrypt"
+      # - "traefik.http.middlewares.radicale-stripprefix.stripprefix.prefixes=/carddav"
+      # - "traefik.http.services.radicale.loadbalancer.server.port=5232"
 
 networks:
-  shared-contacts-network:
+  shared-contacts-prod-network:
     driver: bridge
-    name: shared-contacts-network
+    name: shared-contacts-prod-network
 
 volumes:
   postgres_data:

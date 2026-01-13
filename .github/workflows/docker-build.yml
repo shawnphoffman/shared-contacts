@@ -37,7 +37,7 @@ jobs:
         run: |
           IS_TAG=${{ startsWith(github.ref, 'refs/tags/') }}
           IS_BRANCH=${{ startsWith(github.ref, 'refs/heads/') }}
-          
+
           if [[ "$IS_TAG" == "true" ]]; then
             TAG_NAME=${GITHUB_REF#refs/tags/}
             echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
