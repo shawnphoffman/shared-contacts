@@ -2,13 +2,17 @@
 
 /**
  * Version management script for shared-contacts
- * Updates version in all package.json files and optionally creates a git tag
+ * Updates version in all package.json files, commits changes, and creates a git tag
  * 
  * Usage:
  *   npm run version:patch   - Bump patch version (1.0.0 -> 1.0.1)
  *   npm run version:minor   - Bump minor version (1.0.0 -> 1.1.0)
  *   npm run version:major   - Bump major version (1.0.0 -> 2.0.0)
  *   npm run version:set -- 1.2.3  - Set specific version
+ * 
+ * Options:
+ *   --no-tag  - Skip git commit and tag creation
+ *   --force   - Proceed even with other uncommitted changes
  */
 
 const fs = require('fs');
@@ -88,18 +92,70 @@ function updateVersions(newVersion) {
   return newVersion;
 }
 
-function createGitTag(version, createTag = true) {
+function checkGitStatus() {
+  let gitAvailable = true;
+  let hasOtherUncommittedChanges = false;
+  let otherChanges = '';
+  
+  try {
+    execSync('git --version', { stdio: 'ignore' });
+  } catch {
+    gitAvailable = false;
+    return { gitAvailable, hasOtherUncommittedChanges, otherChanges };
+  }
+  
+  try {
+    const gitStatus = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+    
+    if (gitStatus) {
+      // Filter out package.json files that will be updated by this script
+      const lines = gitStatus.split('\n').filter(line => line.trim());
+      const otherLines = lines.filter(line => {
+        const file = line.substring(3).trim();
+        return !PACKAGE_FILES.includes(file) && file !== 'package-lock.json';
+      });
+      hasOtherUncommittedChanges = otherLines.length > 0;
+      otherChanges = otherLines.join('\n');
+    }
+  } catch {
+    // Not a git repo or other error
+    gitAvailable = false;
+  }
+  
+  return { gitAvailable, hasOtherUncommittedChanges, otherChanges };
+}
+
+function commitAndTag(version, createTag = true, force = false) {
   if (!createTag) {
-    console.log('\n⏭️  Skipping git tag creation (use --no-tag to suppress this message)');
+    console.log('\n⏭️  Skipping git operations (--no-tag flag)');
     return;
+  }
+  
+  const { gitAvailable, hasOtherUncommittedChanges, otherChanges } = checkGitStatus();
+  
+  if (!gitAvailable) {
+    console.log('\n⚠️  Not a git repository. Skipping git operations.');
+    return;
+  }
+  
+  if (hasOtherUncommittedChanges && !force) {
+    console.log('\n⚠️  Warning: You have uncommitted changes in other files:');
+    console.log(otherChanges);
+    console.log('\nOptions:');
+    console.log('1. Commit or stash your changes first, then run this script again');
+    console.log('2. Use --force flag to proceed anyway (will commit only package.json files)');
+    console.log('3. Use --no-tag flag to update files only (no git commit/tag)');
+    console.error('\n❌ Aborting. Please commit or stash your changes first.');
+    process.exit(1);
+  }
+  
+  if (hasOtherUncommittedChanges && force) {
+    console.log('\n⚠️  Proceeding with --force flag (will commit only package.json files)...');
   }
   
   const tagName = `v${version}`;
   
   try {
-    // Check if we're in a git repository
-    execSync('git rev-parse --git-dir', { stdio: 'ignore' });
-    
     // Check if tag already exists
     try {
       execSync(`git rev-parse -q --verify "refs/tags/${tagName}"`, { stdio: 'ignore' });
@@ -109,24 +165,25 @@ function createGitTag(version, createTag = true) {
       // Tag doesn't exist, proceed
     }
     
-    // Check if there are uncommitted changes
-    const status = execSync('git status --porcelain', { encoding: 'utf8' });
-    if (status.trim()) {
-      console.log('\n⚠️  You have uncommitted changes. Commit them before creating a tag.');
-      console.log('   Or run: git add . && git commit -m "chore: bump version to ' + version + '"');
-      return;
-    }
+    // Stage package.json files
+    const filesToStage = PACKAGE_FILES.join(' ');
+    execSync(`git add ${filesToStage}`, { stdio: 'inherit' });
     
-    // Create the tag
-    execSync(`git tag -a ${tagName} -m "Release ${version}"`, { stdio: 'inherit' });
-    console.log(`\n✅ Created git tag: ${tagName}`);
-    console.log(`\n📤 To push the tag, run: git push origin ${tagName}`);
+    // Create commit
+    const commitMessage = `chore: bump version to ${version}`;
+    execSync(`git commit -m "${commitMessage}"`, { stdio: 'inherit' });
+    console.log(`✅ Created git commit: ${commitMessage}`);
+    
+    // Create tag
+    execSync(`git tag -a ${tagName} -m "Version ${version}"`, { stdio: 'inherit' });
+    console.log(`✅ Created git tag: ${tagName}`);
+    
+    console.log(`\n📤 To push to remote:`);
+    console.log(`  git push && git push --tags`);
   } catch (error) {
-    if (error.message.includes('not a git repository')) {
-      console.log('\n⚠️  Not a git repository. Skipping tag creation.');
-    } else {
-      console.error('\n❌ Error creating git tag:', error.message);
-    }
+    console.error('\n❌ Error during git operations:', error.message);
+    console.log('\nVersion was updated in package.json files, but git operations failed.');
+    process.exit(1);
   }
 }
 
@@ -134,6 +191,7 @@ function main() {
   const args = process.argv.slice(2);
   const command = args[0];
   const createTag = !args.includes('--no-tag');
+  const force = args.includes('--force');
   
   // Read current version from root package.json
   const rootPackage = readPackageJson('package.json');
@@ -166,7 +224,8 @@ function main() {
         console.error('  npm run version:major   - Bump major version');
         console.error('  npm run version:set -- <version>  - Set specific version');
         console.error('\nOptions:');
-        console.error('  --no-tag  - Skip creating git tag');
+        console.error('  --no-tag  - Skip creating git commit/tag');
+        console.error('  --force   - Proceed even with other uncommitted changes');
         process.exit(1);
     }
     
@@ -175,10 +234,17 @@ function main() {
       process.exit(0);
     }
     
-    updateVersions(newVersion);
-    createGitTag(newVersion, createTag);
+    console.log(`Current version: ${currentVersion}`);
+    console.log(`New version: ${newVersion}`);
     
-    console.log(`\n✨ Version updated successfully to ${newVersion}!\n`);
+    updateVersions(newVersion);
+    commitAndTag(newVersion, createTag, force);
+    
+    if (createTag) {
+      console.log(`\n🎉 Version ${newVersion} released!`);
+    } else {
+      console.log(`\n✨ Version updated successfully to ${newVersion}!`);
+    }
     
   } catch (error) {
     console.error('\n❌ Error:', error.message);
