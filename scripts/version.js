@@ -125,13 +125,13 @@ function checkGitStatus() {
   return { gitAvailable, hasOtherUncommittedChanges, otherChanges };
 }
 
-function commitAndTag(version, createTag = true, force = false) {
+function commitAndTag(version, gitStatus, createTag = true, force = false) {
   if (!createTag) {
     console.log('\n⏭️  Skipping git operations (--no-tag flag)');
     return;
   }
   
-  const { gitAvailable, hasOtherUncommittedChanges, otherChanges } = checkGitStatus();
+  const { gitAvailable, hasOtherUncommittedChanges, otherChanges } = gitStatus;
   
   if (!gitAvailable) {
     console.log('\n⚠️  Not a git repository. Skipping git operations.');
@@ -237,8 +237,14 @@ function main() {
     console.log(`Current version: ${currentVersion}`);
     console.log(`New version: ${newVersion}`);
     
+    // Check git status BEFORE updating files
+    const gitStatus = checkGitStatus();
+    
+    // Update versions
     updateVersions(newVersion);
-    commitAndTag(newVersion, createTag, force);
+    
+    // Commit and tag (using the git status from before updates)
+    commitAndTag(newVersion, gitStatus, createTag, force);
     
     if (createTag) {
       console.log(`\n🎉 Version ${newVersion} released!`);
