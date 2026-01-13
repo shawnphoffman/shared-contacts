@@ -5,7 +5,8 @@ import { Contact, getAllContacts, createContact, updateContact, getContactByVcar
 import { parseVCard, generateVCard, VCardData } from './vcard'
 
 const RADICALE_STORAGE_PATH = process.env.RADICALE_STORAGE_PATH || '/radicale-data/collections'
-const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '5000', 10)
+const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
+const FILE_WATCHER_DEBOUNCE_MS = parseInt(process.env.FILE_WATCHER_DEBOUNCE_MS || '2000', 10) // Debounce file changes for 2 seconds
 
 /**
  * Get the path to the shared address book in Radicale
@@ -115,13 +116,18 @@ export async function syncDbToRadicale(): Promise<void> {
 
 			existingVCardIds.add(contact.vcard_id)
 			// Generate vCard with arrays if available
-			const vcardData = contact.vcard_data || generateVCard({}, {
-				...contact,
-				phones: contact.phones || null,
-				emails: contact.emails || null,
-				addresses: contact.addresses || null,
-				urls: contact.urls || null,
-			})
+			const vcardData =
+				contact.vcard_data ||
+				generateVCard(
+					{},
+					{
+						...contact,
+						phones: contact.phones || null,
+						emails: contact.emails || null,
+						addresses: contact.addresses || null,
+						urls: contact.urls || null,
+					}
+				)
 			writeVCardFile(contact.vcard_id, vcardData)
 		}
 
@@ -137,7 +143,9 @@ export async function syncDbToRadicale(): Promise<void> {
 			}
 		}
 
-		console.log(`Synced ${contacts.length} contacts to Radicale`)
+		if (contacts.length > 0) {
+			console.log(`Synced ${contacts.length} contacts to Radicale`)
+		}
 	} catch (error) {
 		console.error('Error syncing DB to Radicale:', error)
 		throw error
@@ -146,9 +154,12 @@ export async function syncDbToRadicale(): Promise<void> {
 
 /**
  * Sync from Radicale to PostgreSQL
+ * @param silent If true, suppresses the initial "Syncing..." log message
  */
-export async function syncRadicaleToDb(): Promise<void> {
-	console.log('Syncing Radicale → PostgreSQL...')
+export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
+	if (!silent) {
+		console.log('Syncing Radicale → PostgreSQL...')
+	}
 
 	try {
 		const vcardFiles = getVCardFiles()
@@ -212,21 +223,25 @@ export async function syncRadicaleToDb(): Promise<void> {
 			}
 
 			// Convert vCard arrays to Contact arrays
-			const phones = vcardData.tels && vcardData.tels.length > 0 
-				? vcardData.tels 
-				: (vcardData.tel ? [{ value: vcardData.tel, type: 'CELL' }] : [])
-			
-			const emails = vcardData.emails && vcardData.emails.length > 0 
-				? vcardData.emails 
-				: (vcardData.email ? [{ value: vcardData.email, type: 'INTERNET' }] : [])
-			
-			const addresses = vcardData.addresses && vcardData.addresses.length > 0 
-				? vcardData.addresses 
-				: (vcardData.adr ? [{ value: vcardData.adr, type: 'HOME' }] : [])
-			
-			const urls = vcardData.urls && vcardData.urls.length > 0 
-				? vcardData.urls 
-				: (vcardData.url ? [{ value: vcardData.url, type: 'HOME' }] : [])
+			const phones =
+				vcardData.tels && vcardData.tels.length > 0 ? vcardData.tels : vcardData.tel ? [{ value: vcardData.tel, type: 'CELL' }] : []
+
+			const emails =
+				vcardData.emails && vcardData.emails.length > 0
+					? vcardData.emails
+					: vcardData.email
+					? [{ value: vcardData.email, type: 'INTERNET' }]
+					: []
+
+			const addresses =
+				vcardData.addresses && vcardData.addresses.length > 0
+					? vcardData.addresses
+					: vcardData.adr
+					? [{ value: vcardData.adr, type: 'HOME' }]
+					: []
+
+			const urls =
+				vcardData.urls && vcardData.urls.length > 0 ? vcardData.urls : vcardData.url ? [{ value: vcardData.url, type: 'HOME' }] : []
 
 			const contactData: Partial<Contact> = {
 				vcard_id: vcardId,
@@ -267,7 +282,9 @@ export async function syncRadicaleToDb(): Promise<void> {
 		// recreate vCard files for contacts that exist in the DB.
 		// Only delete from DB if explicitly deleted from Radicale (handled by file watcher)
 
-		console.log(`Synced Radicale to DB: ${created} created, ${updated} updated`)
+		if (created > 0 || updated > 0) {
+			console.log(`Synced Radicale to DB: ${created} created, ${updated} updated`)
+		}
 	} catch (error) {
 		console.error('Error syncing Radicale to DB:', error)
 		throw error
@@ -282,6 +299,7 @@ export function startWatchingRadicale(): void {
 	ensureDirectoryExists(addressBookPath)
 
 	console.log(`Watching Radicale storage: ${addressBookPath}`)
+	console.log(`File watcher debounce: ${FILE_WATCHER_DEBOUNCE_MS}ms`)
 
 	const watcher = watch(addressBookPath, {
 		ignored: /(^|[\/\\])\../, // ignore dotfiles
@@ -289,19 +307,49 @@ export function startWatchingRadicale(): void {
 		ignoreInitial: true,
 	})
 
-	watcher.on('add', async filePath => {
-		console.log(`New vCard file detected: ${filePath}`)
-		await syncRadicaleToDb()
+	// Debounce file changes to batch multiple changes together
+	let debounceTimer: NodeJS.Timeout | null = null
+	let pendingFiles = new Set<string>()
+
+	const triggerDebouncedSync = async () => {
+		if (pendingFiles.size === 0) return
+
+		const files = Array.from(pendingFiles)
+		pendingFiles.clear()
+
+		// Only log if there are many files changed (likely a batch sync)
+		if (files.length > 1) {
+			console.log(`${files.length} vCard files changed, syncing Radicale → PostgreSQL...`)
+		} else if (files.length === 1) {
+			console.log(`vCard file changed: ${files[0]}, syncing Radicale → PostgreSQL...`)
+		}
+
+		await syncRadicaleToDb(true) // Silent mode since we already logged above
+	}
+
+	const scheduleSync = (filePath: string) => {
+		pendingFiles.add(filePath)
+
+		if (debounceTimer) {
+			clearTimeout(debounceTimer)
+		}
+
+		debounceTimer = setTimeout(() => {
+			debounceTimer = null
+			triggerDebouncedSync()
+		}, FILE_WATCHER_DEBOUNCE_MS)
+	}
+
+	watcher.on('add', filePath => {
+		scheduleSync(filePath)
 	})
 
-	watcher.on('change', async filePath => {
-		console.log(`vCard file changed: ${filePath}`)
-		await syncRadicaleToDb()
+	watcher.on('change', filePath => {
+		scheduleSync(filePath)
 	})
 
-	watcher.on('unlink', async filePath => {
-		console.log(`vCard file deleted: ${filePath}`)
-		await syncRadicaleToDb()
+	watcher.on('unlink', filePath => {
+		scheduleSync(filePath)
 	})
 
 	watcher.on('error', error => {

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as CarddavConnectionRouteImport } from './routes/carddav-connection'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
@@ -35,6 +36,11 @@ const NewRoute = NewRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarddavConnectionRoute = CarddavConnectionRouteImport.update({
+  id: '/carddav-connection',
+  path: '/carddav-connection',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IdRoute = IdRouteImport.update({
@@ -87,6 +93,7 @@ const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/carddav-connection': typeof CarddavConnectionRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/carddav-connection': typeof CarddavConnectionRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/carddav-connection': typeof CarddavConnectionRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$id'
+    | '/carddav-connection'
     | '/import'
     | '/new'
     | '/radicale-users'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$id'
+    | '/carddav-connection'
     | '/import'
     | '/new'
     | '/radicale-users'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$id'
+    | '/carddav-connection'
     | '/import'
     | '/new'
     | '/radicale-users'
@@ -175,6 +187,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IdRoute: typeof IdRoute
+  CarddavConnectionRoute: typeof CarddavConnectionRoute
   ImportRoute: typeof ImportRoute
   NewRoute: typeof NewRoute
   RadicaleUsersRoute: typeof RadicaleUsersRoute
@@ -203,6 +216,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carddav-connection': {
+      id: '/carddav-connection'
+      path: '/carddav-connection'
+      fullPath: '/carddav-connection'
+      preLoaderRoute: typeof CarddavConnectionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$id': {
@@ -303,6 +323,7 @@ const ApiRadicaleUsersRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdRoute: IdRoute,
+  CarddavConnectionRoute: CarddavConnectionRoute,
   ImportRoute: ImportRoute,
   NewRoute: NewRoute,
   RadicaleUsersRoute: RadicaleUsersRoute,
