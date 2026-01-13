@@ -45,17 +45,17 @@ wait_for_service() {
 # Function to cleanup on exit
 cleanup() {
     log "Shutting down services..."
-    
+
     # Kill all child processes
     kill -TERM $RADICALE_PID 2>/dev/null || true
     kill -TERM $SYNC_PID 2>/dev/null || true
     kill -TERM $UI_PID 2>/dev/null || true
-    
+
     # Wait for processes to exit
     wait $RADICALE_PID 2>/dev/null || true
     wait $SYNC_PID 2>/dev/null || true
     wait $UI_PID 2>/dev/null || true
-    
+
     log "All services stopped"
     exit 0
 }

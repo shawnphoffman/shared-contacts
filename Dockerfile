@@ -7,8 +7,9 @@ WORKDIR /app/sync-service
 COPY sync-service/package*.json ./
 COPY sync-service/tsconfig.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install all dependencies (including dev dependencies for TypeScript build)
+# Use npm install instead of npm ci to handle potential lock file mismatches
+RUN npm install && npm cache clean --force
 
 # Copy source code
 COPY sync-service/src ./src
@@ -44,7 +45,8 @@ USER root
 
 # Install Node.js 22 (for ui) and Node.js 20 (for sync-service)
 # We'll use Node 22 for both since it's backward compatible
-RUN apk add --no-cache nodejs npm && \
+# Also install netcat for health checks in entrypoint script
+RUN apk add --no-cache nodejs npm netcat-openbsd && \
 	npm install -g pnpm && \
 	rm -rf /var/cache/apk/*
 

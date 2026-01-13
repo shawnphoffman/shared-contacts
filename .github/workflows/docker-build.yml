@@ -1,0 +1,124 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check tags and branch info
+        id: check-refs
+        run: |
+          IS_TAG=${{ startsWith(github.ref, 'refs/tags/') }}
+          IS_BRANCH=${{ startsWith(github.ref, 'refs/heads/') }}
+          
+          if [[ "$IS_TAG" == "true" ]]; then
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "is_tag_event=true" >> $GITHUB_OUTPUT
+            if git branch -r --contains "${{ github.sha }}" | grep -q "origin/main\|origin/master"; then
+              echo "is_on_main=true" >> $GITHUB_OUTPUT
+              echo "add_branch_tag=true" >> $GITHUB_OUTPUT
+              echo "Tag $TAG_NAME is on main branch - will add branch tag"
+            else
+              echo "is_on_main=false" >> $GITHUB_OUTPUT
+              echo "add_branch_tag=false" >> $GITHUB_OUTPUT
+              echo "Tag $TAG_NAME is not on main branch"
+            fi
+          elif [[ "$IS_BRANCH" == "true" ]]; then
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "is_tag_event=false" >> $GITHUB_OUTPUT
+            # Check if there's a tag on this commit
+            TAGS_ON_COMMIT=$(git tag --contains "${{ github.sha }}" | grep -E '^v[0-9]' | head -1)
+            if [[ -n "$TAGS_ON_COMMIT" ]]; then
+              echo "tag_name=$TAGS_ON_COMMIT" >> $GITHUB_OUTPUT
+              echo "add_tag_from_commit=true" >> $GITHUB_OUTPUT
+              echo "Found tag $TAGS_ON_COMMIT on commit ${{ github.sha }}"
+            else
+              echo "add_tag_from_commit=false" >> $GITHUB_OUTPUT
+            fi
+            if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+              echo "is_on_main=true" >> $GITHUB_OUTPUT
+            else
+              echo "is_on_main=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "is_on_main=false" >> $GITHUB_OUTPUT
+            echo "is_tag_event=false" >> $GITHUB_OUTPUT
+            echo "add_branch_tag=false" >> $GITHUB_OUTPUT
+            echo "add_tag_from_commit=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value={{tag}}
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=main,enable=${{ steps.check-refs.outputs.add_branch_tag == 'true' }}
+            type=raw,value=master,enable=${{ steps.check-refs.outputs.add_branch_tag == 'true' }}
+            type=raw,value=${{ steps.check-refs.outputs.tag_name }},enable=${{ steps.check-refs.outputs.add_tag_from_commit == 'true' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
