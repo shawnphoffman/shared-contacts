@@ -3,19 +3,27 @@ import * as path from 'path'
 import { watch } from 'chokidar'
 import { Contact, getAllContacts, createContact, updateContact, getContactByVcardId, deleteContact } from './db'
 import { parseVCard, generateVCard, VCardData } from './vcard'
+import { getUsers } from './htpasswd'
 
 const RADICALE_STORAGE_PATH = process.env.RADICALE_STORAGE_PATH || '/radicale-data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
 const FILE_WATCHER_DEBOUNCE_MS = parseInt(process.env.FILE_WATCHER_DEBOUNCE_MS || '2000', 10) // Debounce file changes for 2 seconds
 
 /**
- * Get the path to the shared address book in Radicale
- * Radicale stores collections in a structure like: /collections/user/collection/
+ * Get the path to the shared address book in Radicale for a specific user
+ * Radicale's web interface only shows collections that are children of the user's principal collection
+ */
+function getSharedAddressBookPathForUser(username: string): string {
+	// Store the shared collection under each user's directory so it appears in the web interface
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, 'shared-contacts')
+}
+
+/**
+ * Get the main shared address book path (for backward compatibility and file watching)
  */
 function getSharedAddressBookPath(): string {
-	// For a shared address book, we'll use a default user/collection
-	// In production, you might want to configure this
-	return path.join(RADICALE_STORAGE_PATH, 'shared', 'contacts')
+	// Keep a master copy at the root level for the file watcher
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', 'shared-contacts')
 }
 
 /**
@@ -54,26 +62,65 @@ function readVCardFile(filePath: string): string | null {
 
 /**
  * Write a vCard file to Radicale storage
+ * Writes to both the master location and each user's directory
  */
-function writeVCardFile(vcardId: string, vcardData: string): void {
-	const addressBookPath = getSharedAddressBookPath()
-	ensureDirectoryExists(addressBookPath)
+async function writeVCardFile(vcardId: string, vcardData: string): Promise<void> {
+	// Write to master location
+	const masterPath = getSharedAddressBookPath()
+	ensureDirectoryExists(masterPath)
+	const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
+	fs.writeFileSync(masterFilePath, vcardData, 'utf-8')
 
-	const fileName = `${vcardId}.vcf`
-	const filePath = path.join(addressBookPath, fileName)
-	fs.writeFileSync(filePath, vcardData, 'utf-8')
+	// Write to each user's directory so it appears in their web interface
+	try {
+		const users = await getUsers()
+		for (const user of users) {
+			const userPath = getSharedAddressBookPathForUser(user.username)
+			ensureDirectoryExists(userPath)
+			// Ensure .Radicale.props exists for the collection
+			const propsPath = path.join(userPath, '.Radicale.props')
+			if (!fs.existsSync(propsPath)) {
+				const props = {
+					tag: 'VADDRESSBOOK',
+					'D:displayname': 'Shared Contacts',
+					'C:addressbook-description': 'Shared contacts for all users',
+				}
+				fs.writeFileSync(propsPath, JSON.stringify(props), 'utf-8')
+			}
+			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
+			fs.writeFileSync(userFilePath, vcardData, 'utf-8')
+		}
+	} catch (error) {
+		console.error('Error writing to user directories:', error)
+		// Continue even if user directory writes fail
+	}
 }
 
 /**
  * Delete a vCard file from Radicale storage
+ * Deletes from both the master location and each user's directory
  */
-function deleteVCardFile(vcardId: string): void {
-	const addressBookPath = getSharedAddressBookPath()
-	const fileName = `${vcardId}.vcf`
-	const filePath = path.join(addressBookPath, fileName)
+async function deleteVCardFile(vcardId: string): Promise<void> {
+	// Delete from master location
+	const masterPath = getSharedAddressBookPath()
+	const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
+	if (fs.existsSync(masterFilePath)) {
+		fs.unlinkSync(masterFilePath)
+	}
 
-	if (fs.existsSync(filePath)) {
-		fs.unlinkSync(filePath)
+	// Delete from each user's directory
+	try {
+		const users = await getUsers()
+		for (const user of users) {
+			const userPath = getSharedAddressBookPathForUser(user.username)
+			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
+			if (fs.existsSync(userFilePath)) {
+				fs.unlinkSync(userFilePath)
+			}
+		}
+	} catch (error) {
+		console.error('Error deleting from user directories:', error)
+		// Continue even if user directory deletes fail
 	}
 }
 
@@ -128,7 +175,7 @@ export async function syncDbToRadicale(): Promise<void> {
 						urls: contact.urls || null,
 					}
 				)
-			writeVCardFile(contact.vcard_id, vcardData)
+			await writeVCardFile(contact.vcard_id, vcardData)
 		}
 
 		// Delete vCard files that no longer exist in DB
@@ -138,7 +185,7 @@ export async function syncDbToRadicale(): Promise<void> {
 				const vcardId = extractVCardId(filePath, vcardContent)
 				if (vcardId && !existingVCardIds.has(vcardId)) {
 					console.log(`Deleting orphaned vCard file: ${vcardId}`)
-					deleteVCardFile(vcardId)
+					await deleteVCardFile(vcardId)
 				}
 			}
 		}

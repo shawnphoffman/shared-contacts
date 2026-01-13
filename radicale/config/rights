@@ -1,0 +1,7 @@
+# Radicale rights configuration
+# Any authenticated user can read/write any collection
+
+[all-authenticated]
+user: .+
+collection: .*
+permissions: RWrw

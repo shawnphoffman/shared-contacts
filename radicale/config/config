@@ -8,12 +8,13 @@ htpasswd_filename = /data/users
 htpasswd_encryption = bcrypt
 
 [rights]
-type = owner_only
+type = from_file
+file = /config/rights
 
 [storage]
 type = multifilesystem
 filesystem_folder = /data/collections
 
 [logging]
-level = info
+level = debug
 

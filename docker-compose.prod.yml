@@ -27,7 +27,9 @@ services:
       - "com.sharedcontacts.description=PostgreSQL database"
 
   radicale:
-    image: tomsquest/docker-radicale:latest
+    build:
+      context: ./radicale
+      dockerfile: Dockerfile
     container_name: shared-contacts-radicale
     environment:
       RADICALE_SERVER_HOSTS: "0.0.0.0:5232"
@@ -35,7 +37,6 @@ services:
       RADICALE_AUTH_TYPE: "htpasswd"
       RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt"
       RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users"
-      RADICALE_RIGHTS_TYPE: "owner_only"
     volumes:
       - radicale_data:/data
       - ./radicale/config:/config:ro
@@ -46,16 +47,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    entrypoint: [ "/bin/sh", "-c" ]
-    command:
-      - |
-        if [ ! -f /data/users ]; then
-          echo "Creating empty users file..."
-          touch /data/users
-          chmod 666 /data/users
-          echo "Users file created. Add users with: docker exec -it shared-contacts-radicale htpasswd -B /data/users username"
-        fi
-        exec docker-entrypoint.sh /venv/bin/radicale --config /config/config
+    entrypoint: ["/init-radicale.sh"]
     restart: always
     labels:
       - "com.sharedcontacts.service=radicale"

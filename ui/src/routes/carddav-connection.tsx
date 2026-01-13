@@ -76,9 +76,9 @@ function getCardDAVBaseUrl(): string {
 
 function getCardDAVUrl(username: string): string {
   const baseUrl = getCardDAVBaseUrl()
-  // Radicale uses the username as the collection path
-  // The shared contacts are typically at /shared/contacts
-  return `${baseUrl}/${username}/shared/contacts/`
+  // The shared contacts collection is accessible to all authenticated users
+  // The collection path is /shared-contacts (flat structure under collection-root)
+  return `${baseUrl}/shared-contacts/`
 }
 
 function CopyButton({ text, label }: { text: string; label: string }) {
