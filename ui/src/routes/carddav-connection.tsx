@@ -196,6 +196,16 @@ function CardDAVConnectionPage() {
               behind a reverse proxy (like Traefik or Nginx), configure SSL/TLS
               at the proxy level.
             </p>
+            <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                ⚠️ Important for Apple Contacts:
+              </p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                Make sure to use <strong>HTTP</strong> (not HTTPS) in your Apple Contacts
+                connection settings. If you see SSL/TLS errors, verify the server URL starts
+                with <code className="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">http://</code>
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
