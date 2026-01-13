@@ -1,0 +1,27 @@
+{
+	"name": "shared-contacts",
+	"version": "1.0.0",
+	"description": "Self-hostable CardDAV server for managing shared contacts with a modern web-based management interface",
+	"private": true,
+	"engines": {
+		"node": ">=20.0.0",
+		"npm": ">=9.0.0"
+	},
+	"keywords": [
+		"carddav",
+		"contacts",
+		"radicale",
+		"self-hosted",
+		"sync"
+	],
+	"author": "Shawn Hoffman",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/shawnphoffman/shared-contacts.git"
+	},
+	"bugs": {
+		"url": "https://github.com/shawnphoffman/shared-contacts/issues"
+	},
+	"homepage": "https://github.com/shawnphoffman/shared-contacts#readme"
+}
