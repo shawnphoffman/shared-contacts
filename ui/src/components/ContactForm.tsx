@@ -1,17 +1,34 @@
 import { useState, useEffect, useRef } from 'react'
+import Cropper from 'react-easy-crop'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { Field, FieldContent, FieldLabel } from './ui/field'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog'
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
 import { validateEmail, validateUrl, normalizeUrl } from '../lib/validation'
+import { cropToSquareDataUrl, readFileAsDataUrl, type CropArea } from '../lib/image'
 import type { Contact, ContactField } from '../lib/db'
+
+export type ContactPayload = Partial<Contact> & {
+  photo_data?: string
+  photo_mime?: string
+  photo_width?: number
+  photo_height?: number
+  photo_remove?: boolean
+}
 
 interface ContactFormProps {
   contact?: Contact
-  onSubmit: (data: Partial<Contact>) => Promise<void>
+  onSubmit: (data: ContactPayload) => Promise<void>
   onCancel?: () => void
 }
 
@@ -73,6 +90,24 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         .trim() ||
       '',
   )
+  const existingPhotoUrl = contact?.id
+    ? `/api/contacts/${contact.id}/photo`
+    : null
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+  const [photoData, setPhotoData] = useState<string | null>(null)
+  const [photoMime, setPhotoMime] = useState<string | null>(null)
+  const [photoWidth, setPhotoWidth] = useState<number | null>(null)
+  const [photoHeight, setPhotoHeight] = useState<number | null>(null)
+  const [photoRemove, setPhotoRemove] = useState(false)
+  const [showExistingPhoto, setShowExistingPhoto] = useState(true)
+  const [cropSource, setCropSource] = useState<string | null>(null)
+  const [isCropOpen, setIsCropOpen] = useState(false)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(
+    null,
+  )
+  const [cropOutputMime, setCropOutputMime] = useState('image/jpeg')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<
     Record<string, Record<number, string | null>>
@@ -157,6 +192,56 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     setTimeout(() => validateUrls(normalized), 300)
   }
 
+  const handlePhotoFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const dataUrl = await readFileAsDataUrl(file)
+    setCropSource(dataUrl)
+    setCropOutputMime(file.type === 'image/png' ? 'image/png' : 'image/jpeg')
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    setCroppedAreaPixels(null)
+    setIsCropOpen(true)
+  }
+
+  const handleCropSave = async () => {
+    if (!cropSource || !croppedAreaPixels) return
+    const { dataUrl, width, height } = await cropToSquareDataUrl({
+      imageSrc: cropSource,
+      crop: croppedAreaPixels,
+      outputSize: 512,
+      outputMime: cropOutputMime,
+      quality: cropOutputMime === 'image/jpeg' ? 0.9 : undefined,
+    })
+    const base64Data = dataUrl.split(',')[1] || ''
+    setPhotoPreviewUrl(dataUrl)
+    setPhotoData(base64Data)
+    setPhotoMime(cropOutputMime)
+    setPhotoWidth(width)
+    setPhotoHeight(height)
+    setPhotoRemove(false)
+    setShowExistingPhoto(false)
+    setIsCropOpen(false)
+    setCropSource(null)
+  }
+
+  const handleCropCancel = () => {
+    setIsCropOpen(false)
+    setCropSource(null)
+  }
+
+  const handleRemovePhoto = () => {
+    setPhotoPreviewUrl(null)
+    setPhotoData(null)
+    setPhotoMime(null)
+    setPhotoWidth(null)
+    setPhotoHeight(null)
+    setPhotoRemove(true)
+    setShowExistingPhoto(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -202,6 +287,16 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         }
       }
 
+      const photoPayload: ContactPayload = {}
+      if (photoRemove) {
+        photoPayload.photo_remove = true
+      } else if (photoData && photoMime) {
+        photoPayload.photo_data = photoData
+        photoPayload.photo_mime = photoMime
+        photoPayload.photo_width = photoWidth || 512
+        photoPayload.photo_height = photoHeight || 512
+      }
+
       await onSubmit({
         ...formData,
         full_name: fullName || null,
@@ -217,6 +312,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         homepage: nonEmptyUrls.length > 0 ? nonEmptyUrls[0].value : null,
         // Structured address fields for easier querying and display
         ...structuredAddressFields,
+        ...photoPayload,
       })
     } finally {
       setIsSubmitting(false)
@@ -225,6 +321,39 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+          {photoPreviewUrl ? (
+            <img
+              src={photoPreviewUrl}
+              alt="Contact"
+              className="h-full w-full object-cover"
+            />
+          ) : showExistingPhoto && existingPhotoUrl ? (
+            <img
+              src={existingPhotoUrl}
+              alt="Contact"
+              className="h-full w-full object-cover"
+              onError={() => setShowExistingPhoto(false)}
+            />
+          ) : (
+            <span className="text-xs text-gray-400">No Photo</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoFileChange}
+          />
+          {(photoPreviewUrl || (showExistingPhoto && existingPhotoUrl)) && (
+            <Button type="button" variant="outline" onClick={handleRemovePhoto}>
+              Remove photo
+            </Button>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <Field>
           <FieldLabel htmlFor="first_name">First Name</FieldLabel>
@@ -460,6 +589,47 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           {isSubmitting ? 'Saving...' : contact ? 'Update' : 'Create'}
         </Button>
       </div>
+
+      <Dialog open={isCropOpen} onOpenChange={(open) => !open && handleCropCancel()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Crop Photo</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-80 w-full bg-black/80">
+            {cropSource && (
+              <Cropper
+                image={cropSource}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_area, pixels) => setCroppedAreaPixels(pixels)}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">Zoom</span>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.1}
+              value={zoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+              className="flex-1"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleCropCancel}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleCropSave}>
+              Use photo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   )
 }

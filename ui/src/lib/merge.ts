@@ -184,6 +184,14 @@ export function mergeContacts(contacts: Contact[]): Partial<Contact> {
     // Notes: combine all notes
     notes: notesParts.length > 0 ? notesParts.join('') : null,
 
+    // Photo: preserve primary photo
+    photo_blob: primary.photo_blob || null,
+    photo_mime: primary.photo_mime || null,
+    photo_width: primary.photo_width || null,
+    photo_height: primary.photo_height || null,
+    photo_updated_at: primary.photo_updated_at || null,
+    photo_hash: primary.photo_hash || null,
+
     // vCard fields will be regenerated
     vcard_id: primary.vcard_id,
   }

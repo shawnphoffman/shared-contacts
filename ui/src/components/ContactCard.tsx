@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Mail, Phone, Building, MapPin } from 'lucide-react'
 import type { Contact } from '../lib/db'
@@ -9,23 +10,47 @@ interface ContactCardProps {
 }
 
 export function ContactCard({ contact }: ContactCardProps) {
+  const [showPhoto, setShowPhoto] = useState(true)
+  const displayName = contact.full_name || 'Unnamed Contact'
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
   return (
     <Link to="/$id" params={{ id: contact.id }}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">
         <CardHeader>
-          <CardTitle className="text-xl">
-            {contact.full_name || 'Unnamed Contact'}
-            {contact.nickname && (
-              <span className="text-base font-normal text-gray-500 ml-2">
-                ({contact.nickname})
-              </span>
-            )}
-          </CardTitle>
-          {contact.job_title && contact.organization && (
-            <p className="text-sm text-gray-500">
-              {contact.job_title} at {contact.organization}
-            </p>
-          )}
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-sm text-gray-500">
+              {showPhoto && (
+                <img
+                  src={`/api/contacts/${contact.id}/photo`}
+                  alt={displayName}
+                  className="h-full w-full object-cover"
+                  onError={() => setShowPhoto(false)}
+                />
+              )}
+              {!showPhoto && <span>{initials || '—'}</span>}
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-xl">
+                {displayName}
+                {contact.nickname && (
+                  <span className="text-base font-normal text-gray-500 ml-2">
+                    ({contact.nickname})
+                  </span>
+                )}
+              </CardTitle>
+              {contact.job_title && contact.organization && (
+                <p className="text-sm text-gray-500">
+                  {contact.job_title} at {contact.organization}
+                </p>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {contact.email && (

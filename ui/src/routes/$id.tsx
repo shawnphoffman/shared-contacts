@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, notFound } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ContactForm } from '../components/ContactForm'
+import { ContactForm, type ContactPayload } from '../components/ContactForm'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import {
@@ -45,7 +45,7 @@ async function fetchContact(id: string): Promise<Contact> {
 
 async function updateContact(
   id: string,
-  data: Partial<Contact>,
+  data: ContactPayload,
 ): Promise<Contact> {
   const response = await fetch(`/api/contacts/${id}`, {
     method: 'PUT',
@@ -82,6 +82,7 @@ function ContactDetailPage() {
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showPhoto, setShowPhoto] = useState(true)
 
   const { data: contact, isLoading } = useQuery({
     queryKey: ['contacts', id],
@@ -136,12 +137,31 @@ function ContactDetailPage() {
     )
   }
 
+  const displayName = contact.full_name || 'Unnamed Contact'
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
   return (
     <div className="container mx-auto p-6 max-w-2xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
-          {contact.full_name || 'Unnamed Contact'}
-        </h1>
+        <div className="flex items-center gap-4">
+          <div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500">
+            {showPhoto && (
+              <img
+                src={`/api/contacts/${contact.id}/photo`}
+                alt={displayName}
+                className="h-full w-full object-cover"
+                onError={() => setShowPhoto(false)}
+              />
+            )}
+            {!showPhoto && <span>{initials || '—'}</span>}
+          </div>
+          <h1 className="text-3xl font-bold">{displayName}</h1>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsEditing(true)}>
             <Edit className="w-4 h-4 mr-1" />

@@ -27,6 +27,12 @@ function mergeContacts(primary: Contact, duplicate: Contact): Partial<Contact> {
     birthday: primary.birthday || duplicate.birthday,
     homepage: primary.homepage || duplicate.homepage,
     notes: primary.notes || duplicate.notes,
+    photo_blob: primary.photo_blob || duplicate.photo_blob,
+    photo_mime: primary.photo_mime || duplicate.photo_mime,
+    photo_width: primary.photo_width || duplicate.photo_width,
+    photo_height: primary.photo_height || duplicate.photo_height,
+    photo_updated_at: primary.photo_updated_at || duplicate.photo_updated_at,
+    photo_hash: primary.photo_hash || duplicate.photo_hash,
   }
 }
 

@@ -25,6 +25,7 @@ export interface VCardData {
 	url?: string // Deprecated: use urls array
 	urls?: VCardField[] // Multiple URLs
 	note?: string
+	photo?: { data: string; type?: string }
 	version?: string
 }
 
@@ -162,6 +163,12 @@ function parseVCardLine(line: string, data: VCardData): void {
 		case 'NOTE':
 			data.note = value
 			break
+		case 'PHOTO':
+			data.photo = {
+				data: value,
+				type,
+			}
+			break
 	}
 }
 
@@ -185,6 +192,8 @@ export function generateVCard(
 		birthday?: Date | string | null
 		homepage?: string | null
 		notes?: string | null
+		photo_blob?: Buffer | null
+		photo_mime?: string | null
 		phones?: Array<{ value: string; type?: string }> | null
 		emails?: Array<{ value: string; type?: string }> | null
 		addresses?: Array<{ value: string; type?: string }> | null
@@ -220,6 +229,14 @@ export function generateVCard(
 	const nickname = data.nickname || contact?.nickname
 	if (nickname) {
 		lines.push(`NICKNAME:${nickname}`)
+	}
+
+	// Photo (base64)
+	const photoBase64 = getPhotoBase64(data, contact)
+	if (photoBase64) {
+		const type = getPhotoType(data, contact)
+		const photoLine = `PHOTO;ENCODING=b;TYPE=${type}:${photoBase64}`
+		lines.push(...foldVCardLine(photoLine))
 	}
 
 	// Emails - use arrays if available, fall back to single values
@@ -334,6 +351,42 @@ export function generateVCard(
 
 	lines.push('END:VCARD')
 	return lines.join('\r\n')
+}
+
+function foldVCardLine(line: string): string[] {
+	const maxLength = 75
+	const lines: string[] = []
+	let remaining = line
+
+	while (remaining.length > maxLength) {
+		lines.push(remaining.slice(0, maxLength))
+		remaining = ` ${remaining.slice(maxLength)}`
+	}
+
+	lines.push(remaining)
+	return lines
+}
+
+function getPhotoBase64(
+	data: VCardData,
+	contact?: { photo_blob?: Buffer | null }
+): string | null {
+	if (data.photo?.data) return data.photo.data
+	if (contact?.photo_blob) {
+		return contact.photo_blob.toString('base64')
+	}
+	return null
+}
+
+function getPhotoType(
+	data: VCardData,
+	contact?: { photo_mime?: string | null }
+): string {
+	if (data.photo?.type) {
+		return data.photo.type.toUpperCase()
+	}
+	const mime = contact?.photo_mime || 'image/jpeg'
+	return mime.toLowerCase().includes('png') ? 'PNG' : 'JPEG'
 }
 
 /**

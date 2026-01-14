@@ -9,6 +9,11 @@ import {
 import { generateVCard, extractUID } from '../../lib/vcard'
 import { mergeContacts } from '../../lib/merge'
 
+function sanitizeContact(contact: Contact): Omit<Contact, 'photo_blob'> {
+  const { photo_blob, ...rest } = contact
+  return rest
+}
+
 export const Route = createFileRoute('/api/contacts/merge')({
   server: {
     handlers: {
@@ -78,7 +83,7 @@ export const Route = createFileRoute('/api/contacts/merge')({
             message: `Successfully merged ${contacts.length} contacts into ${primaryContact.full_name || primaryContact.email || 'contact'}`,
             primaryContactId: primaryContact.id,
             deletedContactIds: deletedIds,
-            mergedContact: updatedContact,
+            mergedContact: sanitizeContact(updatedContact),
           })
         } catch (error) {
           console.error('Error merging contacts:', error)

@@ -7,6 +7,35 @@ function generateUID(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
 }
 
+function foldVCardLine(line: string): string[] {
+  const maxLength = 75
+  const lines: string[] = []
+  let remaining = line
+
+  while (remaining.length > maxLength) {
+    lines.push(remaining.slice(0, maxLength))
+    remaining = ` ${remaining.slice(maxLength)}`
+  }
+
+  lines.push(remaining)
+  return lines
+}
+
+function normalizePhotoBase64(
+  photoBlob: Uint8Array | string | null | undefined,
+): string | null {
+  if (!photoBlob) return null
+  const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
+  if (typeof photoBlob === 'string') {
+    if (photoBlob.startsWith('\\x')) {
+      const hex = photoBlob.slice(2)
+      return NodeBuffer ? NodeBuffer.from(hex, 'hex').toString('base64') : null
+    }
+    return photoBlob
+  }
+  return NodeBuffer ? NodeBuffer.from(photoBlob).toString('base64') : null
+}
+
 export function generateVCard(contact: {
   vcard_id?: string | null
   full_name?: string | null
@@ -27,6 +56,8 @@ export function generateVCard(contact: {
   homepage?: string | null
   urls?: Array<{ value: string; type?: string }> | null
   notes?: string | null
+  photo_blob?: Uint8Array | string | null
+  photo_mime?: string | null
 }): string {
   const uid = contact.vcard_id || generateUID()
   const fullName = contact.full_name || 'Unknown'
@@ -45,6 +76,15 @@ export function generateVCard(contact: {
 
   if (contact.nickname) {
     lines.push(`NICKNAME:${contact.nickname}`)
+  }
+
+  // Photo (base64)
+  const photoBase64 = normalizePhotoBase64(contact.photo_blob)
+  if (photoBase64) {
+    const mime = contact.photo_mime || 'image/jpeg'
+    const type = mime.toLowerCase().includes('png') ? 'PNG' : 'JPEG'
+    const photoLine = `PHOTO;ENCODING=b;TYPE=${type}:${photoBase64}`
+    lines.push(...foldVCardLine(photoLine))
   }
   
   // Emails - use arrays if available, fall back to single value

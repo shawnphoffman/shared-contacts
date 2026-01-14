@@ -44,6 +44,12 @@ export interface Contact {
 	homepage: string | null // Deprecated: use urls array
 	urls: ContactField[] | null // Multiple URLs
 	notes: string | null
+	photo_blob: Buffer | null
+	photo_mime: string | null
+	photo_width: number | null
+	photo_height: number | null
+	photo_updated_at: Date | null
+	photo_hash: string | null
 	vcard_data: string | null
 	created_at: Date
 	updated_at: Date
@@ -84,8 +90,8 @@ export async function getContactByVcardId(vcardId: string): Promise<Contact | nu
 export async function createContact(contact: Partial<Contact>): Promise<Contact> {
 	const pool = getPool()
 	const result = await pool.query(
-		`INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, nickname, maiden_name, email, phone, phones, emails, organization, job_title, address, addresses, birthday, homepage, urls, notes, vcard_data)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+		`INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, nickname, maiden_name, email, phone, phones, emails, organization, job_title, address, addresses, birthday, homepage, urls, notes, photo_blob, photo_mime, photo_width, photo_height, photo_updated_at, photo_hash, vcard_data)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
      RETURNING *`,
 		[
 			contact.vcard_id || null,
@@ -107,6 +113,12 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 			contact.homepage || null,
 			contact.urls ? JSON.stringify(contact.urls) : '[]',
 			contact.notes || null,
+			contact.photo_blob || null,
+			contact.photo_mime || null,
+			contact.photo_width || null,
+			contact.photo_height || null,
+			contact.photo_updated_at || null,
+			contact.photo_hash || null,
 			contact.vcard_data || null,
 		]
 	)
@@ -145,6 +157,12 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 		'homepage',
 		'urls',
 		'notes',
+		'photo_blob',
+		'photo_mime',
+		'photo_width',
+		'photo_height',
+		'photo_updated_at',
+		'photo_hash',
 		'vcard_data',
 	]
 

@@ -67,6 +67,12 @@ export interface Contact {
   homepage: string | null // Deprecated: use urls array
   urls: ContactField[] | null // Multiple URLs
   notes: string | null
+  photo_blob: Uint8Array | string | null
+  photo_mime: string | null
+  photo_width: number | null
+  photo_height: number | null
+  photo_updated_at: Date | null
+  photo_hash: string | null
   vcard_data: string | null
   created_at: Date
   updated_at: Date
@@ -228,6 +234,12 @@ export async function createContact(
     'homepage',
     'urls',
     'notes',
+    'photo_blob',
+    'photo_mime',
+    'photo_width',
+    'photo_height',
+    'photo_updated_at',
+    'photo_hash',
     'vcard_data',
     'sync_source',
     'last_synced_to_radicale_at',
@@ -351,6 +363,12 @@ export async function updateContact(
     'homepage',
     'urls',
     'notes',
+    'photo_blob',
+    'photo_mime',
+    'photo_width',
+    'photo_height',
+    'photo_updated_at',
+    'photo_hash',
     'vcard_data',
     'sync_source',
     'last_synced_to_radicale_at',
