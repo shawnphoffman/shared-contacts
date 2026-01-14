@@ -1,6 +1,6 @@
 {
   "name": "shared-contacts",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Self-hostable CardDAV server for managing shared contacts with a modern web-based management interface",
   "private": true,
   "engines": {
