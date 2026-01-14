@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Input } from './ui/input'
 import { Field, FieldContent, FieldLabel } from './ui/field'
+import { ChevronsLeftRightEllipsis } from 'lucide-react'
+import { Button } from './ui/button'
 
 /**
  * Structured address data
@@ -74,6 +76,25 @@ export function AddressInput({
   placeholder = 'Enter address',
   error,
 }: AddressInputProps) {
+  // Format value for display in simple mode (convert vCard format to readable)
+  const getSimpleDisplayValue = (val: string): string => {
+    if (!val) return ''
+    if (val.startsWith(';;')) {
+      // Parse vCard format and convert to readable
+      const parsed = parseAddress(val)
+      return [
+        parsed.street,
+        parsed.city,
+        parsed.state,
+        parsed.postal,
+        parsed.country,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    }
+    return val
+  }
+
   const [structured, setStructured] = useState<StructuredAddress>(() =>
     parseAddress(value || ''),
   )
@@ -86,6 +107,9 @@ export function AddressInput({
       !!(parsed.city || parsed.state || parsed.postal || parsed.country)
     )
   })
+  const [simpleValue, setSimpleValue] = useState(() =>
+    getSimpleDisplayValue(value || ''),
+  )
 
   // Update structured mode when switching
   const handleModeSwitch = (newMode: boolean) => {
@@ -125,6 +149,13 @@ export function AddressInput({
     }
   }, [value])
 
+  // Update simple value when external value changes
+  useEffect(() => {
+    if (!useStructured) {
+      setSimpleValue(getSimpleDisplayValue(value || ''))
+    }
+  }, [value, useStructured])
+
   // Update parent when structured address changes
   useEffect(() => {
     if (useStructured) {
@@ -141,107 +172,75 @@ export function AddressInput({
   if (useStructured) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            Structured Address
-          </span>
-          <button
-            type="button"
-            onClick={() => handleModeSwitch(false)}
-            className="text-xs text-blue-600 hover:underline dark:text-blue-400"
-          >
-            Switch to simple
-          </button>
-        </div>
-        <div className="space-y-2">
-          <Input
-            placeholder="Street address"
-            value={structured.street}
-            onChange={(e) => updateField('street', e.target.value)}
-            className={error ? 'border-red-500' : ''}
-          />
-          <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-2">
             <Input
-              placeholder="City"
-              value={structured.city}
-              onChange={(e) => updateField('city', e.target.value)}
+              placeholder="Street address"
+              value={structured.street}
+              onChange={(e) => updateField('street', e.target.value)}
+              className={error ? 'border-red-500' : ''}
             />
-            <Input
-              placeholder="State/Province"
-              value={structured.state}
-              onChange={(e) => updateField('state', e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              placeholder="Postal/ZIP code"
-              value={structured.postal}
-              onChange={(e) => updateField('postal', e.target.value)}
-            />
+            <div className="grid grid-cols-4 gap-2">
+              <Input
+                placeholder="City"
+                value={structured.city}
+                onChange={(e) => updateField('city', e.target.value)}
+                className="col-span-2"
+              />
+              <Input
+                placeholder="State"
+                value={structured.state}
+                onChange={(e) => updateField('state', e.target.value)}
+              />
+              <Input
+                placeholder="ZIP"
+                value={structured.postal}
+                onChange={(e) => updateField('postal', e.target.value)}
+              />
+            </div>
             <Input
               placeholder="Country"
               value={structured.country}
               onChange={(e) => updateField('country', e.target.value)}
             />
           </div>
+
+          <Button
+            type="button"
+            onClick={() => handleModeSwitch(false)}
+            variant="outline"
+            size="icon"
+          >
+            <ChevronsLeftRightEllipsis className="w-4 h-4" />
+          </Button>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
       </div>
     )
   }
 
-  // Format value for display in simple mode (convert vCard format to readable)
-  const getSimpleDisplayValue = (val: string): string => {
-    if (!val) return ''
-    if (val.startsWith(';;')) {
-      // Parse vCard format and convert to readable
-      const parsed = parseAddress(val)
-      return [
-        parsed.street,
-        parsed.city,
-        parsed.state,
-        parsed.postal,
-        parsed.country,
-      ]
-        .filter(Boolean)
-        .join(', ')
-    }
-    return val
-  }
-
-  const [simpleValue, setSimpleValue] = useState(() =>
-    getSimpleDisplayValue(value || ''),
-  )
-
-  // Update simple value when external value changes
-  useEffect(() => {
-    if (!useStructured) {
-      setSimpleValue(getSimpleDisplayValue(value || ''))
-    }
-  }, [value, useStructured])
-
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">Simple Address</span>
-        <button
+      <div className="flex items-center justify-between gap-2">
+        <Input
+          type="text"
+          value={simpleValue}
+          onChange={(e) => {
+            setSimpleValue(e.target.value)
+            onChange(e.target.value)
+          }}
+          placeholder={placeholder}
+          className={error ? 'border-red-500' : ''}
+        />
+        <Button
           type="button"
           onClick={() => handleModeSwitch(true)}
-          className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+          variant="outline"
+          size="icon"
         >
-          Switch to structured
-        </button>
+          <ChevronsLeftRightEllipsis className="w-4 h-4" />
+        </Button>
       </div>
-      <Input
-        type="text"
-        value={simpleValue}
-        onChange={(e) => {
-          setSimpleValue(e.target.value)
-          onChange(e.target.value)
-        }}
-        placeholder={placeholder}
-        className={error ? 'border-red-500' : ''}
-      />
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   )
