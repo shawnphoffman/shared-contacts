@@ -369,14 +369,14 @@ export async function syncDbToRadicale(): Promise<void> {
 		if (fs.existsSync(masterPath)) {
 			const masterFiles = fs.readdirSync(masterPath)
 			const masterVCardFiles = masterFiles.filter(file => file.endsWith('.vcf') || file.endsWith('.ics'))
-			
+
 			for (const fileName of masterVCardFiles) {
 				const filePath = path.join(masterPath, fileName)
 				// Check if file still exists (might have been deleted between listing and now)
 				if (!fs.existsSync(filePath)) {
 					continue
 				}
-				
+
 				const vcardContent = readVCardFile(filePath)
 				if (vcardContent) {
 					const vcardId = extractVCardId(filePath, vcardContent)
