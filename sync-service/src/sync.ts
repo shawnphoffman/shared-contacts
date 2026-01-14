@@ -48,15 +48,38 @@ function ensureDirectoryExists(dirPath: string): void {
 
 /**
  * Get all vCard files from Radicale storage
+ * Checks both the master directory and all user directories
  */
-function getVCardFiles(): string[] {
-	const addressBookPath = getSharedAddressBookPath()
-	if (!fs.existsSync(addressBookPath)) {
-		return []
+async function getVCardFiles(): Promise<string[]> {
+	const files = new Set<string>()
+	
+	// Check master directory
+	const masterPath = getSharedAddressBookPath()
+	if (fs.existsSync(masterPath)) {
+		const masterFiles = fs.readdirSync(masterPath)
+		masterFiles
+			.filter(file => file.endsWith('.vcf') || file.endsWith('.ics'))
+			.forEach(file => files.add(path.join(masterPath, file)))
 	}
-
-	const files = fs.readdirSync(addressBookPath)
-	return files.filter(file => file.endsWith('.vcf') || file.endsWith('.ics')).map(file => path.join(addressBookPath, file))
+	
+	// Check all user directories (where clients might create contacts)
+	try {
+		const users = await getUsers()
+		for (const user of users) {
+			const userPath = getSharedAddressBookPathForUser(user.username)
+			if (fs.existsSync(userPath)) {
+				const userFiles = fs.readdirSync(userPath)
+				userFiles
+					.filter(file => (file.endsWith('.vcf') || file.endsWith('.ics')) && file !== '.Radicale.props')
+					.forEach(file => files.add(path.join(userPath, file)))
+			}
+		}
+	} catch (error) {
+		console.error('Error reading user directories:', error)
+		// Continue with master directory files only
+	}
+	
+	return Array.from(files)
 }
 
 /**
@@ -243,7 +266,7 @@ export async function syncDbToRadicale(): Promise<void> {
 		ensureDirectoryExists(addressBookPath)
 
 		// Get existing vCard files
-		const existingFiles = getVCardFiles()
+		const existingFiles = await getVCardFiles()
 		const existingVCardIds = new Set<string>()
 
 		let synced = 0
@@ -370,7 +393,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 	}
 
 	try {
-		const vcardFiles = getVCardFiles()
+		const vcardFiles = await getVCardFiles()
 		const dbContacts = await getAllContacts()
 		const dbContactsByVcardId = new Map<string, Contact>()
 		const radicaleVCardIds = new Set<string>()
@@ -543,6 +566,17 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					radicale_file_mtime: fileMtime,
 					sync_source: 'radicale',
 				})
+				
+				// If contact was found in a user directory (not master), copy it to master directory
+				// so it's available to all users immediately
+				const masterPath = getSharedAddressBookPath()
+				const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
+				if (!fs.existsSync(masterFilePath)) {
+					ensureDirectoryExists(masterPath)
+					fs.writeFileSync(masterFilePath, vcardContent, 'utf-8')
+					console.log(`Copied new contact ${vcardId} from user directory to master directory`)
+				}
+				
 				created++
 			}
 		}
@@ -571,19 +605,47 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 
 /**
  * Start watching Radicale storage for changes
+ * Watches both the master directory and all user directories
  */
-export function startWatchingRadicale(): void {
-	const addressBookPath = getSharedAddressBookPath()
-	ensureDirectoryExists(addressBookPath)
+export async function startWatchingRadicale(): Promise<void> {
+	const masterPath = getSharedAddressBookPath()
+	ensureDirectoryExists(masterPath)
 
-	console.log(`Watching Radicale storage: ${addressBookPath}`)
+	console.log(`Watching Radicale storage: ${masterPath}`)
 	console.log(`File watcher debounce: ${FILE_WATCHER_DEBOUNCE_MS}ms`)
 
-	const watcher = watch(addressBookPath, {
+	// Watch master directory
+	const watchers: ReturnType<typeof watch>[] = []
+	
+	const masterWatcher = watch(masterPath, {
 		ignored: /(^|[\/\\])\../, // ignore dotfiles
 		persistent: true,
 		ignoreInitial: true,
 	})
+	watchers.push(masterWatcher)
+
+	// Watch all user directories (where clients create contacts)
+	try {
+		const users = await getUsers()
+		for (const user of users) {
+			const userPath = getSharedAddressBookPathForUser(user.username)
+			ensureDirectoryExists(userPath)
+			
+			const userWatcher = watch(userPath, {
+				ignored: /(^|[\/\\])\../, // ignore dotfiles
+				persistent: true,
+				ignoreInitial: true,
+			})
+			watchers.push(userWatcher)
+			console.log(`Also watching user directory: ${userPath}`)
+		}
+	} catch (error) {
+		console.error('Error setting up user directory watchers:', error)
+		// Continue with master directory watcher only
+	}
+
+	// Use a single debounce mechanism for all watchers
+	const allWatchers = watchers.length > 0 ? watchers : [masterWatcher]
 
 	// Debounce file changes to batch multiple changes together
 	let debounceTimer: NodeJS.Timeout | null = null
@@ -618,40 +680,43 @@ export function startWatchingRadicale(): void {
 		}, FILE_WATCHER_DEBOUNCE_MS)
 	}
 
-	watcher.on('add', filePath => {
-		scheduleSync(filePath)
-	})
+	// Set up event handlers for all watchers
+	for (const watcher of allWatchers) {
+		watcher.on('add', filePath => {
+			scheduleSync(filePath)
+		})
 
-	watcher.on('change', filePath => {
-		scheduleSync(filePath)
-	})
+		watcher.on('change', filePath => {
+			scheduleSync(filePath)
+		})
 
-	watcher.on('unlink', async filePath => {
-		// Handle file deletion
-		// Extract vCard ID from filename (file is already deleted, so we can't read it)
-		const fileName = path.basename(filePath, path.extname(filePath))
-		const vcardId = fileName
+		watcher.on('unlink', async filePath => {
+			// Handle file deletion
+			// Extract vCard ID from filename (file is already deleted, so we can't read it)
+			const fileName = path.basename(filePath, path.extname(filePath))
+			const vcardId = fileName
 
-		if (vcardId) {
-			const contact = await getContactByVcardId(vcardId)
-			if (contact) {
-				// Only delete from DB if contact was created from Radicale
-				if (contact.sync_source === 'radicale') {
-					console.log(`Deleting contact ${vcardId} from DB (deleted from Radicale)`)
-					await deleteContact(contact.id)
-				} else {
-					// Contact was created via API/DB, keep it - will be recreated in Radicale on next sync
-					console.log(`Contact ${vcardId} deleted from Radicale but keeping in DB (will be recreated)`)
+			if (vcardId) {
+				const contact = await getContactByVcardId(vcardId)
+				if (contact) {
+					// Only delete from DB if contact was created from Radicale
+					if (contact.sync_source === 'radicale') {
+						console.log(`Deleting contact ${vcardId} from DB (deleted from Radicale)`)
+						await deleteContact(contact.id)
+					} else {
+						// Contact was created via API/DB, keep it - will be recreated in Radicale on next sync
+						console.log(`Contact ${vcardId} deleted from Radicale but keeping in DB (will be recreated)`)
+					}
 				}
 			}
-		}
-		// Also trigger full sync to handle any other changes
-		scheduleSync(filePath)
-	})
+			// Also trigger full sync to handle any other changes
+			scheduleSync(filePath)
+		})
 
-	watcher.on('error', error => {
-		console.error('Watcher error:', error)
-	})
+		watcher.on('error', error => {
+			console.error('Watcher error:', error)
+		})
+	}
 }
 
 /**

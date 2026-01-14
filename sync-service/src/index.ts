@@ -27,7 +27,7 @@ async function main() {
 		await syncDbToRadicale()
 
 		// Start watching Radicale for changes
-		startWatchingRadicale()
+		await startWatchingRadicale()
 
 		// Start periodic sync from DB to Radicale
 		startPeriodicSync()
