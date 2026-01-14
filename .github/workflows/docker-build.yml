@@ -99,7 +99,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
             type=raw,value=v${{ steps.version.outputs.version }}
             type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
             type=raw,value=main,enable=${{ steps.check-refs.outputs.add_branch_tag == 'true' }}
