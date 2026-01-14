@@ -86,8 +86,12 @@ async function getVCardFiles(): Promise<string[]> {
 function readVCardFile(filePath: string): string | null {
 	try {
 		return fs.readFileSync(filePath, 'utf-8')
-	} catch (error) {
-		console.error(`Error reading vCard file ${filePath}:`, error)
+	} catch (error: any) {
+		// ENOENT (file not found) is expected in some cases (files deleted between listing and reading)
+		// Only log other errors to reduce noise
+		if (error.code !== 'ENOENT') {
+			console.error(`Error reading vCard file ${filePath}:`, error)
+		}
 		return null
 	}
 }
@@ -360,13 +364,26 @@ export async function syncDbToRadicale(): Promise<void> {
 		}
 
 		// Delete vCard files that no longer exist in DB
-		for (const filePath of existingFiles) {
-			const vcardContent = readVCardFile(filePath)
-			if (vcardContent) {
-				const vcardId = extractVCardId(filePath, vcardContent)
-				if (vcardId && !existingVCardIds.has(vcardId)) {
-					console.log(`Deleting orphaned vCard file: ${vcardId}`)
-					await deleteVCardFile(vcardId)
+		// Only check master directory for orphaned files (user directories are just mirrors)
+		const masterPath = getSharedAddressBookPath()
+		if (fs.existsSync(masterPath)) {
+			const masterFiles = fs.readdirSync(masterPath)
+			const masterVCardFiles = masterFiles.filter(file => file.endsWith('.vcf') || file.endsWith('.ics'))
+			
+			for (const fileName of masterVCardFiles) {
+				const filePath = path.join(masterPath, fileName)
+				// Check if file still exists (might have been deleted between listing and now)
+				if (!fs.existsSync(filePath)) {
+					continue
+				}
+				
+				const vcardContent = readVCardFile(filePath)
+				if (vcardContent) {
+					const vcardId = extractVCardId(filePath, vcardContent)
+					if (vcardId && !existingVCardIds.has(vcardId)) {
+						console.log(`Deleting orphaned vCard file: ${vcardId}`)
+						await deleteVCardFile(vcardId)
+					}
 				}
 			}
 		}
