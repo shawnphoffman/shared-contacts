@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { NotebookTabs, Users, Upload, Link as LinkIcon } from 'lucide-react'
+import { NotebookTabs, Users, Upload, Link as LinkIcon, Info } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 
@@ -59,6 +59,17 @@ export default function Header() {
           >
             <LinkIcon className="w-4 h-4" />
             <span>Connection</span>
+          </Link>
+          <Link
+            to="/about"
+            className="flex items-center justify-center p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+            activeProps={{
+              className:
+                'flex items-center justify-center p-2 rounded-lg bg-accent text-accent-foreground',
+            }}
+            aria-label="About"
+          >
+            <Info className="w-5 h-5" />
           </Link>
           <ThemeToggle />
         </nav>

@@ -13,10 +13,12 @@ import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as CarddavConnectionRouteImport } from './routes/carddav-connection'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
+import { Route as ApiAboutRouteImport } from './routes/api/about'
 import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
 import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
 import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
@@ -43,6 +45,11 @@ const CarddavConnectionRoute = CarddavConnectionRouteImport.update({
   path: '/carddav-connection',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IdRoute = IdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -61,6 +68,11 @@ const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
 const ApiContactsRoute = ApiContactsRouteImport.update({
   id: '/api/contacts',
   path: '/api/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAboutRoute = ApiAboutRouteImport.update({
+  id: '/api/about',
+  path: '/api/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRadicaleUsersUsernameRoute =
@@ -93,10 +105,12 @@ const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/about': typeof AboutRoute
   '/carddav-connection': typeof CarddavConnectionRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/api/about': typeof ApiAboutRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
@@ -108,10 +122,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/about': typeof AboutRoute
   '/carddav-connection': typeof CarddavConnectionRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/api/about': typeof ApiAboutRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
@@ -124,10 +140,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/about': typeof AboutRoute
   '/carddav-connection': typeof CarddavConnectionRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/api/about': typeof ApiAboutRoute
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
@@ -141,10 +159,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$id'
+    | '/about'
     | '/carddav-connection'
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/api/about'
     | '/api/contacts'
     | '/api/radicale-users'
     | '/api/contacts/$id'
@@ -156,10 +176,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$id'
+    | '/about'
     | '/carddav-connection'
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/api/about'
     | '/api/contacts'
     | '/api/radicale-users'
     | '/api/contacts/$id'
@@ -171,10 +193,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$id'
+    | '/about'
     | '/carddav-connection'
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/api/about'
     | '/api/contacts'
     | '/api/radicale-users'
     | '/api/contacts/$id'
@@ -187,10 +211,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IdRoute: typeof IdRoute
+  AboutRoute: typeof AboutRoute
   CarddavConnectionRoute: typeof CarddavConnectionRoute
   ImportRoute: typeof ImportRoute
   NewRoute: typeof NewRoute
   RadicaleUsersRoute: typeof RadicaleUsersRoute
+  ApiAboutRoute: typeof ApiAboutRoute
   ApiContactsRoute: typeof ApiContactsRouteWithChildren
   ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
 }
@@ -225,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CarddavConnectionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$id': {
       id: '/$id'
       path: '/$id'
@@ -251,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/api/contacts'
       fullPath: '/api/contacts'
       preLoaderRoute: typeof ApiContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/about': {
+      id: '/api/about'
+      path: '/api/about'
+      fullPath: '/api/about'
+      preLoaderRoute: typeof ApiAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/radicale-users/$username': {
@@ -323,10 +363,12 @@ const ApiRadicaleUsersRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdRoute: IdRoute,
+  AboutRoute: AboutRoute,
   CarddavConnectionRoute: CarddavConnectionRoute,
   ImportRoute: ImportRoute,
   NewRoute: NewRoute,
   RadicaleUsersRoute: RadicaleUsersRoute,
+  ApiAboutRoute: ApiAboutRoute,
   ApiContactsRoute: ApiContactsRouteWithChildren,
   ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
 }
