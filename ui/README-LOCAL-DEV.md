@@ -42,11 +42,25 @@ pnpm install
 
 ### 3. Ensure Database Schema Exists
 
-The database must have the contacts table. If using Docker Compose, the migrations run automatically. For local PostgreSQL, run the migrations manually:
+The database must have the contacts table. If using Docker Compose, the migrations run automatically. For local PostgreSQL, run all migrations manually in order:
 
 ```bash
 # From project root
 psql -U postgres -d sharedcontacts -f migrations/01_init_schema.sql
+psql -U postgres -d sharedcontacts -f migrations/02_auth_schema.sql
+psql -U postgres -d sharedcontacts -f migrations/03_sample_contacts.sql
+psql -U postgres -d sharedcontacts -f migrations/04_add_nickname.sql
+psql -U postgres -d sharedcontacts -f migrations/05_add_csv_fields.sql
+psql -U postgres -d sharedcontacts -f migrations/06_add_multiple_fields.sql
+psql -U postgres -d sharedcontacts -f migrations/07_add_sync_tracking.sql
+```
+
+Or run them all at once:
+```bash
+# From project root
+for migration in migrations/*.sql; do
+  psql -U postgres -d sharedcontacts -f "$migration"
+done
 ```
 
 ### 4. Start Development Server

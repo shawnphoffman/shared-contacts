@@ -184,34 +184,95 @@ export async function createContact(
   contact: Partial<Contact>,
 ): Promise<Contact> {
   const pool = getPool()
+
+  // Check which columns exist in the database
+  const columnCheck = await pool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = 'contacts' AND table_schema = 'public'
+  `)
+  const existingColumns = new Set(
+    columnCheck.rows.map((r: any) => r.column_name),
+  )
+
+  const fields: (keyof Contact)[] = [
+    'vcard_id',
+    'full_name',
+    'first_name',
+    'last_name',
+    'middle_name',
+    'nickname',
+    'maiden_name',
+    'email',
+    'phone',
+    'phones',
+    'emails',
+    'organization',
+    'job_title',
+    'address',
+    'addresses',
+    'birthday',
+    'homepage',
+    'urls',
+    'notes',
+    'vcard_data',
+    'sync_source',
+    'last_synced_to_radicale_at',
+  ]
+
+  const columns: string[] = []
+  const values: any[] = []
+  const placeholders: string[] = []
+  let paramIndex = 1
+
+  for (const field of fields) {
+    // Skip fields that don't exist in the database
+    if (!existingColumns.has(field)) {
+      continue
+    }
+
+    // Only include field if it's provided in contact data or has a default
+    const value = contact[field]
+    if (value !== undefined) {
+      columns.push(field)
+      // Convert arrays to JSON strings for JSONB columns
+      if (
+        (field === 'phones' ||
+          field === 'emails' ||
+          field === 'addresses' ||
+          field === 'urls') &&
+        Array.isArray(value)
+      ) {
+        values.push(JSON.stringify(value))
+      } else {
+        values.push(value || null)
+      }
+      placeholders.push(`$${paramIndex}`)
+      paramIndex++
+    } else if (
+      // Include fields with null defaults if they exist
+      field === 'phones' ||
+      field === 'emails' ||
+      field === 'addresses' ||
+      field === 'urls'
+    ) {
+      // Default empty arrays for JSONB fields
+      columns.push(field)
+      values.push('[]')
+      placeholders.push(`$${paramIndex}`)
+      paramIndex++
+    }
+  }
+
+  if (columns.length === 0) {
+    throw new Error('No valid columns to insert')
+  }
+
   const result = await pool.query(
-    `INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, nickname, maiden_name, email, phone, phones, emails, organization, job_title, address, addresses, birthday, homepage, urls, notes, vcard_data, sync_source, last_synced_to_radicale_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+    `INSERT INTO contacts (${columns.join(', ')})
+     VALUES (${placeholders.join(', ')})
      RETURNING *`,
-    [
-      contact.vcard_id || null,
-      contact.full_name || null,
-      contact.first_name || null,
-      contact.last_name || null,
-      contact.middle_name || null,
-      contact.nickname || null,
-      contact.maiden_name || null,
-      contact.email || null,
-      contact.phone || null,
-      contact.phones ? JSON.stringify(contact.phones) : '[]',
-      contact.emails ? JSON.stringify(contact.emails) : '[]',
-      contact.organization || null,
-      contact.job_title || null,
-      contact.address || null,
-      contact.addresses ? JSON.stringify(contact.addresses) : '[]',
-      contact.birthday || null,
-      contact.homepage || null,
-      contact.urls ? JSON.stringify(contact.urls) : '[]',
-      contact.notes || null,
-      contact.vcard_data || null,
-      contact.sync_source || null,
-      contact.last_synced_to_radicale_at || null,
-    ],
+    values,
   )
   // Parse JSONB fields
   const row = result.rows[0]
