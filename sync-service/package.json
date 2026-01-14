@@ -1,6 +1,6 @@
 {
   "name": "shared-contacts-sync-service",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Sync service for CardDAV contacts between Radicale and PostgreSQL",
   "main": "dist/index.js",
   "scripts": {
