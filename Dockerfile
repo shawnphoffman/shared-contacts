@@ -68,6 +68,9 @@ COPY --from=ui-builder /app/ui/package.json /app/ui/package.json
 COPY --from=ui-builder /app/ui/pnpm-lock.yaml /app/ui/pnpm-lock.yaml
 COPY --from=ui-builder /app/ui/node_modules /app/ui/node_modules
 
+# Copy root package.json for about metadata
+COPY package.json /app/package.json
+
 # Copy migrations (needed by both sync-service and ui)
 COPY migrations /app/migrations
 
