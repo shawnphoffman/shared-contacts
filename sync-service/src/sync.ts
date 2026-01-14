@@ -52,16 +52,14 @@ function ensureDirectoryExists(dirPath: string): void {
  */
 async function getVCardFiles(): Promise<string[]> {
 	const files = new Set<string>()
-	
+
 	// Check master directory
 	const masterPath = getSharedAddressBookPath()
 	if (fs.existsSync(masterPath)) {
 		const masterFiles = fs.readdirSync(masterPath)
-		masterFiles
-			.filter(file => file.endsWith('.vcf') || file.endsWith('.ics'))
-			.forEach(file => files.add(path.join(masterPath, file)))
+		masterFiles.filter(file => file.endsWith('.vcf') || file.endsWith('.ics')).forEach(file => files.add(path.join(masterPath, file)))
 	}
-	
+
 	// Check all user directories (where clients might create contacts)
 	try {
 		const users = await getUsers()
@@ -78,7 +76,7 @@ async function getVCardFiles(): Promise<string[]> {
 		console.error('Error reading user directories:', error)
 		// Continue with master directory files only
 	}
-	
+
 	return Array.from(files)
 }
 
@@ -566,7 +564,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					radicale_file_mtime: fileMtime,
 					sync_source: 'radicale',
 				})
-				
+
 				// If contact was found in a user directory (not master), copy it to master directory
 				// so it's available to all users immediately
 				const masterPath = getSharedAddressBookPath()
@@ -576,7 +574,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					fs.writeFileSync(masterFilePath, vcardContent, 'utf-8')
 					console.log(`Copied new contact ${vcardId} from user directory to master directory`)
 				}
-				
+
 				created++
 			}
 		}
@@ -616,7 +614,7 @@ export async function startWatchingRadicale(): Promise<void> {
 
 	// Watch master directory
 	const watchers: ReturnType<typeof watch>[] = []
-	
+
 	const masterWatcher = watch(masterPath, {
 		ignored: /(^|[\/\\])\../, // ignore dotfiles
 		persistent: true,
@@ -630,7 +628,7 @@ export async function startWatchingRadicale(): Promise<void> {
 		for (const user of users) {
 			const userPath = getSharedAddressBookPathForUser(user.username)
 			ensureDirectoryExists(userPath)
-			
+
 			const userWatcher = watch(userPath, {
 				ignored: /(^|[\/\\])\../, // ignore dotfiles
 				persistent: true,
