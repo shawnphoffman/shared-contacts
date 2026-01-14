@@ -1,5 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { NotebookTabs, Users, Upload, Link as LinkIcon, Info } from 'lucide-react'
+import {
+  NotebookTabs,
+  Users,
+  Upload,
+  Link as LinkIcon,
+  Info,
+} from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 
@@ -23,7 +29,7 @@ export default function Header() {
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Link to="/" className="text-foreground flex items-center gap-2">
             <NotebookTabs className="w-5 h-5" />
-            <span className="hidden sm:inline">Shared Contacts</span>
+            <span className="hidden sm:inline">xShared Contacts</span>
           </Link>
         </h1>
         <nav className="flex items-center gap-4">

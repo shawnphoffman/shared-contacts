@@ -90,6 +90,13 @@ function ContactDetailPage() {
     queryFn: () => fetchContact(id),
   })
 
+  useEffect(() => {
+    if (!contact) {
+      return
+    }
+    setShowPhoto(true)
+  }, [contact?.id, contact?.photo_hash, contact?.photo_updated_at])
+
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Contact>) => updateContact(id, data),
     onSuccess: (updatedContact) => {
@@ -146,10 +153,6 @@ function ContactDetailPage() {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('')
-
-  useEffect(() => {
-    setShowPhoto(true)
-  }, [contact.id, contact.photo_hash, contact.photo_updated_at])
 
   return (
     <div className="container mx-auto p-6 max-w-2xl">
