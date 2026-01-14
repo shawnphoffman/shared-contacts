@@ -314,9 +314,9 @@ function ContactsIndexPage() {
 
   return (
     <div className="container mx-auto p-6 gap-4 flex flex-col">
-      <div className="flex justify-between items-center">
+      <div className="flex sm:justify-between sm:items-center flex-col sm:flex-row gap-2">
         <h1 className="text-3xl font-bold">Contacts</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-row items-center gap-2 w-full sm:w-auto justify-between">
           <DeduplicateButton />
           <Button onClick={() => navigate({ to: '/new' })}>
             <Plus className="w-4 h-4 mr-2" />
