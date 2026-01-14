@@ -1,7 +1,18 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import * as crypto from 'crypto'
 import { watch } from 'chokidar'
-import { Contact, getAllContacts, createContact, updateContact, getContactByVcardId, deleteContact } from './db'
+import {
+	Contact,
+	getAllContacts,
+	createContact,
+	updateContact,
+	getContactByVcardId,
+	deleteContact,
+	updateSyncMetadata,
+	getContactsNeedingRadicaleSync,
+	getContactSyncMetadata,
+} from './db'
 import { parseVCard, generateVCard, VCardData } from './vcard'
 import { getUsers } from './htpasswd'
 
@@ -140,19 +151,104 @@ function extractVCardId(filePath: string, vcardContent: string): string | null {
 }
 
 /**
+ * Calculate SHA256 hash of vCard content for change detection
+ */
+function calculateVCardHash(vcardContent: string): string {
+	return crypto.createHash('sha256').update(vcardContent, 'utf8').digest('hex')
+}
+
+/**
+ * Get file modification time from filesystem
+ */
+function getFileModificationTime(filePath: string): Date | null {
+	try {
+		const stats = fs.statSync(filePath)
+		return stats.mtime
+	} catch (error) {
+		return null
+	}
+}
+
+export interface ConflictInfo {
+	hasConflict: boolean
+	dbNewer: boolean
+	radicaleNewer: boolean
+	dbTimestamp: Date
+	radicaleTimestamp: Date
+}
+
+/**
+ * Detect if there's a conflict between DB and Radicale versions
+ * A conflict exists when both sides have been modified since the last sync
+ * @param syncDirection 'db-to-radicale' or 'radicale-to-db' - determines which timestamps to use
+ */
+function detectConflict(
+	contact: Contact,
+	radicaleFileMtime: Date | null,
+	radicaleHash: string,
+	syncDirection: 'db-to-radicale' | 'radicale-to-db'
+): ConflictInfo {
+	const dbTimestamp = contact.updated_at
+	const radicaleTimestamp = radicaleFileMtime || new Date(0)
+
+	let dbModifiedAfterSync: boolean
+	let radicaleModifiedAfterSync: boolean
+
+	if (syncDirection === 'db-to-radicale') {
+		// When syncing DB → Radicale:
+		// - Check if DB was modified after we last sent TO Radicale
+		// - Check if Radicale was modified after we last received FROM Radicale
+		dbModifiedAfterSync = contact.last_synced_to_radicale_at ? dbTimestamp > contact.last_synced_to_radicale_at : true // If never synced, assume modified
+		radicaleModifiedAfterSync = contact.last_synced_from_radicale_at ? radicaleTimestamp > contact.last_synced_from_radicale_at : true // If never synced, assume modified
+	} else {
+		// When syncing Radicale → DB:
+		// - Check if DB was modified after we last received FROM Radicale
+		// - Check if Radicale was modified after we last received FROM Radicale
+		dbModifiedAfterSync = contact.last_synced_from_radicale_at ? dbTimestamp > contact.last_synced_from_radicale_at : true // If never synced, assume modified
+		radicaleModifiedAfterSync = contact.last_synced_from_radicale_at ? radicaleTimestamp > contact.last_synced_from_radicale_at : true // If never synced, assume modified
+	}
+
+	// Conflict exists if both sides modified AND hashes differ
+	const hasConflict = dbModifiedAfterSync && radicaleModifiedAfterSync && contact.vcard_hash !== null && contact.vcard_hash !== radicaleHash
+
+	return {
+		hasConflict,
+		dbNewer: dbTimestamp > radicaleTimestamp,
+		radicaleNewer: radicaleTimestamp > dbTimestamp,
+		dbTimestamp,
+		radicaleTimestamp,
+	}
+}
+
+/**
+ * Resolve conflict using last-write-wins strategy
+ * Returns 'db' if DB version should be used, 'radicale' if Radicale version should be used
+ */
+function resolveConflict(conflict: ConflictInfo): 'db' | 'radicale' {
+	// Last-write-wins: use the most recent timestamp
+	return conflict.dbNewer ? 'db' : 'radicale'
+}
+
+/**
  * Sync from PostgreSQL to Radicale
+ * Only syncs contacts that have changed since last sync to prevent loops
  */
 export async function syncDbToRadicale(): Promise<void> {
 	console.log('Syncing PostgreSQL → Radicale...')
 
 	try {
-		const contacts = await getAllContacts()
+		// Only get contacts that need syncing
+		const contacts = await getContactsNeedingRadicaleSync()
 		const addressBookPath = getSharedAddressBookPath()
 		ensureDirectoryExists(addressBookPath)
 
 		// Get existing vCard files
 		const existingFiles = getVCardFiles()
 		const existingVCardIds = new Set<string>()
+
+		let synced = 0
+		let skipped = 0
+		let conflicts = 0
 
 		// Update/create vCard files
 		for (const contact of contacts) {
@@ -162,6 +258,7 @@ export async function syncDbToRadicale(): Promise<void> {
 			}
 
 			existingVCardIds.add(contact.vcard_id)
+
 			// Generate vCard with arrays if available
 			const vcardData =
 				contact.vcard_data ||
@@ -175,7 +272,70 @@ export async function syncDbToRadicale(): Promise<void> {
 						urls: contact.urls || null,
 					}
 				)
+
+			const newHash = calculateVCardHash(vcardData)
+
+			// Check if Radicale file exists
+			const masterFilePath = path.join(addressBookPath, `${contact.vcard_id}.vcf`)
+			const radicaleFileExists = fs.existsSync(masterFilePath)
+
+			if (radicaleFileExists) {
+				// Read existing file to check for conflicts
+				const existingVCardContent = readVCardFile(masterFilePath)
+				if (existingVCardContent) {
+					const existingHash = calculateVCardHash(existingVCardContent)
+					const fileMtime = getFileModificationTime(masterFilePath)
+
+					// If hash matches, no change needed
+					if (newHash === existingHash && contact.vcard_hash === newHash) {
+						// Content hasn't changed, just update sync timestamp
+						await updateSyncMetadata(contact.id, {
+							last_synced_to_radicale_at: new Date(),
+							vcard_hash: newHash,
+							radicale_file_mtime: fileMtime,
+						})
+						skipped++
+						continue
+					}
+
+					// Check for conflict: both sides changed
+					// Need to check if DB was modified after last sync TO Radicale, and if Radicale was modified after last sync FROM Radicale
+					if (fileMtime && (contact.last_synced_to_radicale_at || contact.last_synced_from_radicale_at)) {
+						const conflict = detectConflict(contact, fileMtime, existingHash, 'db-to-radicale')
+						if (conflict.hasConflict) {
+							conflicts++
+							const resolution = resolveConflict(conflict)
+							if (resolution === 'radicale') {
+								// Radicale version wins, skip writing
+								console.log(`Conflict detected for ${contact.vcard_id}: Radicale version is newer, skipping sync`)
+								// Update metadata to reflect we saw the Radicale version
+								await updateSyncMetadata(contact.id, {
+									last_synced_to_radicale_at: new Date(),
+									radicale_file_mtime: fileMtime,
+								})
+								skipped++
+								continue
+							}
+							// DB version wins, continue to write
+							console.log(`Conflict detected for ${contact.vcard_id}: DB version is newer, overwriting Radicale`)
+						}
+					}
+				}
+			}
+
+			// Write vCard file
 			await writeVCardFile(contact.vcard_id, vcardData)
+
+			// Update sync metadata
+			const fileMtime = getFileModificationTime(masterFilePath)
+			await updateSyncMetadata(contact.id, {
+				last_synced_to_radicale_at: new Date(),
+				vcard_hash: newHash,
+				radicale_file_mtime: fileMtime,
+				sync_source: contact.sync_source === 'api' ? 'api' : 'db',
+			})
+
+			synced++
 		}
 
 		// Delete vCard files that no longer exist in DB
@@ -190,8 +350,8 @@ export async function syncDbToRadicale(): Promise<void> {
 			}
 		}
 
-		if (contacts.length > 0) {
-			console.log(`Synced ${contacts.length} contacts to Radicale`)
+		if (synced > 0 || skipped > 0 || conflicts > 0) {
+			console.log(`Synced ${synced} contacts to Radicale (${skipped} skipped, ${conflicts} conflicts resolved)`)
 		}
 	} catch (error) {
 		console.error('Error syncing DB to Radicale:', error)
@@ -201,6 +361,7 @@ export async function syncDbToRadicale(): Promise<void> {
 
 /**
  * Sync from Radicale to PostgreSQL
+ * Only syncs files that have changed since last sync to prevent loops
  * @param silent If true, suppresses the initial "Syncing..." log message
  */
 export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
@@ -212,6 +373,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 		const vcardFiles = getVCardFiles()
 		const dbContacts = await getAllContacts()
 		const dbContactsByVcardId = new Map<string, Contact>()
+		const radicaleVCardIds = new Set<string>()
 
 		for (const contact of dbContacts) {
 			if (contact.vcard_id) {
@@ -221,6 +383,8 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 
 		let created = 0
 		let updated = 0
+		let skipped = 0
+		let conflicts = 0
 
 		for (const filePath of vcardFiles) {
 			const vcardContent = readVCardFile(filePath)
@@ -234,7 +398,52 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				continue
 			}
 
+			radicaleVCardIds.add(vcardId)
 			const existingContact = dbContactsByVcardId.get(vcardId)
+
+			// Get file modification time and calculate hash
+			const fileMtime = getFileModificationTime(filePath)
+			const vcardHash = calculateVCardHash(vcardContent)
+
+			// Check if we need to sync this file
+			if (existingContact) {
+				// Check if file hasn't changed since last sync
+				if (fileMtime && existingContact.last_synced_from_radicale_at) {
+					if (fileMtime <= existingContact.last_synced_from_radicale_at && existingContact.vcard_hash === vcardHash) {
+						// File hasn't changed, skip
+						skipped++
+						continue
+					}
+				}
+
+				// Check for conflict: both sides changed
+				if (
+					fileMtime &&
+					existingContact.last_synced_from_radicale_at &&
+					existingContact.updated_at > existingContact.last_synced_from_radicale_at &&
+					existingContact.vcard_hash !== null &&
+					existingContact.vcard_hash !== vcardHash
+				) {
+					const conflict = detectConflict(existingContact, fileMtime, vcardHash, 'radicale-to-db')
+					if (conflict.hasConflict) {
+						conflicts++
+						const resolution = resolveConflict(conflict)
+						if (resolution === 'db') {
+							// DB version wins, skip updating from Radicale
+							console.log(`Conflict detected for ${vcardId}: DB version is newer, skipping Radicale update`)
+							// Update metadata to reflect we saw the Radicale file
+							await updateSyncMetadata(existingContact.id, {
+								last_synced_from_radicale_at: new Date(),
+								radicale_file_mtime: fileMtime,
+							})
+							skipped++
+							continue
+						}
+						// Radicale version wins, continue to update
+						console.log(`Conflict detected for ${vcardId}: Radicale version is newer, updating DB`)
+					}
+				}
+			}
 
 			// Parse name
 			const nameParts = vcardData.n ? vcardData.n.split(';') : []
@@ -317,20 +526,42 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 
 			if (existingContact) {
 				await updateContact(existingContact.id, contactData)
+				// Update sync metadata
+				await updateSyncMetadata(existingContact.id, {
+					last_synced_from_radicale_at: new Date(),
+					vcard_hash: vcardHash,
+					radicale_file_mtime: fileMtime,
+					sync_source: 'radicale',
+				})
 				updated++
 			} else {
-				await createContact(contactData)
+				const newContact = await createContact(contactData)
+				// Update sync metadata for new contact
+				await updateSyncMetadata(newContact.id, {
+					last_synced_from_radicale_at: new Date(),
+					vcard_hash: vcardHash,
+					radicale_file_mtime: fileMtime,
+					sync_source: 'radicale',
+				})
 				created++
 			}
 		}
 
-		// Note: We don't delete DB contacts when vCard files are missing in Radicale
-		// because the DB is the source of truth. The syncDbToRadicale function will
-		// recreate vCard files for contacts that exist in the DB.
-		// Only delete from DB if explicitly deleted from Radicale (handled by file watcher)
+		// Handle deletions: delete DB contacts that were created from Radicale but no longer exist there
+		for (const contact of dbContacts) {
+			if (contact.vcard_id && !radicaleVCardIds.has(contact.vcard_id)) {
+				// Contact exists in DB but not in Radicale
+				if (contact.sync_source === 'radicale') {
+					// Was created from Radicale, so delete from DB
+					console.log(`Deleting contact ${contact.vcard_id} from DB (deleted from Radicale)`)
+					await deleteContact(contact.id)
+				}
+				// If sync_source is 'api' or 'db', keep in DB - it will be recreated in Radicale on next sync
+			}
+		}
 
-		if (created > 0 || updated > 0) {
-			console.log(`Synced Radicale to DB: ${created} created, ${updated} updated`)
+		if (created > 0 || updated > 0 || skipped > 0 || conflicts > 0) {
+			console.log(`Synced Radicale to DB: ${created} created, ${updated} updated (${skipped} skipped, ${conflicts} conflicts resolved)`)
 		}
 	} catch (error) {
 		console.error('Error syncing Radicale to DB:', error)
@@ -395,7 +626,26 @@ export function startWatchingRadicale(): void {
 		scheduleSync(filePath)
 	})
 
-	watcher.on('unlink', filePath => {
+	watcher.on('unlink', async filePath => {
+		// Handle file deletion
+		// Extract vCard ID from filename (file is already deleted, so we can't read it)
+		const fileName = path.basename(filePath, path.extname(filePath))
+		const vcardId = fileName
+
+		if (vcardId) {
+			const contact = await getContactByVcardId(vcardId)
+			if (contact) {
+				// Only delete from DB if contact was created from Radicale
+				if (contact.sync_source === 'radicale') {
+					console.log(`Deleting contact ${vcardId} from DB (deleted from Radicale)`)
+					await deleteContact(contact.id)
+				} else {
+					// Contact was created via API/DB, keep it - will be recreated in Radicale on next sync
+					console.log(`Contact ${vcardId} deleted from Radicale but keeping in DB (will be recreated)`)
+				}
+			}
+		}
+		// Also trigger full sync to handle any other changes
 		scheduleSync(filePath)
 	})
 

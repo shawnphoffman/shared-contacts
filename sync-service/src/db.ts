@@ -47,6 +47,12 @@ export interface Contact {
 	vcard_data: string | null
 	created_at: Date
 	updated_at: Date
+	// Sync tracking fields
+	last_synced_from_radicale_at: Date | null
+	last_synced_to_radicale_at: Date | null
+	vcard_hash: string | null
+	sync_source: string | null // 'db', 'radicale', 'api', or NULL
+	radicale_file_mtime: Date | null
 }
 
 export async function getAllContacts(): Promise<Contact[]> {
@@ -173,6 +179,110 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 export async function deleteContact(id: string): Promise<void> {
 	const pool = getPool()
 	await pool.query('DELETE FROM contacts WHERE id = $1', [id])
+}
+
+export interface SyncMetadata {
+	last_synced_from_radicale_at?: Date | null
+	last_synced_to_radicale_at?: Date | null
+	vcard_hash?: string | null
+	sync_source?: string | null
+	radicale_file_mtime?: Date | null
+}
+
+/**
+ * Update sync metadata for a contact
+ */
+export async function updateSyncMetadata(id: string, metadata: SyncMetadata): Promise<void> {
+	const pool = getPool()
+	const updates: string[] = []
+	const values: any[] = []
+	let paramIndex = 1
+
+	if (metadata.last_synced_from_radicale_at !== undefined) {
+		updates.push(`last_synced_from_radicale_at = $${paramIndex}`)
+		values.push(metadata.last_synced_from_radicale_at)
+		paramIndex++
+	}
+
+	if (metadata.last_synced_to_radicale_at !== undefined) {
+		updates.push(`last_synced_to_radicale_at = $${paramIndex}`)
+		values.push(metadata.last_synced_to_radicale_at)
+		paramIndex++
+	}
+
+	if (metadata.vcard_hash !== undefined) {
+		updates.push(`vcard_hash = $${paramIndex}`)
+		values.push(metadata.vcard_hash)
+		paramIndex++
+	}
+
+	if (metadata.sync_source !== undefined) {
+		updates.push(`sync_source = $${paramIndex}`)
+		values.push(metadata.sync_source)
+		paramIndex++
+	}
+
+	if (metadata.radicale_file_mtime !== undefined) {
+		updates.push(`radicale_file_mtime = $${paramIndex}`)
+		values.push(metadata.radicale_file_mtime)
+		paramIndex++
+	}
+
+	if (updates.length === 0) {
+		return // No updates to make
+	}
+
+	values.push(id)
+	await pool.query(`UPDATE contacts SET ${updates.join(', ')} WHERE id = $${paramIndex}`, values)
+}
+
+/**
+ * Get contacts that need to be synced to Radicale
+ * A contact needs syncing if:
+ * - updated_at > last_synced_to_radicale_at (DB was modified after last sync)
+ * - OR sync_source != 'radicale' (change didn't come from Radicale)
+ * - OR last_synced_to_radicale_at IS NULL (never synced)
+ */
+export async function getContactsNeedingRadicaleSync(): Promise<Contact[]> {
+	const pool = getPool()
+	const result = await pool.query(
+		`SELECT * FROM contacts
+		WHERE vcard_id IS NOT NULL
+		AND (
+			updated_at > COALESCE(last_synced_to_radicale_at, '1970-01-01'::timestamp)
+			OR sync_source != 'radicale'
+			OR last_synced_to_radicale_at IS NULL
+		)
+		ORDER BY updated_at DESC`
+	)
+	// Parse JSONB fields
+	return result.rows.map(row => {
+		if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+		if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+		if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
+		if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+		return row
+	})
+}
+
+/**
+ * Get sync metadata for a contact
+ */
+export async function getContactSyncMetadata(id: string): Promise<{
+	last_synced_from_radicale_at: Date | null
+	last_synced_to_radicale_at: Date | null
+	vcard_hash: string | null
+	sync_source: string | null
+	radicale_file_mtime: Date | null
+	updated_at: Date
+} | null> {
+	const pool = getPool()
+	const result = await pool.query(
+		`SELECT last_synced_from_radicale_at, last_synced_to_radicale_at, vcard_hash, sync_source, radicale_file_mtime, updated_at
+		FROM contacts WHERE id = $1`,
+		[id]
+	)
+	return result.rows[0] || null
 }
 
 export async function closePool(): Promise<void> {

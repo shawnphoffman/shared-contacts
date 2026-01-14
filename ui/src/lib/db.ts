@@ -63,6 +63,12 @@ export interface Contact {
   vcard_data: string | null
   created_at: Date
   updated_at: Date
+  // Sync tracking fields
+  last_synced_from_radicale_at: Date | null
+  last_synced_to_radicale_at: Date | null
+  vcard_hash: string | null
+  sync_source: string | null // 'db', 'radicale', 'api', or NULL
+  radicale_file_mtime: Date | null
 }
 
 export async function getAllContacts(): Promise<Contact[]> {
@@ -193,8 +199,8 @@ export async function createContact(
 ): Promise<Contact> {
   const pool = getPool()
   const result = await pool.query(
-    `INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, nickname, maiden_name, email, phone, phones, emails, organization, job_title, address, addresses, birthday, homepage, urls, notes, vcard_data)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+    `INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, nickname, maiden_name, email, phone, phones, emails, organization, job_title, address, addresses, birthday, homepage, urls, notes, vcard_data, sync_source, last_synced_to_radicale_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
      RETURNING *`,
     [
       contact.vcard_id || null,
@@ -217,6 +223,8 @@ export async function createContact(
       contact.urls ? JSON.stringify(contact.urls) : '[]',
       contact.notes || null,
       contact.vcard_data || null,
+      contact.sync_source || null,
+      contact.last_synced_to_radicale_at || null,
     ],
   )
   // Parse JSONB fields
@@ -258,6 +266,8 @@ export async function updateContact(
     'urls',
     'notes',
     'vcard_data',
+    'sync_source',
+    'last_synced_to_radicale_at',
   ]
 
   for (const field of fields) {

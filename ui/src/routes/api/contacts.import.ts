@@ -200,7 +200,11 @@ export const Route = createFileRoute('/api/contacts/import')({
                   vcard_data: vcardData,
                 }
 
-                await updateContact(existing.id, mergedData)
+                await updateContact(existing.id, {
+                  ...mergedData,
+                  sync_source: 'api',
+                  last_synced_to_radicale_at: null, // Force sync to Radicale
+                })
                 results.updated++
               } else {
                 // Create new contact
@@ -208,6 +212,8 @@ export const Route = createFileRoute('/api/contacts/import')({
                   ...contactData,
                   vcard_id: vcardId,
                   vcard_data: vcardData,
+                  sync_source: 'api',
+                  last_synced_to_radicale_at: null, // Force sync to Radicale
                 })
                 results.success++
               }

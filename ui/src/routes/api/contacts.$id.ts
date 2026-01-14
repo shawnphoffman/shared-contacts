@@ -67,6 +67,8 @@ export const Route = createFileRoute('/api/contacts/$id')({
             ...contactData,
             vcard_id: vcardId,
             vcard_data: vcardData,
+            sync_source: 'api',
+            last_synced_to_radicale_at: null, // Force sync to Radicale
           })
 
           return json(contact)
