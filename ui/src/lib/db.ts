@@ -56,6 +56,13 @@ export interface Contact {
   job_title: string | null
   address: string | null // Deprecated: use addresses array
   addresses: ContactField[] | null // Multiple addresses
+  // Structured address fields for easier querying and display
+  address_street: string | null
+  address_extended: string | null // Address line 2
+  address_city: string | null
+  address_state: string | null
+  address_postal: string | null
+  address_country: string | null
   birthday: Date | null
   homepage: string | null // Deprecated: use urls array
   urls: ContactField[] | null // Multiple URLs
@@ -211,6 +218,12 @@ export async function createContact(
     'job_title',
     'address',
     'addresses',
+    'address_street',
+    'address_extended',
+    'address_city',
+    'address_state',
+    'address_postal',
+    'address_country',
     'birthday',
     'homepage',
     'urls',
@@ -328,6 +341,12 @@ export async function updateContact(
     'job_title',
     'address',
     'addresses',
+    'address_street',
+    'address_extended',
+    'address_city',
+    'address_state',
+    'address_postal',
+    'address_country',
     'birthday',
     'homepage',
     'urls',

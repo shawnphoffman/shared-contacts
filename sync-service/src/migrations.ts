@@ -36,6 +36,7 @@ function getMigrationFiles(): string[] {
 		'05_add_csv_fields.sql',
 		'06_add_multiple_fields.sql',
 		'07_add_sync_tracking.sql',
+		'08_add_structured_address_fields.sql',
 	]
 }
 

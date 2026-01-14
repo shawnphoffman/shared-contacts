@@ -12,6 +12,8 @@ interface PhoneInputProps {
   onChange?: (value: string) => void
   onBlur?: () => void
   id?: string
+  name?: string
+  autoComplete?: string
   className?: string
   placeholder?: string
   disabled?: boolean
@@ -27,6 +29,8 @@ export function PhoneInput({
   onChange,
   onBlur,
   id,
+  name,
+  autoComplete = 'tel',
   className,
   placeholder = 'Enter phone number',
   disabled = false,
@@ -193,7 +197,9 @@ export function PhoneInput({
     <Input
       ref={inputRef}
       id={id}
+      name={name}
       type="tel"
+      autoComplete={autoComplete}
       value={displayValue}
       onChange={handleChange}
       onBlur={handleBlur}

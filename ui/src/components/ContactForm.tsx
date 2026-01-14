@@ -5,7 +5,7 @@ import { Textarea } from './ui/textarea'
 import { Field, FieldContent, FieldLabel } from './ui/field'
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
-import { AddressInput } from './AddressInput'
+import { AddressInput, parseAddress } from './AddressInput'
 import { validateEmail, validateUrl, normalizeUrl } from '../lib/validation'
 import type { Contact, ContactField } from '../lib/db'
 
@@ -187,6 +187,21 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
       const nonEmptyAddresses = addresses.filter((a) => a.value.trim())
       const nonEmptyUrls = normalizedUrls.filter((u) => u.value.trim())
 
+      // Extract structured address fields from the first address (primary address)
+      let structuredAddressFields: Partial<Contact> = {}
+      if (nonEmptyAddresses.length > 0) {
+        const primaryAddress = nonEmptyAddresses[0]!.value
+        const parsed = parseAddress(primaryAddress)
+        structuredAddressFields = {
+          address_street: parsed.street || null,
+          address_extended: parsed.extended || null,
+          address_city: parsed.city || null,
+          address_state: parsed.state || null,
+          address_postal: parsed.postal || null,
+          address_country: parsed.country || null,
+        }
+      }
+
       await onSubmit({
         ...formData,
         full_name: fullName || null,
@@ -200,6 +215,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         email: nonEmptyEmails.length > 0 ? nonEmptyEmails[0].value : null,
         address: nonEmptyAddresses.length > 0 ? nonEmptyAddresses[0].value : null,
         homepage: nonEmptyUrls.length > 0 ? nonEmptyUrls[0].value : null,
+        // Structured address fields for easier querying and display
+        ...structuredAddressFields,
       })
     } finally {
       setIsSubmitting(false)
@@ -214,6 +231,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           <FieldContent>
             <Input
               id="first_name"
+              name="first_name"
+              autoComplete="given-name"
               value={formData.first_name}
               onChange={(e) =>
                 setFormData({ ...formData, first_name: e.target.value })
@@ -226,6 +245,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           <FieldContent>
             <Input
               id="last_name"
+              name="last_name"
+              autoComplete="family-name"
               value={formData.last_name}
               onChange={(e) =>
                 setFormData({ ...formData, last_name: e.target.value })
@@ -254,6 +275,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           <FieldContent>
             <Input
               id="nickname"
+              name="nickname"
+              autoComplete="nickname"
               value={formData.nickname}
               onChange={(e) =>
                 setFormData({ ...formData, nickname: e.target.value })
@@ -272,8 +295,10 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           placeholder="Enter phone number"
           inputType="tel"
           defaultType="CELL"
-          renderInput={(field, _index, onChange) => (
+          renderInput={(field, index, onChange) => (
             <PhoneInput
+              name={`phone-${index}`}
+              autoComplete="tel"
               value={field.value}
               onChange={onChange}
               placeholder="Enter phone number"
@@ -295,6 +320,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
             <div className="flex-1">
               <Input
                 type="email"
+                name={`email-${index}`}
+                autoComplete="email"
                 value={field.value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Enter email address"
@@ -318,6 +345,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           <FieldContent>
             <Input
               id="organization"
+              name="organization"
+              autoComplete="organization"
               value={formData.organization}
               onChange={(e) =>
                 setFormData({ ...formData, organization: e.target.value })
@@ -330,6 +359,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           <FieldContent>
             <Input
               id="job_title"
+              name="job_title"
+              autoComplete="organization-title"
               value={formData.job_title}
               onChange={(e) =>
                 setFormData({ ...formData, job_title: e.target.value })
@@ -347,12 +378,11 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           placeholder="Enter address"
           inputType="text"
           defaultType="HOME"
-          renderInput={(field, index, onChange) => (
+          renderInput={(field, _index, onChange) => (
             <div className="flex-1">
               <AddressInput
                 value={field.value}
                 onChange={onChange}
-                placeholder="Enter address"
               />
             </div>
           )}
@@ -371,6 +401,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
             <div className="flex-1">
               <Input
                 type="url"
+                name={`url-${index}`}
+                autoComplete="url"
                 value={field.value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="example.com or https://example.com"
@@ -393,7 +425,9 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         <FieldContent>
           <Input
             id="birthday"
+            name="birthday"
             type="date"
+            autoComplete="bday"
             value={formData.birthday}
             onChange={(e) =>
               setFormData({ ...formData, birthday: e.target.value })
