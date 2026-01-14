@@ -4,11 +4,7 @@ import { useState } from 'react'
 import { Plus, Edit, Trash2, Users } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
-import {
-  Field,
-  FieldContent,
-  FieldLabel,
-} from '../components/ui/field'
+import { Field, FieldContent, FieldLabel } from '../components/ui/field'
 import {
   Dialog,
   DialogContent,
@@ -217,7 +213,7 @@ function RadicaleUsersPage() {
           <h1 className="text-3xl font-bold">Radicale Users</h1>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4 mr-1" />
           New User
         </Button>
       </div>
@@ -231,7 +227,7 @@ function RadicaleUsersPage() {
         <div className="text-center py-12 border rounded-lg">
           <p className="text-gray-500 mb-4">No Radicale users yet.</p>
           <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-1" />
             Create First User
           </Button>
         </div>
@@ -255,7 +251,7 @@ function RadicaleUsersPage() {
                         size="sm"
                         onClick={() => openEditDialog(user.username)}
                       >
-                        <Edit className="w-4 h-4 mr-2" />
+                        <Edit className="w-4 h-4 mr-1" />
                         Change Password
                       </Button>
                       <Button
@@ -263,7 +259,7 @@ function RadicaleUsersPage() {
                         size="sm"
                         onClick={() => openDeleteDialog(user.username)}
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        <Trash2 className="w-4 h-4 mr-1" />
                         Delete
                       </Button>
                     </div>

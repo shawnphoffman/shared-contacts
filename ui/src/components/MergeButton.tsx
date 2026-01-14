@@ -69,12 +69,12 @@ export function MergeButton({ contactIds, onMergeSuccess }: MergeButtonProps) {
       >
         {mergeMutation.isPending ? (
           <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
             Merging...
           </>
         ) : (
           <>
-            <Merge className="w-4 h-4 mr-2" />
+            <Merge className="w-4 h-4 mr-1" />
             Merge {contactIds.length} Contacts
           </>
         )}

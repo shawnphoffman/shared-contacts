@@ -319,7 +319,7 @@ function ContactsIndexPage() {
         <div className="flex sm:flex-row flex-col sm:items-center gap-2 w-full sm:w-auto justify-between">
           <DeduplicateButton />
           <Button onClick={() => navigate({ to: '/new' })}>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-1" />
             New Contact
           </Button>
         </div>
@@ -354,7 +354,7 @@ function ContactsIndexPage() {
             No contacts yet. Create your first contact!
           </p>
           <Button onClick={() => navigate({ to: '/new' })}>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-1" />
             Create Contact
           </Button>
         </div>

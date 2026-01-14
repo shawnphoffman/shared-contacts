@@ -8,6 +8,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import Header from '../components/Header'
 import { ThemeProvider } from '../components/ThemeProvider'
+import { Toaster } from '../components/ui/sonner'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -59,6 +60,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         >
           <Header />
           {children}
+          <Toaster />
           <TanStackDevtools
             config={{
               position: 'bottom-right',

@@ -184,6 +184,67 @@ To update the application:
 
 Data volumes are preserved during updates.
 
+## Database Migrations
+
+The application uses an automatic database migration system that runs on startup:
+
+### How Migrations Work
+
+1. **Automatic Execution**: Migrations are automatically detected and applied when the sync-service starts
+2. **Migration Files**: SQL migration files are stored in `/migrations/` directory, numbered sequentially (e.g., `01_init_schema.sql`, `02_auth_schema.sql`)
+3. **Tracking**: Applied migrations are tracked in the `schema_migrations` table in the database
+4. **Startup Process**:
+   - Sync-service starts and checks for pending migrations
+   - Migrations run in order before the service is marked as "ready"
+   - The `/ready` endpoint returns 503 until all migrations complete
+   - Container health check waits for migrations to complete
+
+### Migration Safety
+
+- **Idempotent**: Migrations use `IF NOT EXISTS` and similar patterns to be safe to run multiple times
+- **Ordered**: Migrations run in numerical order (01, 02, 03, etc.)
+- **Tracked**: Each migration is recorded in `schema_migrations` table after successful completion
+- **Failure Handling**: If a migration fails, the sync-service exits and the container is marked unhealthy
+
+### Adding New Migrations
+
+When releasing a new version with database changes:
+
+1. Create a new migration file in `/migrations/` directory with the next sequential number
+2. Use SQL `IF NOT EXISTS` patterns to make migrations idempotent
+3. Test migrations on a development database first
+4. Deploy the new version - migrations will run automatically on startup
+
+### Verifying Migrations
+
+Check migration status:
+
+```bash
+# View applied migrations
+docker exec shared-contacts-postgres psql -U sharedcontacts sharedcontacts -c "SELECT name, applied_at FROM schema_migrations ORDER BY name;"
+
+# Check sync-service logs for migration status
+docker compose -f docker-compose.prod.yml logs shared-contacts-app | grep -i migration
+```
+
+### Migration Troubleshooting
+
+**Migrations not running:**
+- Check sync-service logs: `docker compose -f docker-compose.prod.yml logs shared-contacts-app`
+- Verify migrations directory exists in container: `docker exec shared-contacts-app ls -la /app/migrations`
+- Ensure database connection is working
+
+**Migration failures:**
+- Check error messages in sync-service logs
+- Verify database permissions
+- Review migration SQL for syntax errors
+- If a migration partially applied, you may need to manually fix the database state
+
+**Container won't become healthy:**
+- The health check waits for both UI (port 3030) and sync-service `/ready` endpoint (port 3001)
+- If migrations are still running, the container will remain unhealthy until they complete
+- Check sync-service logs to see migration progress
+
 ## Troubleshooting
 
 ### Services won't start
@@ -191,6 +252,7 @@ Data volumes are preserved during updates.
 1. Check logs: `docker compose -f docker-compose.prod.yml logs`
 2. Verify `.env` file has all required variables
 3. Check port conflicts: `netstat -tuln | grep -E '3030|5232|3001|5432'`
+4. Check if migrations are blocking startup: `docker compose -f docker-compose.prod.yml logs shared-contacts-app | grep -i migration`
 
 ### UI shows connection errors
 

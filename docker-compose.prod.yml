@@ -64,7 +64,10 @@ services:
       shared-contacts-postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3030/', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      # Check both UI availability and sync-service readiness (migrations complete)
+      # The sync-service /ready endpoint returns 503 until migrations complete
+      # This ensures migrations finish before the container is marked healthy
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3030/',(r1)=>{if(r1.statusCode!==200)process.exit(1);require('http').get('http://localhost:3001/ready',(r2)=>{process.exit(r2.statusCode===200?0:1)}).on('error',()=>process.exit(1))}).on('error',()=>process.exit(1))\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

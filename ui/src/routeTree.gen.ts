@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as DuplicatesRouteImport } from './routes/duplicates'
 import { Route as CarddavConnectionRouteImport } from './routes/carddav-connection'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IdRouteImport } from './routes/$id'
@@ -22,6 +23,7 @@ import { Route as ApiAboutRouteImport } from './routes/api/about'
 import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
 import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
 import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
+import { Route as ApiContactsDuplicatesRouteImport } from './routes/api/contacts.duplicates'
 import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
 
@@ -38,6 +40,11 @@ const NewRoute = NewRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DuplicatesRoute = DuplicatesRouteImport.update({
+  id: '/duplicates',
+  path: '/duplicates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CarddavConnectionRoute = CarddavConnectionRouteImport.update({
@@ -91,6 +98,11 @@ const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
   path: '/import',
   getParentRoute: () => ApiContactsRoute,
 } as any)
+const ApiContactsDuplicatesRoute = ApiContactsDuplicatesRouteImport.update({
+  id: '/duplicates',
+  path: '/duplicates',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
 const ApiContactsDeduplicateRoute = ApiContactsDeduplicateRouteImport.update({
   id: '/deduplicate',
   path: '/deduplicate',
@@ -107,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/$id': typeof IdRoute
   '/about': typeof AboutRoute
   '/carddav-connection': typeof CarddavConnectionRoute
+  '/duplicates': typeof DuplicatesRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
@@ -115,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
+  '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
@@ -124,6 +138,7 @@ export interface FileRoutesByTo {
   '/$id': typeof IdRoute
   '/about': typeof AboutRoute
   '/carddav-connection': typeof CarddavConnectionRoute
+  '/duplicates': typeof DuplicatesRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
@@ -132,6 +147,7 @@ export interface FileRoutesByTo {
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
+  '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
@@ -142,6 +158,7 @@ export interface FileRoutesById {
   '/$id': typeof IdRoute
   '/about': typeof AboutRoute
   '/carddav-connection': typeof CarddavConnectionRoute
+  '/duplicates': typeof DuplicatesRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
@@ -150,6 +167,7 @@ export interface FileRoutesById {
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
   '/api/contacts/$id': typeof ApiContactsIdRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
+  '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
@@ -161,6 +179,7 @@ export interface FileRouteTypes {
     | '/$id'
     | '/about'
     | '/carddav-connection'
+    | '/duplicates'
     | '/import'
     | '/new'
     | '/radicale-users'
@@ -169,6 +188,7 @@ export interface FileRouteTypes {
     | '/api/radicale-users'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
+    | '/api/contacts/duplicates'
     | '/api/contacts/import'
     | '/api/contacts/merge'
     | '/api/radicale-users/$username'
@@ -178,6 +198,7 @@ export interface FileRouteTypes {
     | '/$id'
     | '/about'
     | '/carddav-connection'
+    | '/duplicates'
     | '/import'
     | '/new'
     | '/radicale-users'
@@ -186,6 +207,7 @@ export interface FileRouteTypes {
     | '/api/radicale-users'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
+    | '/api/contacts/duplicates'
     | '/api/contacts/import'
     | '/api/contacts/merge'
     | '/api/radicale-users/$username'
@@ -195,6 +217,7 @@ export interface FileRouteTypes {
     | '/$id'
     | '/about'
     | '/carddav-connection'
+    | '/duplicates'
     | '/import'
     | '/new'
     | '/radicale-users'
@@ -203,6 +226,7 @@ export interface FileRouteTypes {
     | '/api/radicale-users'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
+    | '/api/contacts/duplicates'
     | '/api/contacts/import'
     | '/api/contacts/merge'
     | '/api/radicale-users/$username'
@@ -213,6 +237,7 @@ export interface RootRouteChildren {
   IdRoute: typeof IdRoute
   AboutRoute: typeof AboutRoute
   CarddavConnectionRoute: typeof CarddavConnectionRoute
+  DuplicatesRoute: typeof DuplicatesRoute
   ImportRoute: typeof ImportRoute
   NewRoute: typeof NewRoute
   RadicaleUsersRoute: typeof RadicaleUsersRoute
@@ -242,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/duplicates': {
+      id: '/duplicates'
+      path: '/duplicates'
+      fullPath: '/duplicates'
+      preLoaderRoute: typeof DuplicatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/carddav-connection': {
@@ -314,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactsImportRouteImport
       parentRoute: typeof ApiContactsRoute
     }
+    '/api/contacts/duplicates': {
+      id: '/api/contacts/duplicates'
+      path: '/duplicates'
+      fullPath: '/api/contacts/duplicates'
+      preLoaderRoute: typeof ApiContactsDuplicatesRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
     '/api/contacts/deduplicate': {
       id: '/api/contacts/deduplicate'
       path: '/deduplicate'
@@ -334,6 +373,7 @@ declare module '@tanstack/react-router' {
 interface ApiContactsRouteChildren {
   ApiContactsIdRoute: typeof ApiContactsIdRoute
   ApiContactsDeduplicateRoute: typeof ApiContactsDeduplicateRoute
+  ApiContactsDuplicatesRoute: typeof ApiContactsDuplicatesRoute
   ApiContactsImportRoute: typeof ApiContactsImportRoute
   ApiContactsMergeRoute: typeof ApiContactsMergeRoute
 }
@@ -341,6 +381,7 @@ interface ApiContactsRouteChildren {
 const ApiContactsRouteChildren: ApiContactsRouteChildren = {
   ApiContactsIdRoute: ApiContactsIdRoute,
   ApiContactsDeduplicateRoute: ApiContactsDeduplicateRoute,
+  ApiContactsDuplicatesRoute: ApiContactsDuplicatesRoute,
   ApiContactsImportRoute: ApiContactsImportRoute,
   ApiContactsMergeRoute: ApiContactsMergeRoute,
 }
@@ -365,6 +406,7 @@ const rootRouteChildren: RootRouteChildren = {
   IdRoute: IdRoute,
   AboutRoute: AboutRoute,
   CarddavConnectionRoute: CarddavConnectionRoute,
+  DuplicatesRoute: DuplicatesRoute,
   ImportRoute: ImportRoute,
   NewRoute: NewRoute,
   RadicaleUsersRoute: RadicaleUsersRoute,

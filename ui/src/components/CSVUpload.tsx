@@ -82,7 +82,7 @@ export function CSVUpload() {
               onClick={() => document.getElementById('csv-upload')?.click()}
               disabled={importMutation.isPending}
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="w-4 h-4 mr-1" />
               {file ? file.name : 'Select CSV File'}
             </Button>
           </label>
@@ -92,12 +92,12 @@ export function CSVUpload() {
           <Button onClick={handleUpload} disabled={importMutation.isPending}>
             {importMutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                 Importing...
               </>
             ) : (
               <>
-                <Upload className="w-4 h-4 mr-2" />
+                <Upload className="w-4 h-4 mr-1" />
                 Import
               </>
             )}

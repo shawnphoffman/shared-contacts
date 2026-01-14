@@ -11,7 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog'
-import { Mail, Phone, Building, MapPin, Edit, Trash2, Globe } from 'lucide-react'
+import {
+  Mail,
+  Phone,
+  Building,
+  MapPin,
+  Edit,
+  Trash2,
+  Globe,
+} from 'lucide-react'
 import { useState } from 'react'
 import type { Contact } from '../lib/db'
 import { formatPhoneNumber } from '../lib/utils'
@@ -136,14 +144,14 @@ function ContactDetailPage() {
         </h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsEditing(true)}>
-            <Edit className="w-4 h-4 mr-2" />
+            <Edit className="w-4 h-4 mr-1" />
             Edit
           </Button>
           <Button
             variant="destructive"
             onClick={() => setShowDeleteDialog(true)}
           >
-            <Trash2 className="w-4 h-4 mr-2" />
+            <Trash2 className="w-4 h-4 mr-1" />
             Delete
           </Button>
         </div>
@@ -158,7 +166,9 @@ function ContactDetailPage() {
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-gray-400" />
               <div className="flex-1">
-                <p className="text-sm text-gray-500 mb-1">Email{contact.emails && contact.emails.length > 1 ? 's' : ''}</p>
+                <p className="text-sm text-gray-500 mb-1">
+                  Email{contact.emails && contact.emails.length > 1 ? 's' : ''}
+                </p>
                 <div className="space-y-1">
                   {contact.emails && contact.emails.length > 0
                     ? contact.emails.map((email, index) => (
@@ -192,7 +202,9 @@ function ContactDetailPage() {
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-gray-400" />
               <div className="flex-1">
-                <p className="text-sm text-gray-500 mb-1">Phone{contact.phones && contact.phones.length > 1 ? 's' : ''}</p>
+                <p className="text-sm text-gray-500 mb-1">
+                  Phone{contact.phones && contact.phones.length > 1 ? 's' : ''}
+                </p>
                 <div className="space-y-1">
                   {contact.phones && contact.phones.length > 0
                     ? contact.phones.map((phone, index) => (
@@ -237,11 +249,17 @@ function ContactDetailPage() {
               <p>{contact.job_title}</p>
             </div>
           )}
-          {((contact.addresses && contact.addresses.length > 0) || contact.address) && (
+          {((contact.addresses && contact.addresses.length > 0) ||
+            contact.address) && (
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-gray-400" />
               <div className="flex-1">
-                <p className="text-sm text-gray-500 mb-1">Address{contact.addresses && contact.addresses.length > 1 ? 'es' : ''}</p>
+                <p className="text-sm text-gray-500 mb-1">
+                  Address
+                  {contact.addresses && contact.addresses.length > 1
+                    ? 'es'
+                    : ''}
+                </p>
                 <div className="space-y-1">
                   {contact.addresses && contact.addresses.length > 0
                     ? contact.addresses.map((address, index) => (
@@ -256,9 +274,7 @@ function ContactDetailPage() {
                           </p>
                         </div>
                       ))
-                    : contact.address && (
-                        <p>{contact.address}</p>
-                      )}
+                    : contact.address && <p>{contact.address}</p>}
                 </div>
               </div>
             </div>
@@ -267,7 +283,9 @@ function ContactDetailPage() {
             <div className="flex items-center gap-3">
               <Globe className="w-5 h-5 text-gray-400" />
               <div className="flex-1">
-                <p className="text-sm text-gray-500 mb-1">URL{contact.urls && contact.urls.length > 1 ? 's' : ''}</p>
+                <p className="text-sm text-gray-500 mb-1">
+                  URL{contact.urls && contact.urls.length > 1 ? 's' : ''}
+                </p>
                 <div className="space-y-1">
                   {contact.urls && contact.urls.length > 0
                     ? contact.urls.map((url, index) => (
