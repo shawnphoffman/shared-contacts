@@ -27,6 +27,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
   }
 
   // Initialize arrays from contact, or migrate from single values
+  // Always return at least one empty field so users don't need to click "+"
   const initializeArray = (
     array: ContactField[] | null | undefined,
     singleValue: string | null | undefined,
@@ -38,7 +39,8 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     if (singleValue) {
       return [{ value: singleValue, type: defaultType }]
     }
-    return []
+    // Always return at least one empty field
+    return [{ value: '', type: defaultType }]
   }
 
   const [formData, setFormData] = useState({
@@ -179,19 +181,25 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         value: url.value.trim() ? normalizeUrl(url.value) : url.value,
       }))
 
+      // Filter out empty fields before submission
+      const nonEmptyPhones = phones.filter((p) => p.value.trim())
+      const nonEmptyEmails = emails.filter((e) => e.value.trim())
+      const nonEmptyAddresses = addresses.filter((a) => a.value.trim())
+      const nonEmptyUrls = normalizedUrls.filter((u) => u.value.trim())
+
       await onSubmit({
         ...formData,
         full_name: fullName || null,
         birthday: formData.birthday ? new Date(formData.birthday) : null,
-        phones: phones.length > 0 ? phones : null,
-        emails: emails.length > 0 ? emails : null,
-        addresses: addresses.length > 0 ? addresses : null,
-        urls: normalizedUrls.length > 0 ? normalizedUrls : null,
+        phones: nonEmptyPhones.length > 0 ? nonEmptyPhones : null,
+        emails: nonEmptyEmails.length > 0 ? nonEmptyEmails : null,
+        addresses: nonEmptyAddresses.length > 0 ? nonEmptyAddresses : null,
+        urls: nonEmptyUrls.length > 0 ? nonEmptyUrls : null,
         // Backward compatibility: set single values from arrays
-        phone: phones.length > 0 ? phones[0].value : null,
-        email: emails.length > 0 ? emails[0].value : null,
-        address: addresses.length > 0 ? addresses[0].value : null,
-        homepage: normalizedUrls.length > 0 ? normalizedUrls[0].value : null,
+        phone: nonEmptyPhones.length > 0 ? nonEmptyPhones[0].value : null,
+        email: nonEmptyEmails.length > 0 ? nonEmptyEmails[0].value : null,
+        address: nonEmptyAddresses.length > 0 ? nonEmptyAddresses[0].value : null,
+        homepage: nonEmptyUrls.length > 0 ? nonEmptyUrls[0].value : null,
       })
     } finally {
       setIsSubmitting(false)
