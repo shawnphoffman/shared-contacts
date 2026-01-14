@@ -30,21 +30,21 @@ DECLARE
     postal_val TEXT;
     country_val TEXT;
 BEGIN
-    FOR contact_record IN 
-        SELECT id, address, addresses 
-        FROM contacts 
+    FOR contact_record IN
+        SELECT id, address, addresses
+        FROM contacts
         WHERE (address_street IS NULL OR address_city IS NULL)
     LOOP
         -- Try to get address from addresses array first, then fallback to address field
         address_value := NULL;
-        
+
         -- Check addresses array (JSONB)
         IF contact_record.addresses IS NOT NULL AND jsonb_array_length(contact_record.addresses) > 0 THEN
             address_value := contact_record.addresses->0->>'value';
         ELSIF contact_record.address IS NOT NULL AND contact_record.address != '' THEN
             address_value := contact_record.address;
         END IF;
-        
+
         -- If we have an address value, parse it
         IF address_value IS NOT NULL AND address_value != '' THEN
             -- Check if it's in vCard format (starts with ;;)
@@ -91,10 +91,10 @@ BEGIN
                     END;
                 END IF;
             END IF;
-            
+
             -- Update the contact with parsed values
             UPDATE contacts
-            SET 
+            SET
                 address_street = COALESCE(address_street, street_val),
                 address_extended = COALESCE(address_extended, extended_val),
                 address_city = COALESCE(address_city, city_val),

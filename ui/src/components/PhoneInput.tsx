@@ -37,9 +37,9 @@ export function PhoneInput({
   defaultCountry = 'US',
 }: PhoneInputProps) {
   const [displayValue, setDisplayValue] = useState(value)
-  const [detectedCountry, setDetectedCountry] = useState<CountryCode | undefined>(
-    defaultCountry,
-  )
+  const [detectedCountry, setDetectedCountry] = useState<
+    CountryCode | undefined
+  >(defaultCountry)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Update display value when external value changes
@@ -47,7 +47,7 @@ export function PhoneInput({
     // Only update if the value prop actually changed (not from internal state)
     const currentFormatted = displayValue.replace(/\D/g, '')
     const newFormatted = value.replace(/\D/g, '')
-    
+
     // If the digits are the same, don't update (to avoid loops)
     if (currentFormatted === newFormatted && value === displayValue) {
       return
@@ -62,7 +62,10 @@ export function PhoneInput({
     // Try to format the value for display
     try {
       // First try to parse as a complete number
-      const phoneNumber = parsePhoneNumber(value, detectedCountry || defaultCountry)
+      const phoneNumber = parsePhoneNumber(
+        value,
+        detectedCountry || defaultCountry,
+      )
       if (phoneNumber.isValid()) {
         // Format for display
         setDisplayValue(phoneNumber.formatNational())
@@ -132,7 +135,10 @@ export function PhoneInput({
     // Try to get E.164 format if we can parse it, otherwise use formatted value
     if (onChange) {
       try {
-        const phoneNumber = parsePhoneNumber(inputValue, detectedCountry || defaultCountry)
+        const phoneNumber = parsePhoneNumber(
+          inputValue,
+          detectedCountry || defaultCountry,
+        )
         // Use E.164 format if valid, otherwise use formatted value
         onChange(phoneNumber.isValid() ? phoneNumber.number : formattedValue)
       } catch {
@@ -157,7 +163,10 @@ export function PhoneInput({
     if (displayValue) {
       try {
         // Try parsing with detected/default country first
-        const phoneNumber = parsePhoneNumber(displayValue, detectedCountry || defaultCountry)
+        const phoneNumber = parsePhoneNumber(
+          displayValue,
+          detectedCountry || defaultCountry,
+        )
         if (phoneNumber.isValid()) {
           // Format as national format for display, but store E.164
           const formatted = phoneNumber.formatNational()

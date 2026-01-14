@@ -220,11 +220,7 @@ interface AddressInputProps {
  * Address input component with structured fields only
  * Formats addresses correctly for vCard (;;street;extended;city;state;postal;country)
  */
-export function AddressInput({
-  value,
-  onChange,
-  error,
-}: AddressInputProps) {
+export function AddressInput({ value, onChange, error }: AddressInputProps) {
   const [structured, setStructured] = useState<StructuredAddress>(() =>
     parseAddress(value || ''),
   )
