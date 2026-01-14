@@ -1,6 +1,5 @@
--- Better Auth tables
--- These tables are created automatically by Better Auth, but we include them here for reference
--- Better Auth will handle table creation on first run
+-- Authentication tables
+-- These tables are included for optional app-level auth usage
 
 -- User table
 CREATE TABLE IF NOT EXISTS "user" (

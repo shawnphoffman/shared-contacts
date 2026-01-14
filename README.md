@@ -8,7 +8,7 @@ A self-hostable CardDAV server for managing shared contacts with a modern web-ba
 - **Web Management UI**: Modern React-based interface built with TanStack Start
 - **PostgreSQL Backend**: Queryable database for fast contact searches
 - **Bidirectional Sync**: Automatic synchronization between CardDAV and database
-- **Authentication**: Secure access control with Better Auth
+- **User Management**: Manage Radicale users for CardDAV access
 - **Docker Compose**: Easy deployment with Docker
 
 ## Architecture
@@ -31,7 +31,6 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture documentation
    ```
    Edit `.env` and set your desired values. See `.env.example` for detailed documentation of all available variables. Most importantly:
    - `POSTGRES_PASSWORD`: Strong password for PostgreSQL
-   - `BETTER_AUTH_SECRET`: Generate a secure random string (e.g., `openssl rand -base64 32`)
 
 3. **Start the services**:
    ```bash
@@ -39,8 +38,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architecture documentation
    ```
 
 4. **Access the management UI**:
-   - Open `http://localhost:3010` in your browser
-   - Register a new account or login
+  - Open `http://localhost:3010` in your browser
 
 5. **Configure CardDAV clients**:
    - Server URL: `http://localhost:5232` (or your domain)
@@ -79,16 +77,13 @@ The sync service automatically syncs between PostgreSQL and Radicale:
 
 The UI is accessible at `http://localhost:3010` (configurable via `UI_PORT`).
 
-Authentication is handled by Better Auth:
-- Users can register and login
-- Sessions are managed automatically
-- All routes require authentication
+The UI is intended for trusted networks or a reverse proxy with access control.
 
 ## Usage
 
 ### Adding Contacts via Web UI
 
-1. Login to the management UI
+1. Open the management UI
 2. Click "Add Contact"
 3. Fill in contact information
 4. Click "Create Contact"
@@ -175,12 +170,6 @@ Migrations are automatically applied when the PostgreSQL container starts. They 
 2. Verify database connection: `docker-compose exec postgres psql -U sharedcontacts -d sharedcontacts`
 3. Check Radicale storage: `docker-compose exec radicale ls -la /data/collections`
 
-### Authentication issues
-
-1. Verify `BETTER_AUTH_SECRET` is set in `.env`
-2. Check UI logs: `docker-compose logs ui`
-3. Clear browser cookies and try again
-
 ### CardDAV client connection issues
 
 1. Verify Radicale is running: `docker-compose ps radicale`
@@ -212,10 +201,9 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 
 1. **Change default passwords** in production
 2. **Use HTTPS** in production (configure reverse proxy)
-3. **Set strong `BETTER_AUTH_SECRET`**
-4. **Restrict network access** to services
-5. **Regular backups** of database and Radicale data
-6. **Keep Docker images updated**
+3. **Restrict network access** to services
+4. **Regular backups** of database and Radicale data
+5. **Keep Docker images updated**
 
 ## License
 

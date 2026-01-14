@@ -67,10 +67,6 @@ cd shared-contacts
    # Generate a strong password for PostgreSQL
    POSTGRES_PASSWORD=your-strong-password-here
 
-   # Generate a secure random string for Better Auth
-   # On macOS/Linux, run: openssl rand -base64 32
-   # On Windows PowerShell, run: [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
-   BETTER_AUTH_SECRET=your-generated-secret-here
    ```
 
    **Optional:** Adjust ports if they conflict with other services:
@@ -144,25 +140,18 @@ cd shared-contacts
    ```
    (Or use the port you configured in `.env` if different)
 
-2. **You should see the Shared Contacts homepage** with options to:
-   - View Contacts
-   - Login
+2. **You should see the Shared Contacts UI** with access to contacts and settings.
 
-## Step 6: Create Your First User Account
+## Step 6: Create a Radicale User (Optional)
 
-1. **Navigate to the login page:**
-   - Click "Login" on the homepage, or
-   - Go directly to: `http://localhost:3010/auth/login`
+1. **Open the Radicale users page:**
+   - Go to: `http://localhost:3010/radicale-users`
 
-2. **Register a new account:**
-   - Click "Register" or go to: `http://localhost:3010/auth/register`
-   - Fill in:
-     - Name: Your name
-     - Email: Your email address
-     - Password: A secure password (minimum 8 characters)
-   - Click "Register"
+2. **Create a new Radicale user:**
+   - Enter a username and password
+   - Click "Create User"
 
-3. **You should be automatically logged in** and redirected to the contacts page
+3. **Use this username/password** in your CardDAV client configuration
 
 ## Step 7: Configure CardDAV Access (Optional)
 
@@ -384,7 +373,6 @@ You should now have:
 - ✅ PostgreSQL database initialized
 - ✅ CardDAV server running on port 5232
 - ✅ Sync service keeping data in sync
-- ✅ A user account created
 
 **Congratulations! Your Shared Contacts server is up and running!** 🎉
 

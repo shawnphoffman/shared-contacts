@@ -77,8 +77,6 @@ The UI will be available at `http://localhost:3030`
 |----------|----------|-------------|---------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string | - |
 | `NODE_ENV` | No | Node environment (`development` or `production`) | `development` |
-| `BETTER_AUTH_SECRET` | No | Auth secret (for future auth implementation) | - |
-| `BETTER_AUTH_URL` | No | Auth base URL (for future auth implementation) | - |
 
 ## Troubleshooting
 

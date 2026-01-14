@@ -50,15 +50,10 @@ export const Route = createFileRoute('/api/about')({
             FILE_WATCHER_DEBOUNCE_MS:
               process.env.FILE_WATCHER_DEBOUNCE_MS || null,
             API_PORT: process.env.API_PORT || null,
-            BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || null,
             DATABASE_SSL: process.env.DATABASE_SSL || null,
             DATABASE_SSL_REJECT_UNAUTHORIZED:
               process.env.DATABASE_SSL_REJECT_UNAUTHORIZED || null,
             RADICALE_USERS_FILE: process.env.RADICALE_USERS_FILE || null,
-            // Mask sensitive secrets
-            BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET
-              ? '***masked***'
-              : null,
           }
 
           return json({

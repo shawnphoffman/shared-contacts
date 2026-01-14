@@ -79,8 +79,6 @@ services:
   #   container_name: shared-contacts-ui-dev
   #   environment:
   #     DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
-  #     BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
-  #     BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3030}
   #     NODE_ENV: production
   #     SYNC_SERVICE_URL: http://sync-service:3001
   #   ports:
@@ -104,8 +102,6 @@ services:
     working_dir: /app
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3030}
       NODE_ENV: development
       SYNC_SERVICE_URL: http://sync-service:3001
       PORT: 3030

@@ -21,14 +21,10 @@ This guide covers deploying Shared Contacts to production using Docker Compose, 
 2. Edit `.env` and set **required** values:
    ```env
    POSTGRES_PASSWORD=your-strong-password-here
-   BETTER_AUTH_SECRET=$(openssl rand -base64 32)
-   BETTER_AUTH_URL=https://your-domain.com
    ```
 
    **Important:**
    - Use a strong password for `POSTGRES_PASSWORD`
-   - Generate `BETTER_AUTH_SECRET` using: `openssl rand -base64 32`
-   - Set `BETTER_AUTH_URL` to your public domain (with https://)
 
 3. Optionally adjust ports if needed:
    ```env
@@ -49,18 +45,15 @@ This guide covers deploying Shared Contacts to production using Docker Compose, 
    - Add each variable from your `.env` file:
      - `POSTGRES_USER` (optional, defaults to `sharedcontacts`)
      - `POSTGRES_PASSWORD` (required)
-     - `POSTGRES_DB` (optional, defaults to `sharedcontacts`)
-     - `BETTER_AUTH_SECRET` (required)
-     - `BETTER_AUTH_URL` (required - your public URL)
-     - `UI_PORT`, `RADICALE_PORT`, `API_PORT` (optional)
+    - `POSTGRES_DB` (optional, defaults to `sharedcontacts`)
+    - `UI_PORT`, `RADICALE_PORT`, `API_PORT` (optional)
 7. Click **Deploy the stack**
 
 ### Step 3: Verify Deployment
 
 1. Check stack status in Portainer - all services should be "Running"
 2. Access the UI at `http://your-server-ip:3030` (or your configured port)
-3. Register your first user account
-4. Test CardDAV connection at `http://your-server-ip:5232`
+3. Test CardDAV connection at `http://your-server-ip:5232`
 
 ## Alternative: Command Line Deployment
 
@@ -124,19 +117,9 @@ server {
 }
 ```
 
-**Important:** Update `BETTER_AUTH_URL` in `.env` to match your domain:
-```env
-BETTER_AUTH_URL=https://contacts.example.com
-```
-
-Then restart the stack:
-```bash
-docker compose -f docker-compose.prod.yml restart ui
-```
-
 ## Adding Users
 
-Users are managed separately from web UI users. To add a user:
+Users are managed for CardDAV access. To add a user:
 
 ```bash
 docker exec -it shared-contacts-radicale htpasswd -B /data/users username
@@ -256,9 +239,8 @@ docker compose -f docker-compose.prod.yml logs shared-contacts-app | grep -i mig
 
 ### UI shows connection errors
 
-1. Verify `BETTER_AUTH_URL` matches your public URL
-2. Check database connection: `docker compose -f docker-compose.prod.yml logs postgres`
-3. Ensure sync-service is healthy: `docker compose -f docker-compose.prod.yml ps sync-service`
+1. Check database connection: `docker compose -f docker-compose.prod.yml logs postgres`
+2. Ensure sync-service is healthy: `docker compose -f docker-compose.prod.yml ps sync-service`
 
 ### CardDAV clients can't connect
 
@@ -278,8 +260,6 @@ docker compose -f docker-compose.prod.yml up -d
 ## Security Checklist
 
 - [ ] Changed `POSTGRES_PASSWORD` from default
-- [ ] Generated secure `BETTER_AUTH_SECRET`
-- [ ] Set `BETTER_AUTH_URL` to your public domain
 - [ ] Configured reverse proxy with HTTPS
 - [ ] Restricted database port (5432) to internal network only
 - [ ] Set up regular backups
