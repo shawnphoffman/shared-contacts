@@ -9,7 +9,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import {
   Table,
@@ -39,11 +39,30 @@ export const Route = createFileRoute('/')({
 })
 
 async function fetchContacts(): Promise<Array<Contact>> {
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/150ee9a9-9ed8-47a6-a49f-3d7830732250',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'routes/index.tsx:43',message:'fetch contacts start',data:{url:'/api/contacts'},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   const response = await fetch('/api/contacts')
+  const contentType = response.headers.get('content-type')
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/150ee9a9-9ed8-47a6-a49f-3d7830732250',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'routes/index.tsx:47',message:'fetch contacts response',data:{ok:response.ok,status:response.status,contentType},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   if (!response.ok) {
     throw new Error('Failed to fetch contacts')
   }
-  return response.json()
+  let data: unknown
+  try {
+    data = await response.json()
+  } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/150ee9a9-9ed8-47a6-a49f-3d7830732250',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'routes/index.tsx:55',message:'fetch contacts json error',data:{errorMessage:error instanceof Error ? error.message : String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    throw error
+  }
+  // #region agent log
+  fetch('http://127.0.0.1:7245/ingest/150ee9a9-9ed8-47a6-a49f-3d7830732250',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'routes/index.tsx:62',message:'fetch contacts parsed',data:{isArray:Array.isArray(data),length:Array.isArray(data) ? data.length : null},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+  return data as Array<Contact>
 }
 
 function ContactsIndexPage() {
@@ -51,10 +70,15 @@ function ContactsIndexPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 
-  const { data: contacts = [], isLoading } = useQuery({
+  const { data: contacts = [], isLoading, status } = useQuery({
     queryKey: ['contacts'],
     queryFn: fetchContacts,
   })
+  useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/150ee9a9-9ed8-47a6-a49f-3d7830732250',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'routes/index.tsx:68',message:'contacts index render',data:{status,isLoading,contactsLength:contacts.length,searchQueryLength:searchQuery.length},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+  }, [status, isLoading, contacts.length, searchQuery.length])
 
   // Delete mutation available for future use
   // const deleteMutation = useMutation({
