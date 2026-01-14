@@ -77,11 +77,20 @@ export async function getAllContacts(): Promise<Contact[]> {
     'SELECT * FROM contacts ORDER BY full_name, created_at DESC',
   )
   // Parse JSONB fields
-  return result.rows.map(row => {
-    if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-    if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-    if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-    if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  return result.rows.map((row) => {
+    if (row.phones)
+      row.phones =
+        typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+    if (row.emails)
+      row.emails =
+        typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+    if (row.addresses)
+      row.addresses =
+        typeof row.addresses === 'string'
+          ? JSON.parse(row.addresses)
+          : row.addresses
+    if (row.urls)
+      row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
     return row
   })
 }
@@ -92,10 +101,19 @@ export async function getContactById(id: string): Promise<Contact | null> {
   if (!result.rows[0]) return null
   // Parse JSONB fields
   const row = result.rows[0]
-  if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-  if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-  if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-  if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  if (row.phones)
+    row.phones =
+      typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+  if (row.emails)
+    row.emails =
+      typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+  if (row.addresses)
+    row.addresses =
+      typeof row.addresses === 'string'
+        ? JSON.parse(row.addresses)
+        : row.addresses
+  if (row.urls)
+    row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
   return row
 }
 
@@ -162,38 +180,6 @@ export async function findDuplicateContact(
   return null
 }
 
-/**
- * Merge contact data, preferring non-null values from new data
- */
-function mergeContactData(
-  existing: Contact,
-  newData: Partial<Contact>,
-): Partial<Contact> {
-  return {
-    // Keep existing ID and timestamps
-    id: existing.id,
-    created_at: existing.created_at,
-    // Merge fields - prefer new data if it exists and is not null/empty
-    full_name: newData.full_name || existing.full_name,
-    first_name: newData.first_name || existing.first_name,
-    last_name: newData.last_name || existing.last_name,
-    middle_name: newData.middle_name || existing.middle_name,
-    nickname: newData.nickname || existing.nickname,
-    maiden_name: newData.maiden_name || existing.maiden_name,
-    email: newData.email || existing.email,
-    phone: newData.phone || existing.phone,
-    organization: newData.organization || existing.organization,
-    job_title: newData.job_title || existing.job_title,
-    address: newData.address || existing.address,
-    birthday: newData.birthday || existing.birthday,
-    homepage: newData.homepage || existing.homepage,
-    notes: newData.notes || existing.notes,
-    // Always update vCard data
-    vcard_data: newData.vcard_data || existing.vcard_data,
-    vcard_id: newData.vcard_id || existing.vcard_id,
-  }
-}
-
 export async function createContact(
   contact: Partial<Contact>,
 ): Promise<Contact> {
@@ -229,10 +215,19 @@ export async function createContact(
   )
   // Parse JSONB fields
   const row = result.rows[0]
-  if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-  if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-  if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-  if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  if (row.phones)
+    row.phones =
+      typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+  if (row.emails)
+    row.emails =
+      typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+  if (row.addresses)
+    row.addresses =
+      typeof row.addresses === 'string'
+        ? JSON.parse(row.addresses)
+        : row.addresses
+  if (row.urls)
+    row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
   return row
 }
 
@@ -241,6 +236,17 @@ export async function updateContact(
   contact: Partial<Contact>,
 ): Promise<Contact> {
   const pool = getPool()
+
+  // Check which columns exist in the database
+  const columnCheck = await pool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = 'contacts' AND table_schema = 'public'
+  `)
+  const existingColumns = new Set(
+    columnCheck.rows.map((r: any) => r.column_name),
+  )
+
   const updates: string[] = []
   const values: any[] = []
   let paramIndex = 1
@@ -272,9 +278,19 @@ export async function updateContact(
 
   for (const field of fields) {
     if (contact[field] !== undefined) {
+      // Skip fields that don't exist in the database
+      if (!existingColumns.has(field)) {
+        continue
+      }
       updates.push(`${field} = $${paramIndex}`)
       // Convert arrays to JSON strings for JSONB columns
-      if ((field === 'phones' || field === 'emails' || field === 'addresses' || field === 'urls') && Array.isArray(contact[field])) {
+      if (
+        (field === 'phones' ||
+          field === 'emails' ||
+          field === 'addresses' ||
+          field === 'urls') &&
+        Array.isArray(contact[field])
+      ) {
         values.push(JSON.stringify(contact[field]))
       } else {
         values.push(contact[field])
@@ -294,10 +310,19 @@ export async function updateContact(
   )
   // Parse JSONB fields
   const row = result.rows[0]
-  if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-  if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-  if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-  if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  if (row.phones)
+    row.phones =
+      typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
+  if (row.emails)
+    row.emails =
+      typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
+  if (row.addresses)
+    row.addresses =
+      typeof row.addresses === 'string'
+        ? JSON.parse(row.addresses)
+        : row.addresses
+  if (row.urls)
+    row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
   return row
 }
 

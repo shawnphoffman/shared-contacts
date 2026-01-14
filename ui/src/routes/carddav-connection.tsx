@@ -74,7 +74,7 @@ function getCardDAVBaseUrl(): string {
   return 'http://localhost:5232'
 }
 
-function getCardDAVUrl(username: string): string {
+function getCardDAVUrl(_username: string): string {
   const baseUrl = getCardDAVBaseUrl()
   // The shared contacts collection is accessible to all authenticated users
   // The collection path is /shared-contacts (flat structure under collection-root)

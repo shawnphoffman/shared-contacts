@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Plus, Edit, Trash2, Users } from 'lucide-react'
@@ -94,7 +94,6 @@ async function deleteUser(username: string): Promise<void> {
 }
 
 function RadicaleUsersPage() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)

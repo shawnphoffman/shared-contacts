@@ -4,9 +4,11 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
   useReactTable,
+  type SortingState,
 } from '@tanstack/react-table'
-import { Plus, Search } from 'lucide-react'
+import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search } from 'lucide-react'
 import { useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import {
@@ -24,6 +26,13 @@ import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Contact } from '../lib/db'
+
+// Extend ColumnMeta to include className
+declare module '@tanstack/react-table' {
+  interface ColumnMeta<TData, TValue> {
+    className?: string
+  }
+}
 
 export const Route = createFileRoute('/')({
   component: ContactsIndexPage,
@@ -88,7 +97,26 @@ function ContactsIndexPage() {
     },
     {
       accessorKey: 'full_name',
-      header: 'Name',
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-2 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation()
+              column.toggleSorting(column.getIsSorted() === 'asc')
+            }}
+          >
+            Name
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4 opacity-50" />
+            )}
+          </button>
+        )
+      },
       cell: ({ row }) => {
         const contact = row.original
         return (
@@ -105,7 +133,26 @@ function ContactsIndexPage() {
     },
     {
       accessorKey: 'email',
-      header: 'Email',
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-2 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation()
+              column.toggleSorting(column.getIsSorted() === 'asc')
+            }}
+          >
+            Email
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4 opacity-50" />
+            )}
+          </button>
+        )
+      },
       cell: ({ row }) => {
         const email = row.original.email
         return email ? (
@@ -117,7 +164,26 @@ function ContactsIndexPage() {
     },
     {
       accessorKey: 'birthday',
-      header: 'Birthday',
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-2 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation()
+              column.toggleSorting(column.getIsSorted() === 'asc')
+            }}
+          >
+            Birthday
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4 opacity-50" />
+            )}
+          </button>
+        )
+      },
       cell: ({ row }) => {
         const birthday = row.original.birthday
         if (!birthday) {
@@ -137,7 +203,26 @@ function ContactsIndexPage() {
     },
     {
       accessorKey: 'phone',
-      header: 'Phone',
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-2 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation()
+              column.toggleSorting(column.getIsSorted() === 'asc')
+            }}
+          >
+            Phone
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4 opacity-50" />
+            )}
+          </button>
+        )
+      },
       cell: ({ row }) => {
         const phone = row.original.phone
         if (!phone) {
@@ -148,11 +233,30 @@ function ContactsIndexPage() {
     },
     {
       accessorKey: 'organization',
-      header: 'Organization',
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-2 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation()
+              column.toggleSorting(column.getIsSorted() === 'asc')
+            }}
+          >
+            Organization
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4 opacity-50" />
+            )}
+          </button>
+        )
+      },
       cell: ({ row }) => {
         const contact = row.original
         return (
-          <div>
+          <div className="hidden lg:block">
             {contact.organization && <div>{contact.organization}</div>}
             {contact.job_title && (
               <div className="text-sm text-gray-500">{contact.job_title}</div>
@@ -160,17 +264,24 @@ function ContactsIndexPage() {
           </div>
         )
       },
+      meta: {
+        className: 'hidden lg:table-cell',
+      },
     },
   ]
+
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const table = useReactTable({
     data: contacts,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     enableRowSelection: true,
     getRowId: (row) => row.id,
     onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
     globalFilterFn: (row, _columnId, filterValue) => {
       const contact = row.original
       const query = String(filterValue).toLowerCase()
@@ -185,6 +296,7 @@ function ContactsIndexPage() {
     state: {
       globalFilter: searchQuery,
       rowSelection,
+      sorting,
     },
   })
 
@@ -253,7 +365,10 @@ function ContactsIndexPage() {
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className={header.column.columnDef.meta?.className}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -279,7 +394,10 @@ function ContactsIndexPage() {
                       className="cursor-pointer"
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell
+                          key={cell.id}
+                          className={cell.column.columnDef.meta?.className}
+                        >
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext(),

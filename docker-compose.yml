@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: shared-contacts-postgres
+    container_name: shared-contacts-postgres-dev
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sharedcontacts}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sharedcontacts}
@@ -23,7 +23,7 @@ services:
     build:
       context: ./radicale
       dockerfile: Dockerfile
-    container_name: shared-contacts-radicale
+    container_name: shared-contacts-radicale-dev
     environment:
       RADICALE_SERVER_HOSTS: "0.0.0.0:5232"
       RADICALE_SERVER_SSL: "False"
@@ -46,7 +46,7 @@ services:
     build:
       context: .
       dockerfile: ./sync-service/Dockerfile
-    container_name: shared-contacts-sync
+    container_name: shared-contacts-sync-dev
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
       RADICALE_STORAGE_PATH: /radicale-data/collections
@@ -72,35 +72,35 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  ui:
-    build:
-      context: .
-      dockerfile: ./ui/Dockerfile
-    container_name: shared-contacts-ui
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3030}
-      NODE_ENV: production
-      SYNC_SERVICE_URL: http://sync-service:3001
-    ports:
-      - "${UI_PORT:-3030}:3030"
-    networks:
-      - shared-contacts-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      sync-service:
-        condition: service_healthy
-    restart: unless-stopped
-    profiles:
-      - production
+  # ui:
+  #   build:
+  #     context: .
+  #     dockerfile: ./ui/Dockerfile
+  #   container_name: shared-contacts-ui-dev
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+  #     BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production}
+  #     BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3030}
+  #     NODE_ENV: production
+  #     SYNC_SERVICE_URL: http://sync-service:3001
+  #   ports:
+  #     - "${UI_PORT:-3030}:3030"
+  #   networks:
+  #     - shared-contacts-network
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     sync-service:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   profiles:
+  #     - production
 
   ui-dev:
     build:
       context: .
       dockerfile: ./ui/Dockerfile.dev
-    container_name: shared-contacts-ui-dev
+    container_name: shared-contacts-ui-dev-dev
     working_dir: /app
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}

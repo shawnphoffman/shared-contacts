@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import {
-  getPool,
   getAllContacts,
   updateContact,
   deleteContact,
@@ -36,7 +35,6 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
     handlers: {
       POST: async () => {
         try {
-          const pool = getPool()
           const allContacts = await getAllContacts()
 
           // Group contacts by email (case-insensitive)
@@ -70,7 +68,7 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
           }
 
           // Process email duplicates
-          for (const [email, contacts] of emailGroups.entries()) {
+          for (const [, contacts] of emailGroups.entries()) {
             if (contacts.length > 1) {
               // Sort by created_at - keep the oldest one
               contacts.sort(
@@ -119,7 +117,7 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
           }
 
           // Process name+phone duplicates (excluding those already processed by email)
-          for (const [key, contacts] of namePhoneGroups.entries()) {
+          for (const [, contacts] of namePhoneGroups.entries()) {
             if (contacts.length > 1) {
               // Filter out contacts that were already processed
               const unprocessed = contacts.filter(
