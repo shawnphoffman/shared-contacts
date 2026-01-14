@@ -1,5 +1,29 @@
 export type CropArea = { x: number; y: number; width: number; height: number }
 
+type PhotoCacheKey = string | number | Date | null | undefined
+
+export function getContactPhotoUrl(contact: {
+  id: string
+  photo_hash?: string | null
+  photo_updated_at?: Date | string | null
+}): string {
+  const baseUrl = `/api/contacts/${contact.id}/photo`
+  const cacheKey: PhotoCacheKey = contact.photo_hash || contact.photo_updated_at
+  if (!cacheKey) return baseUrl
+
+  let keyValue: string
+  if (cacheKey instanceof Date) {
+    keyValue = cacheKey.getTime().toString()
+  } else if (typeof cacheKey === 'number') {
+    keyValue = String(cacheKey)
+  } else {
+    const parsed = Date.parse(cacheKey)
+    keyValue = Number.isNaN(parsed) ? cacheKey : String(parsed)
+  }
+
+  return `${baseUrl}?v=${encodeURIComponent(keyValue)}`
+}
+
 export async function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

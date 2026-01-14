@@ -20,9 +20,10 @@ import {
   Trash2,
   Globe,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Contact } from '../lib/db'
 import { formatPhoneNumber } from '../lib/utils'
+import { getContactPhotoUrl } from '../lib/image'
 
 export const Route = createFileRoute('/$id')({
   beforeLoad: ({ params }) => {
@@ -91,7 +92,8 @@ function ContactDetailPage() {
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Contact>) => updateContact(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedContact) => {
+      queryClient.setQueryData(['contacts', id], updatedContact)
       queryClient.invalidateQueries({ queryKey: ['contacts'] })
       queryClient.invalidateQueries({ queryKey: ['contacts', id] })
       setIsEditing(false)
@@ -145,6 +147,10 @@ function ContactDetailPage() {
     .map((part) => part[0]?.toUpperCase())
     .join('')
 
+  useEffect(() => {
+    setShowPhoto(true)
+  }, [contact.id, contact.photo_hash, contact.photo_updated_at])
+
   return (
     <div className="container mx-auto p-6 max-w-2xl">
       <div className="flex justify-between items-center mb-6">
@@ -152,7 +158,7 @@ function ContactDetailPage() {
           <div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500">
             {showPhoto && (
               <img
-                src={`/api/contacts/${contact.id}/photo`}
+                src={getContactPhotoUrl(contact)}
                 alt={displayName}
                 className="h-full w-full object-cover"
                 onError={() => setShowPhoto(false)}

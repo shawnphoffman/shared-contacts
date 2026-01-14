@@ -1,9 +1,10 @@
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Mail, Phone, Building, MapPin } from 'lucide-react'
 import type { Contact } from '../lib/db'
 import { formatPhoneNumber } from '../lib/utils'
+import { getContactPhotoUrl } from '../lib/image'
 
 interface ContactCardProps {
   contact: Contact
@@ -19,6 +20,10 @@ export function ContactCard({ contact }: ContactCardProps) {
     .map((part) => part[0]?.toUpperCase())
     .join('')
 
+  useEffect(() => {
+    setShowPhoto(true)
+  }, [contact.id, contact.photo_hash, contact.photo_updated_at])
+
   return (
     <Link to="/$id" params={{ id: contact.id }}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">
@@ -27,7 +32,7 @@ export function ContactCard({ contact }: ContactCardProps) {
             <div className="h-12 w-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-sm text-gray-500">
               {showPhoto && (
                 <img
-                  src={`/api/contacts/${contact.id}/photo`}
+                  src={getContactPhotoUrl(contact)}
                   alt={displayName}
                   className="h-full w-full object-cover"
                   onError={() => setShowPhoto(false)}

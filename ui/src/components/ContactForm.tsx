@@ -15,7 +15,12 @@ import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
 import { validateEmail, validateUrl, normalizeUrl } from '../lib/validation'
-import { cropToSquareDataUrl, readFileAsDataUrl, type CropArea } from '../lib/image'
+import {
+  cropToSquareDataUrl,
+  getContactPhotoUrl,
+  readFileAsDataUrl,
+  type CropArea,
+} from '../lib/image'
 import type { Contact, ContactField } from '../lib/db'
 
 export type ContactPayload = Partial<Contact> & {
@@ -90,9 +95,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         .trim() ||
       '',
   )
-  const existingPhotoUrl = contact?.id
-    ? `/api/contacts/${contact.id}/photo`
-    : null
+  const existingPhotoUrl = contact?.id ? getContactPhotoUrl(contact) : null
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const [photoData, setPhotoData] = useState<string | null>(null)
   const [photoMime, setPhotoMime] = useState<string | null>(null)
