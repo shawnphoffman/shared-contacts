@@ -1,33 +1,33 @@
 {
-	"name": "shared-contacts",
-	"version": "0.0.6",
-	"description": "Self-hostable CardDAV server for managing shared contacts with a modern web-based management interface",
-	"private": true,
-	"engines": {
-		"node": ">=20.0.0",
-		"npm": ">=9.0.0"
-	},
-	"scripts": {
-		"version:patch": "node scripts/version.js patch",
-		"version:minor": "node scripts/version.js minor",
-		"version:major": "node scripts/version.js major",
-		"version:set": "node scripts/version.js set"
-	},
-	"keywords": [
-		"carddav",
-		"contacts",
-		"radicale",
-		"self-hosted",
-		"sync"
-	],
-	"author": "Shawn Hoffman",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/shawnphoffman/shared-contacts.git"
-	},
-	"bugs": {
-		"url": "https://github.com/shawnphoffman/shared-contacts/issues"
-	},
-	"homepage": "https://github.com/shawnphoffman/shared-contacts#readme"
+  "name": "shared-contacts",
+  "version": "0.0.7",
+  "description": "Self-hostable CardDAV server for managing shared contacts with a modern web-based management interface",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "version:patch": "node scripts/version.js patch",
+    "version:minor": "node scripts/version.js minor",
+    "version:major": "node scripts/version.js major",
+    "version:set": "node scripts/version.js set"
+  },
+  "keywords": [
+    "carddav",
+    "contacts",
+    "radicale",
+    "self-hosted",
+    "sync"
+  ],
+  "author": "Shawn Hoffman",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shawnphoffman/shared-contacts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shawnphoffman/shared-contacts/issues"
+  },
+  "homepage": "https://github.com/shawnphoffman/shared-contacts#readme"
 }
