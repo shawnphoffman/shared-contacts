@@ -223,7 +223,7 @@ function RadicaleUsersPage() {
       </div>
 
       <p className="text-gray-600 mb-6">
-        Manage CardDAV users who can sync contacts via Radicale. These users are
+        Manage users who can sync contacts via Radicale. These users are
         separate from the web UI authentication.
       </p>
 

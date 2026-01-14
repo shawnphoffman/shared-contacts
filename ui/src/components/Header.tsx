@@ -23,7 +23,7 @@ export default function Header() {
         <h1 className="text-xl font-semibold flex items-center gap-2">
           <Link to="/" className="text-foreground flex items-center gap-2">
             <NotebookTabs className="w-5 h-5" />
-            <span>Shared Contacts</span>
+            <span className="hidden sm:inline">Shared Contacts</span>
           </Link>
         </h1>
         <nav className="flex items-center gap-4">
@@ -36,7 +36,7 @@ export default function Header() {
             }}
           >
             <Upload className="w-4 h-4" />
-            <span>Import</span>
+            <span className="hidden sm:inline">Import</span>
           </Link>
           <Link
             to="/radicale-users"
@@ -47,7 +47,7 @@ export default function Header() {
             }}
           >
             <Users className="w-4 h-4" />
-            <span>CardDAV Users</span>
+            <span className="hidden sm:inline">Users</span>
           </Link>
           <Link
             to="/carddav-connection"
@@ -58,7 +58,7 @@ export default function Header() {
             }}
           >
             <LinkIcon className="w-4 h-4" />
-            <span>Connection</span>
+            <span className="hidden sm:inline">Connection</span>
           </Link>
           <Link
             to="/about"

@@ -5,6 +5,8 @@ import { Textarea } from './ui/textarea'
 import { Field, FieldContent, FieldLabel } from './ui/field'
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
+import { AddressInput } from './AddressInput'
+import { validateEmail, validateUrl, normalizeUrl } from '../lib/validation'
 import type { Contact, ContactField } from '../lib/db'
 
 interface ContactFormProps {
@@ -70,6 +72,9 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
       '',
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, Record<number, string | null>>
+  >({})
   const isInitialMount = useRef(true)
 
   // Calculate full_name from first_name and last_name only when user edits them
@@ -85,10 +90,95 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
     setFullName(parts.join(' ').trim() || '')
   }, [formData.first_name, formData.last_name])
 
+  // Validate emails
+  const validateEmails = (emailFields: ContactField[]): boolean => {
+    const errors: Record<number, string | null> = {}
+    let isValid = true
+
+    emailFields.forEach((field, index) => {
+      if (field.value.trim()) {
+        const error = validateEmail(field.value)
+        if (error) {
+          errors[index] = error
+          isValid = false
+        } else {
+          errors[index] = null
+        }
+      } else {
+        errors[index] = null
+      }
+    })
+
+    setValidationErrors((prev) => ({ ...prev, emails: errors }))
+    return isValid
+  }
+
+  // Validate URLs
+  const validateUrls = (urlFields: ContactField[]): boolean => {
+    const errors: Record<number, string | null> = {}
+    let isValid = true
+
+    urlFields.forEach((field, index) => {
+      if (field.value.trim()) {
+        const error = validateUrl(field.value)
+        if (error) {
+          errors[index] = error
+          isValid = false
+        } else {
+          errors[index] = null
+        }
+      } else {
+        errors[index] = null
+      }
+    })
+
+    setValidationErrors((prev) => ({ ...prev, urls: errors }))
+    return isValid
+  }
+
+  // Handle email changes with validation
+  const handleEmailsChange = (newEmails: ContactField[]) => {
+    setEmails(newEmails)
+    // Validate after a short delay to avoid showing errors while typing
+    setTimeout(() => validateEmails(newEmails), 300)
+  }
+
+  // Handle URL changes with validation and normalization
+  const handleUrlsChange = (newUrls: ContactField[]) => {
+    // Normalize URLs (add protocol if missing)
+    const normalized = newUrls.map((url) => ({
+      ...url,
+      value: url.value.trim() ? normalizeUrl(url.value) : url.value,
+    }))
+    setUrls(normalized)
+    // Validate after a short delay
+    setTimeout(() => validateUrls(normalized), 300)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate all fields before submission
+    const emailsValid = validateEmails(emails)
+    const urlsValid = validateUrls(urls)
+
+    if (!emailsValid || !urlsValid) {
+      // Scroll to first error
+      const firstErrorField = document.querySelector('.border-red-500')
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+      return
+    }
+
     setIsSubmitting(true)
     try {
+      // Normalize URLs before submission
+      const normalizedUrls = urls.map((url) => ({
+        ...url,
+        value: url.value.trim() ? normalizeUrl(url.value) : url.value,
+      }))
+
       await onSubmit({
         ...formData,
         full_name: fullName || null,
@@ -96,12 +186,12 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         phones: phones.length > 0 ? phones : null,
         emails: emails.length > 0 ? emails : null,
         addresses: addresses.length > 0 ? addresses : null,
-        urls: urls.length > 0 ? urls : null,
+        urls: normalizedUrls.length > 0 ? normalizedUrls : null,
         // Backward compatibility: set single values from arrays
         phone: phones.length > 0 ? phones[0].value : null,
         email: emails.length > 0 ? emails[0].value : null,
         address: addresses.length > 0 ? addresses[0].value : null,
-        homepage: urls.length > 0 ? urls[0].value : null,
+        homepage: normalizedUrls.length > 0 ? normalizedUrls[0].value : null,
       })
     } finally {
       setIsSubmitting(false)
@@ -189,10 +279,28 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         <MultiFieldInput
           label="Email Addresses"
           fields={emails}
-          onChange={setEmails}
+          onChange={handleEmailsChange}
           placeholder="Enter email address"
           inputType="email"
           defaultType="INTERNET"
+          renderInput={(field, index, onChange) => (
+            <div className="flex-1">
+              <Input
+                type="email"
+                value={field.value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="Enter email address"
+                className={
+                  validationErrors.emails?.[index] ? 'border-red-500' : ''
+                }
+              />
+              {validationErrors.emails?.[index] && (
+                <p className="text-sm text-red-500 mt-1">
+                  {validationErrors.emails[index]}
+                </p>
+              )}
+            </div>
+          )}
         />
       </div>
 
@@ -231,6 +339,15 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
           placeholder="Enter address"
           inputType="text"
           defaultType="HOME"
+          renderInput={(field, index, onChange) => (
+            <div className="flex-1">
+              <AddressInput
+                value={field.value}
+                onChange={onChange}
+                placeholder="Enter address"
+              />
+            </div>
+          )}
         />
       </div>
 
@@ -238,10 +355,28 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         <MultiFieldInput
           label="URLs / Websites"
           fields={urls}
-          onChange={setUrls}
-          placeholder="https://example.com"
+          onChange={handleUrlsChange}
+          placeholder="example.com or https://example.com"
           inputType="url"
           defaultType="HOME"
+          renderInput={(field, index, onChange) => (
+            <div className="flex-1">
+              <Input
+                type="url"
+                value={field.value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="example.com or https://example.com"
+                className={
+                  validationErrors.urls?.[index] ? 'border-red-500' : ''
+                }
+              />
+              {validationErrors.urls?.[index] && (
+                <p className="text-sm text-red-500 mt-1">
+                  {validationErrors.urls[index]}
+                </p>
+              )}
+            </div>
+          )}
         />
       </div>
 

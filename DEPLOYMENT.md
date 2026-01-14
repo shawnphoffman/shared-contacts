@@ -134,9 +134,9 @@ Then restart the stack:
 docker compose -f docker-compose.prod.yml restart ui
 ```
 
-## Adding CardDAV Users
+## Adding Users
 
-CardDAV users are managed separately from web UI users. To add a CardDAV user:
+Users are managed separately from web UI users. To add a user:
 
 ```bash
 docker exec -it shared-contacts-radicale htpasswd -B /data/users username

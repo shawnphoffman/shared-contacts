@@ -180,7 +180,7 @@ function CardDAVConnectionPage() {
                 href="/radicale-users"
                 className="text-blue-600 dark:text-blue-400 hover:underline"
               >
-                CardDAV Users
+                Users
               </a>{' '}
               page. These credentials are separate from your web UI login.
             </p>
@@ -201,9 +201,12 @@ function CardDAVConnectionPage() {
                 ⚠️ Important for Apple Contacts:
               </p>
               <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                Make sure to use <strong>HTTP</strong> (not HTTPS) in your Apple Contacts
-                connection settings. If you see SSL/TLS errors, verify the server URL starts
-                with <code className="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">http://</code>
+                Make sure to use <strong>HTTP</strong> (not HTTPS) in your Apple
+                Contacts connection settings. If you see SSL/TLS errors, verify
+                the server URL starts with{' '}
+                <code className="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">
+                  http://
+                </code>
               </p>
             </div>
           </div>
@@ -216,7 +219,7 @@ function CardDAVConnectionPage() {
           <CardHeader>
             <CardTitle>Connection Details by User</CardTitle>
             <CardDescription>
-              Subscription URLs for each CardDAV user account
+              Subscription URLs for each user account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -259,19 +262,18 @@ function CardDAVConnectionPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>No CardDAV Users</CardTitle>
+            <CardTitle>No Users</CardTitle>
             <CardDescription>
-              Create a CardDAV user to enable contact synchronization
+              Create a user to enable contact synchronization
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              You need to create at least one CardDAV user before you can sync
-              contacts. CardDAV users are managed separately from web UI
-              accounts.
+              You need to create at least one user before you can sync contacts.
+              Users are managed separately from web UI accounts.
             </p>
             <Button asChild>
-              <a href="/radicale-users">Go to CardDAV Users</a>
+              <a href="/radicale-users">Go to Users</a>
             </Button>
           </CardContent>
         </Card>
