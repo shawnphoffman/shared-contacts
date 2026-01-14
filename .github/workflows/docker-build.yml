@@ -99,18 +99,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=raw,value={{tag}}
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=v${{ steps.version.outputs.version }}
+            type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
             type=raw,value=main,enable=${{ steps.check-refs.outputs.add_branch_tag == 'true' }}
-            type=raw,value=master,enable=${{ steps.check-refs.outputs.add_branch_tag == 'true' }}
-            type=raw,value=${{ steps.check-refs.outputs.tag_name }},enable=${{ steps.check-refs.outputs.add_tag_from_commit == 'true' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
