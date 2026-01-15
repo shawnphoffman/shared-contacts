@@ -58,6 +58,31 @@ function ContactsIndexPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 
+  const getNameParts = (contact: Contact) => {
+    const firstName = contact.first_name?.trim() ?? ''
+    const lastName = contact.last_name?.trim() ?? ''
+    if (firstName || lastName) {
+      return { firstName, lastName }
+    }
+
+    const fullName = contact.full_name?.trim() ?? ''
+    if (!fullName) {
+      return { firstName: '', lastName: '' }
+    }
+
+    if (fullName.includes(',')) {
+      const [last, rest] = fullName.split(',')
+      return { firstName: rest?.trim() ?? '', lastName: last.trim() }
+    }
+
+    const parts = fullName.split(/\s+/)
+    if (parts.length === 1) {
+      return { firstName: parts[0], lastName: '' }
+    }
+
+    return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
+  }
+
   const {
     data: contacts = [],
     isLoading,
@@ -108,7 +133,8 @@ function ContactsIndexPage() {
       enableHiding: false,
     },
     {
-      accessorKey: 'full_name',
+      id: 'first_name',
+      accessorFn: (row) => getNameParts(row).firstName.toLowerCase(),
       header: ({ column }) => {
         return (
           <button
@@ -118,7 +144,7 @@ function ContactsIndexPage() {
               column.toggleSorting(column.getIsSorted() === 'asc')
             }}
           >
-            Name
+            First Name
             {column.getIsSorted() === 'asc' ? (
               <ArrowUp className="h-4 w-4" />
             ) : column.getIsSorted() === 'desc' ? (
@@ -131,15 +157,48 @@ function ContactsIndexPage() {
       },
       cell: ({ row }) => {
         const contact = row.original
+        const { firstName } = getNameParts(contact)
         return (
           <div>
             <div className="font-medium">
-              {contact.full_name || 'Unnamed Contact'}
+              {firstName || 'Unnamed Contact'}
             </div>
             {contact.nickname && (
               <div className="text-sm text-gray-500">{contact.nickname}</div>
             )}
           </div>
+        )
+      },
+    },
+    {
+      id: 'last_name',
+      accessorFn: (row) => getNameParts(row).lastName.toLowerCase(),
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-2 hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation()
+              column.toggleSorting(column.getIsSorted() === 'asc')
+            }}
+          >
+            Last Name
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="h-4 w-4 opacity-50" />
+            )}
+          </button>
+        )
+      },
+      cell: ({ row }) => {
+        const { lastName } = getNameParts(row.original)
+        return lastName ? (
+          <span>{lastName}</span>
+        ) : (
+          <span className="text-gray-400">—</span>
         )
       },
     },
@@ -299,6 +358,8 @@ function ContactsIndexPage() {
       const query = String(filterValue).toLowerCase()
       return !!(
         contact.full_name?.toLowerCase().includes(query) ||
+        contact.first_name?.toLowerCase().includes(query) ||
+        contact.last_name?.toLowerCase().includes(query) ||
         contact.email?.toLowerCase().includes(query) ||
         contact.phone?.includes(query) ||
         contact.organization?.toLowerCase().includes(query) ||
