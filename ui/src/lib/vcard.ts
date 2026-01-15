@@ -92,7 +92,7 @@ export function generateVCard(contact: {
     const photoLine = `PHOTO;ENCODING=b;TYPE=${type}:${photoBase64}`
     lines.push(...foldVCardLine(photoLine))
   }
-  
+
   // Emails - use arrays if available, fall back to single value
   if (contact.emails && contact.emails.length > 0) {
     for (const email of contact.emails) {
@@ -104,7 +104,7 @@ export function generateVCard(contact: {
   } else if (contact.email) {
     lines.push(`EMAIL;TYPE=INTERNET:${contact.email}`)
   }
-  
+
   // Phones - use arrays if available, fall back to single value
   if (contact.phones && contact.phones.length > 0) {
     for (const phone of contact.phones) {
