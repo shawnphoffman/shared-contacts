@@ -75,6 +75,19 @@ export function parseVCard(vcardString: string): VCardData {
 	return data
 }
 
+function normalizeVCardTypes(types: string[]): string | undefined {
+	const normalized = types
+		.flatMap((type) => type.split(','))
+		.map((type) => type.trim().replace(/^"|"$/g, ''))
+		.filter(Boolean)
+		.map((type) => type.toUpperCase())
+
+	if (normalized.length === 0) return undefined
+
+	const unique = Array.from(new Set(normalized))
+	return unique.join(',')
+}
+
 function parseVCardLine(line: string, data: VCardData): void {
 	if (!line || line.startsWith('BEGIN:') || line.startsWith('END:')) {
 		return
@@ -86,19 +99,25 @@ function parseVCardLine(line: string, data: VCardData): void {
 	const key = line.substring(0, colonIndex).toUpperCase()
 	const value = line.substring(colonIndex + 1)
 
-	// Parse parameters (e.g., "TEL;TYPE=CELL;PREF=1" -> {type: "CELL", pref: "1"})
+	// Parse parameters (e.g., "TEL;TYPE=CELL;PREF=1" or "TEL;WORK;VOICE")
 	const parts = key.split(';')
 	const baseKey = parts[0]
-	const params: Record<string, string> = {}
+	const typeParts: string[] = []
 	for (let i = 1; i < parts.length; i++) {
 		const param = parts[i].split('=')
 		if (param.length === 2) {
-			params[param[0].toLowerCase()] = param[1]
+			const paramKey = param[0].toLowerCase()
+			const paramValue = param[1]
+			if (paramKey === 'type') {
+				typeParts.push(paramValue)
+			}
+		} else if (param.length === 1 && param[0]) {
+			typeParts.push(param[0])
 		}
 	}
 
-	// Extract type (common parameter)
-	const type = params.type || params['type=internet'] || undefined
+	// Extract type (case-insensitive, allow custom types)
+	const type = normalizeVCardTypes(typeParts)
 
 	switch (baseKey) {
 		case 'VERSION':
