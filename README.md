@@ -1,7 +1,7 @@
 # Shared Contacts - CardDAV Server
 
 > [!WARNING]
-> This project is not production read but is slowly becoming more stable. Do NOT use this without proper backups or with mission-critical data. Currently, there is NO AUTHENTICATION so do not expose this publicly.
+> This project is not production ready but is slowly becoming more stable. I stood this project up as an experiment with Cursor and I'm now trying to harden it. Do NOT use this without proper backups or with mission-critical data. Currently, there is NO AUTHENTICATION so do not expose this publicly.
 
 > [!NOTE]
 > To avoid exposing anything, one might run this locally and access it through a VPN (e.g. Tailscale).
