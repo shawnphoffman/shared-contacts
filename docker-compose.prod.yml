@@ -1,4 +1,4 @@
-name: shared-contacts-prod
+name: shared-contacts
 
 services:
   shared-contacts-postgres:
@@ -10,8 +10,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-sharedcontacts}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Migrations are handled by sync-service, not postgres init
-      # - ./migrations:/docker-entrypoint-initdb.d:ro
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     networks:
@@ -74,19 +72,32 @@ services:
     labels:
       - "com.sharedcontacts.service=app"
       - "com.sharedcontacts.description=Combined application (Radicale, Sync Service, UI)"
-      # Traefik labels for web UI
-      # Uncomment and customize these labels for your Traefik setup
-      # - "traefik.enable=true"
-      # - "traefik.http.routers.ui.rule=Host(`contacts.example.com`)"
-      # - "traefik.http.routers.ui.entrypoints=websecure"
-      # - "traefik.http.routers.ui.tls.certresolver=letsencrypt"
-      # - "traefik.http.services.ui.loadbalancer.server.port=3030"
-      # Traefik labels for CardDAV server
-      # - "traefik.http.routers.radicale.rule=Host(`carddav.example.com`) || Host(`contacts.example.com`) && PathPrefix(`/carddav`)"
-      # - "traefik.http.routers.radicale.entrypoints=websecure"
-      # - "traefik.http.routers.radicale.tls.certresolver=letsencrypt"
-      # - "traefik.http.middlewares.radicale-stripprefix.stripprefix.prefixes=/carddav"
-      # - "traefik.http.services.radicale.loadbalancer.server.port=5232"
+      # Traefik
+      - traefik.enable=true
+      - traefik.docker.network=proxy_net
+      - traefik.http.middlewares.redir-https.redirectscheme.scheme=https
+      # Contacts UI
+      - traefik.http.routers.contacts.service=contacts
+      - traefik.http.routers.contacts.rule=Host(`contacts.yourdomain`)
+      - traefik.http.routers.contacts.entrypoints=websecure
+      - traefik.http.routers.contacts.tls=true
+      - traefik.http.routers.contacts.tls.certresolver=cloudflare
+      - traefik.http.services.contacts.loadbalancer.server.port=3030
+      #
+      - traefik.http.routers.contacts-http.entrypoints=web
+      - traefik.http.routers.contacts-http.rule=Host(`contacts.yourdomain`)
+      - traefik.http.routers.contacts-http.middlewares=redir-https
+      # CardDAV Server
+      - traefik.http.routers.radicale.service=radicale
+      - traefik.http.routers.radicale.rule=Host(`carddav.yourdomain`)
+      - traefik.http.routers.radicale.entrypoints=websecure
+      - traefik.http.routers.radicale.tls=true
+      - traefik.http.routers.radicale.tls.certresolver=cloudflare
+      - traefik.http.services.radicale.loadbalancer.server.port=5232
+      #
+      - traefik.http.routers.radicale-http.entrypoints=web
+      - traefik.http.routers.radicale-http.rule=Host(`carddav.yourdomain`)
+      - traefik.http.routers.radicale-http.middlewares=redir-https
 
 networks:
   shared-contacts-prod-network:
