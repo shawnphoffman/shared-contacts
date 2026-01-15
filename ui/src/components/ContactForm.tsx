@@ -282,7 +282,6 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         const parsed = parseAddress(primaryAddress)
         structuredAddressFields = {
           address_street: parsed.street || null,
-          address_extended: parsed.extended || null,
           address_city: parsed.city || null,
           address_state: parsed.state || null,
           address_postal: parsed.postal || null,

@@ -28,14 +28,17 @@ export function ContactCard({ contact }: ContactCardProps) {
     setShowPhoto(true)
   }, [contact.id, contact.photo_hash, contact.photo_updated_at])
 
+  const fallbackStreet = [contact.address_street, contact.address_extended]
+    .filter(Boolean)
+    .join(', ')
+
   const structuredAddress =
     contact.addresses && contact.addresses.length > 0
       ? parseAddress(contact.addresses[0]?.value || '')
       : contact.address
         ? parseAddress(contact.address)
         : {
-            street: contact.address_street || '',
-            extended: contact.address_extended || '',
+            street: fallbackStreet,
             city: contact.address_city || '',
             state: contact.address_state || '',
             postal: contact.address_postal || '',

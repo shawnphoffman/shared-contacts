@@ -292,11 +292,13 @@ export function generateVCard(
 	}
 
 	const formatStructuredAddress = () => {
+		const street = [contact?.address_street, contact?.address_extended]
+			.filter(Boolean)
+			.join(', ')
 		const parts = [
 			'',
 			'',
-			contact?.address_street || '',
-			contact?.address_extended || '',
+			street,
 			contact?.address_city || '',
 			contact?.address_state || '',
 			contact?.address_postal || '',
@@ -309,7 +311,30 @@ export function generateVCard(
 		const trimmed = value.trim()
 		if (!trimmed) return ''
 		if (trimmed.includes(';')) {
-			return trimmed
+			const parts = trimmed.split(';')
+			const poBox = parts[0] || ''
+			const extended = parts[1] || ''
+			if (parts.length >= 8) {
+				const street = [parts[2] || '', parts[3] || '']
+					.filter(Boolean)
+					.join(', ')
+				const city = parts[4] || ''
+				const state = parts[5] || ''
+				const postal = parts[6] || ''
+				const country = parts[7] || ''
+				return [poBox, '', street, city, state, postal, country].join(';')
+			}
+			if (parts.length >= 7) {
+				const street = [parts[2] || '', extended]
+					.filter(Boolean)
+					.join(', ')
+				const city = parts[3] || ''
+				const state = parts[4] || ''
+				const postal = parts[5] || ''
+				const country = parts[6] || ''
+				return [poBox, '', street, city, state, postal, country].join(';')
+			}
+			return `;;${trimmed};;;;`
 		}
 		return `;;${trimmed};;;;`
 	}

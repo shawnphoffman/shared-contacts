@@ -159,8 +159,9 @@ function ContactDetailPage() {
     .join('')
 
   const fallbackStructuredAddress = {
-    street: contact.address_street || '',
-    extended: contact.address_extended || '',
+    street: [contact.address_street, contact.address_extended]
+      .filter(Boolean)
+      .join(', '),
     city: contact.address_city || '',
     state: contact.address_state || '',
     postal: contact.address_postal || '',

@@ -110,7 +110,6 @@ export const Route = createFileRoute('/api/contacts')({
             address: body.address,
             addresses: body.addresses,
             address_street: body.address_street,
-            address_extended: body.address_extended,
             address_city: body.address_city,
             address_state: body.address_state,
             address_postal: body.address_postal,

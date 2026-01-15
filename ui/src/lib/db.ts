@@ -58,7 +58,7 @@ export interface Contact {
   addresses: ContactField[] | null // Multiple addresses
   // Structured address fields for easier querying and display
   address_street: string | null
-  address_extended: string | null // Address line 2
+  address_extended: string | null // Deprecated: address line 2 not synced
   address_city: string | null
   address_state: string | null
   address_postal: string | null

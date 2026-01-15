@@ -6,7 +6,6 @@ import { Input } from './ui/input'
  */
 export interface StructuredAddress {
   street: string
-  extended: string // Address line 2 (apartment, suite, etc.)
   city: string
   state: string
   postal: string
@@ -14,22 +13,23 @@ export interface StructuredAddress {
 }
 
 /**
- * Parse vCard address format: ;;street;extended;city;state;postal;country
+ * Parse vCard address format: PO box;extended;street;city;state;postal;country
  * Also handles plain text addresses and tries to extract structured components
  */
 export function parseAddress(addressValue: string): StructuredAddress {
   const trimmedValue = addressValue.trim()
+  const combineStreet = (street: string, line2: string) =>
+    [street, line2].filter(Boolean).join(', ')
 
   // Handle vCard/structured formats (semicolon-delimited)
   if (trimmedValue.includes(';')) {
     const parts = trimmedValue.split(';')
 
-    // vCard format with empty PO box + extended (starts with ";;")
-    if (parts[0] === '' && parts[1] === '') {
+    // vCard format: PO box;extended;street;city;state;postal;country
+    if (parts.length >= 7) {
       if (parts.length >= 8) {
         return {
-          street: parts[2] || '',
-          extended: parts[3] || '', // Address line 2
+          street: combineStreet(parts[2] || '', parts[3] || ''),
           city: parts[4] || '',
           state: parts[5] || '',
           postal: parts[6] || '',
@@ -37,10 +37,8 @@ export function parseAddress(addressValue: string): StructuredAddress {
         }
       }
 
-      // vCard format without extended line
       return {
-        street: parts[2] || '',
-        extended: '',
+        street: combineStreet(parts[2] || '', parts[1] || ''),
         city: parts[3] || '',
         state: parts[4] || '',
         postal: parts[5] || '',
@@ -51,8 +49,7 @@ export function parseAddress(addressValue: string): StructuredAddress {
     // Structured format without leading empty fields
     if (parts.length >= 6) {
       return {
-        street: parts[0] || '',
-        extended: parts[1] || '',
+        street: combineStreet(parts[0] || '', parts[1] || ''),
         city: parts[2] || '',
         state: parts[3] || '',
         postal: parts[4] || '',
@@ -64,7 +61,6 @@ export function parseAddress(addressValue: string): StructuredAddress {
     if (parts.length === 5) {
       return {
         street: parts[0] || '',
-        extended: '',
         city: parts[1] || '',
         state: parts[2] || '',
         postal: parts[3] || '',
@@ -77,7 +73,6 @@ export function parseAddress(addressValue: string): StructuredAddress {
   if (!trimmedValue) {
     return {
       street: '',
-      extended: '',
       city: '',
       state: '',
       postal: '',
@@ -102,7 +97,6 @@ export function parseAddress(addressValue: string): StructuredAddress {
   if (parts.length === 0) {
     return {
       street: trimmed,
-      extended: '',
       city: '',
       state: '',
       postal: '',
@@ -112,7 +106,6 @@ export function parseAddress(addressValue: string): StructuredAddress {
 
   // Try to extract components
   let street = ''
-  let extended = ''
   let city = ''
   let state = ''
   let postal = ''
@@ -134,7 +127,6 @@ export function parseAddress(addressValue: string): StructuredAddress {
   if (parts.length === 0) {
     return {
       street: '',
-      extended: '',
       city: '',
       state: '',
       postal: '',
@@ -192,42 +184,18 @@ export function parseAddress(addressValue: string): StructuredAddress {
   }
 
   if (parts.length === 0) {
-    return { street: '', extended: '', city: '', state, postal, country }
+    return { street: '', city: '', state, postal, country }
   }
 
   // 3. Last remaining part is city
   city = parts[parts.length - 1]
   parts.pop()
 
-  // 4. If there are 2+ parts left, check if second-to-last might be address line 2
-  // Address line 2 typically appears between street and city
-  if (parts.length >= 2) {
-    // Last part before city could be address line 2 (apartment, suite, etc.)
-    const possibleExtended = parts[parts.length - 1]
-    // Common indicators: Apt, Suite, Unit, #, Floor, Room, Building, etc.
-    const extendedIndicators =
-      /^(apt|apartment|suite|unit|ste|#|floor|fl|room|rm|bldg|building|po box|p\.?o\.?\s*box|box|p\.?m\.?\s*b\.?|pmb)/i
-    // Also check if it's a short string that doesn't look like a city name
-    // Cities are usually longer and don't start with numbers or special chars
-    const looksLikeExtended =
-      extendedIndicators.test(possibleExtended) ||
-      (possibleExtended.length < 25 &&
-        (possibleExtended.length <= 3 ||
-          /^[#\d]/.test(possibleExtended) ||
-          /^(apt|suite|unit|ste|#|fl|rm|bldg|box)/i.test(possibleExtended)))
-
-    if (looksLikeExtended) {
-      extended = possibleExtended
-      parts.pop()
-    }
-  }
-
-  // 5. Everything else is street address
+  // 4. Everything else is street address
   street = parts.join(', ')
 
   return {
     street: street || addressValue, // Fallback to original if parsing fails
-    extended,
     city,
     state,
     postal,
@@ -243,9 +211,6 @@ export function formatAddressForDisplay(address: StructuredAddress): string[] {
 
   if (address.street) {
     lines.push(address.street)
-  }
-  if (address.extended) {
-    lines.push(address.extended)
   }
 
   const locality = [address.city, address.state, address.postal]
@@ -270,7 +235,6 @@ export function formatAddressForSingleLine(
 ): string {
   const parts = [
     address.street,
-    address.extended,
     address.city,
     address.state,
     address.postal,
@@ -283,14 +247,13 @@ export function formatAddressForSingleLine(
 }
 
 /**
- * Format structured address to vCard format: ;;street;extended;city;state;postal;country
+ * Format structured address to vCard format: ;;street;city;state;postal;country
  */
 export function formatAddressForVCard(address: StructuredAddress): string {
   const parts = [
     '', // Post office box (empty)
-    '', // Extended address (empty) - this is actually the first empty field
+    '', // Extended address (empty)
     address.street || '',
-    address.extended || '', // Extended address (line 2)
     address.city || '',
     address.state || '',
     address.postal || '',
@@ -322,7 +285,6 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
     } else {
       setStructured({
         street: '',
-        extended: '',
         city: '',
         state: '',
         postal: '',
@@ -351,13 +313,6 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
         value={structured.street}
         onChange={(e) => updateField('street', e.target.value)}
         className={error ? 'border-red-500' : ''}
-      />
-      <Input
-        name="address-line2"
-        autoComplete="address-line2"
-        placeholder="Apartment, suite, unit, etc. (optional)"
-        value={structured.extended}
-        onChange={(e) => updateField('extended', e.target.value)}
       />
       <div className="grid grid-cols-4 gap-2">
         <Input
