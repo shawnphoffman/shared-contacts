@@ -8,7 +8,14 @@ import {
   useReactTable,
   type SortingState,
 } from '@tanstack/react-table'
-import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search } from 'lucide-react'
+import {
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  Search,
+  RefreshCw,
+} from 'lucide-react'
 import { useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import {
@@ -51,7 +58,12 @@ function ContactsIndexPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 
-  const { data: contacts = [], isLoading } = useQuery({
+  const {
+    data: contacts = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ['contacts'],
     queryFn: fetchContacts,
   })
@@ -320,21 +332,30 @@ function ContactsIndexPage() {
           <DeduplicateButton />
           <Button onClick={() => navigate({ to: '/new' })}>
             <Plus className="w-4 h-4 mr-1" />
-            New Contact
+            New
           </Button>
         </div>
       </div>
 
       <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Search contacts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex-row flex gap-2 items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Search contacts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className="size-4" />
+          </Button>
         </div>
         {selectedContactIds.length >= 2 && (
           <div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-end">
