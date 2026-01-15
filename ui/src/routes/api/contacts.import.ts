@@ -7,6 +7,7 @@ import {
   type Contact,
 } from '../../lib/db'
 import { generateVCard, extractUID } from '../../lib/vcard'
+import { normalizePhoneNumber } from '../../lib/utils'
 
 /**
  * Simple CSV parser that handles quoted fields
@@ -43,8 +44,78 @@ function parseCSVLine(line: string): string[] {
   return values
 }
 
+const headerAliases: Record<string, string> = {
+  // Name fields
+  first: 'first',
+  firstname: 'first',
+  given: 'first',
+  givenname: 'first',
+  last: 'last',
+  lastname: 'last',
+  surname: 'last',
+  familyname: 'last',
+  family: 'last',
+  fullname: 'full_name',
+  name: 'full_name',
+  displayname: 'full_name',
+  middle: 'middle',
+  middlename: 'middle',
+  nickname: 'nick',
+  nick: 'nick',
+  maiden: 'maiden',
+  maidenname: 'maiden',
+  // Contact fields
+  email: 'email',
+  emailaddress: 'email',
+  phone: 'phone',
+  phonenumber: 'phone',
+  mobile: 'phone',
+  cell: 'phone',
+  telephone: 'phone',
+  tel: 'phone',
+  // Organization fields
+  organization: 'company',
+  org: 'company',
+  company: 'company',
+  companyname: 'company',
+  employer: 'company',
+  jobtitle: 'job_title',
+  title: 'job_title',
+  position: 'job_title',
+  role: 'job_title',
+  // Other fields
+  address: 'address',
+  street: 'address',
+  streetaddress: 'address',
+  mailingaddress: 'address',
+  notes: 'notes',
+  note: 'notes',
+  comment: 'notes',
+  comments: 'notes',
+  birthday: 'bday',
+  bday: 'bday',
+  dateofbirth: 'bday',
+  dob: 'bday',
+  homepage: 'homepage',
+  website: 'homepage',
+  url: 'homepage',
+}
+
+function normalizeHeader(header: string): string {
+  return header.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function toCanonicalHeader(header: string): string | null {
+  const normalized = normalizeHeader(header)
+  return headerAliases[normalized] || null
+}
+
 function parseCSV(csvText: string): Array<Record<string, string>> {
-  const lines = csvText.split('\n').filter((line) => line.trim())
+  const lines = csvText
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .filter((line) => line.trim())
   if (lines.length === 0) return []
 
   // Parse header
@@ -59,12 +130,21 @@ function parseCSV(csvText: string): Array<Record<string, string>> {
 
     for (let j = 0; j < headers.length; j++) {
       const value = values[j] || ''
+      const header = headers[j] || ''
+      const canonical = toCanonicalHeader(header)
+      if (!canonical) continue
+
       // Remove surrounding quotes if present
       const cleanValue =
         value.startsWith('"') && value.endsWith('"')
           ? value.slice(1, -1)
           : value
-      row[headers[j]!] = cleanValue.trim()
+      const trimmed = cleanValue.trim()
+
+      if (!trimmed) continue
+      if (!row[canonical]) {
+        row[canonical] = trimmed
+      }
     }
 
     rows.push(row)
@@ -79,10 +159,11 @@ function parseCSV(csvText: string): Array<Record<string, string>> {
 function mapCSVRowToContact(row: Record<string, string>): Partial<Contact> {
   const first = row.first || ''
   const last = row.last || ''
-  const fullName = `${first} ${last}`.trim() || 'Unnamed Contact'
+  const fallbackFullName = `${first} ${last}`.trim()
+  const fullName = row.full_name || fallbackFullName || 'Unnamed Contact'
 
   // Prefer phone, fallback to phone_home
-  const phone = row.phone || row.phone_home || null
+  const phone = normalizePhoneNumber(row.phone || row.phone_home || null)
 
   // Prefer email, then email_work, then email_other
   const email = row.email || row.email_work || row.email_other || null
@@ -109,9 +190,8 @@ function mapCSVRowToContact(row: Record<string, string>): Partial<Contact> {
     job_title: row.job_title || null,
     birthday: birthday,
     homepage: row.homepage || null,
-    // Note: address, notes not in CSV, but could be added later
-    address: null,
-    notes: null,
+    address: row.address || null,
+    notes: row.notes || null,
   }
 }
 

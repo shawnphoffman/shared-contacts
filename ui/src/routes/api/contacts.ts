@@ -3,6 +3,7 @@ import { json } from '@tanstack/react-start'
 import crypto from 'crypto'
 import { getAllContacts, createContact, type Contact } from '../../lib/db'
 import { generateVCard, extractUID } from '../../lib/vcard'
+import { normalizePhoneNumber } from '../../lib/utils'
 
 const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
 
@@ -94,6 +95,13 @@ export const Route = createFileRoute('/api/contacts')({
           const photoPayload = body as PhotoPayload
           const photoFields = decodePhotoPayload(photoPayload)
 
+          const normalizedPhones = Array.isArray(body.phones)
+            ? body.phones.map((phone: { value?: string }) => ({
+                ...phone,
+                value: normalizePhoneNumber(phone.value) ?? '',
+              }))
+            : body.phones
+
           const contactData: Partial<Contact> = {
             full_name: body.full_name,
             first_name: body.first_name,
@@ -104,8 +112,8 @@ export const Route = createFileRoute('/api/contacts')({
             nickname: body.nickname,
             maiden_name: body.maiden_name,
             email: body.email,
-            phone: body.phone,
-            phones: body.phones,
+            phone: normalizePhoneNumber(body.phone),
+            phones: normalizedPhones,
             emails: body.emails,
             organization: body.organization,
             org_units: body.org_units,

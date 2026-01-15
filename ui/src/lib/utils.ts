@@ -17,7 +17,12 @@ export function formatPhoneNumber(
   defaultCountry: CountryCode = 'US',
 ): string {
   if (!phone) return ''
-  
+
+  const digitsOnly = phone.replace(/\D/g, '')
+  if (digitsOnly.length === 7) {
+    return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3)}`
+  }
+
   try {
     const phoneNumber = parsePhoneNumberWithError(phone, defaultCountry)
     return phoneNumber.formatNational()
@@ -25,4 +30,24 @@ export function formatPhoneNumber(
     // If parsing fails, return the original phone number
     return phone
   }
+}
+
+/**
+ * Normalize a phone number for storage.
+ * Preserves existing formats but formats 7-digit numbers as XXX-XXXX.
+ */
+export function normalizePhoneNumber(
+  phone: string | null | undefined,
+): string | null {
+  if (phone == null) return null
+
+  const trimmed = phone.trim()
+  if (!trimmed) return ''
+
+  const digitsOnly = trimmed.replace(/\D/g, '')
+  if (digitsOnly.length === 7) {
+    return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3)}`
+  }
+
+  return trimmed
 }

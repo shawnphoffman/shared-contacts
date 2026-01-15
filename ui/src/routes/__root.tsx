@@ -87,8 +87,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          // enableSystem
           disableTransitionOnChange
         >
           <Header />

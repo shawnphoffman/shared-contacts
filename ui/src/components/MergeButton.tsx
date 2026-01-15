@@ -52,33 +52,22 @@ export function MergeButton({ contactIds, onMergeSuccess }: MergeButtonProps) {
   }
 
   return (
-    <div className="gap-2 flex flex-col sm:flex-row justify-between sm:items-center">
-      <div className="gap-1 flex flex-col">
-        <h3 className="text-sm font-medium">
-          Merge Selected Contacts ({contactIds.length})
-        </h3>
-        <p className="text-xs text-gray-500">
-          Merge {contactIds.length} selected contacts into the oldest contact.
-          Duplicate emails and phone numbers will be deduplicated.
-        </p>
-      </div>
-      <Button
-        onClick={handleMerge}
-        disabled={mergeMutation.isPending || contactIds.length < 2}
-        variant="outline"
-      >
-        {mergeMutation.isPending ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-            Merging...
-          </>
-        ) : (
-          <>
-            <Merge className="w-4 h-4 mr-1" />
-            Merge {contactIds.length} Contacts
-          </>
-        )}
-      </Button>
-    </div>
+    <Button
+      onClick={handleMerge}
+      disabled={mergeMutation.isPending || contactIds.length < 2}
+      variant="outline"
+    >
+      {mergeMutation.isPending ? (
+        <>
+          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+          Merging...
+        </>
+      ) : (
+        <>
+          <Merge className="w-4 h-4 mr-1" />
+          Merge {contactIds.length} Contacts
+        </>
+      )}
+    </Button>
   )
 }

@@ -8,6 +8,7 @@ import {
   type Contact,
 } from '../../lib/db'
 import { generateVCard, extractUID } from '../../lib/vcard'
+import { normalizePhoneNumber } from '../../lib/utils'
 
 const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
 
@@ -106,6 +107,13 @@ export const Route = createFileRoute('/api/contacts/$id')({
           const body = await request.json()
           const photoPayload = body as PhotoPayload
           const photoFields = decodePhotoPayload(photoPayload)
+          const normalizedPhones = Array.isArray(body.phones)
+            ? body.phones.map((phone: { value?: string }) => ({
+                ...phone,
+                value: normalizePhoneNumber(phone.value) ?? '',
+              }))
+            : body.phones
+
           const contactData: Partial<Contact> = {
             full_name: body.full_name,
             first_name: body.first_name,
@@ -116,8 +124,8 @@ export const Route = createFileRoute('/api/contacts/$id')({
             nickname: body.nickname,
             maiden_name: body.maiden_name,
             email: body.email,
-            phone: body.phone,
-            phones: body.phones,
+            phone: normalizePhoneNumber(body.phone),
+            phones: normalizedPhones,
             emails: body.emails,
             organization: body.organization,
             org_units: body.org_units,

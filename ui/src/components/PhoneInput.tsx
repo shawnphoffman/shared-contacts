@@ -41,6 +41,11 @@ export function PhoneInput({
     CountryCode | undefined
   >(defaultCountry)
   const inputRef = useRef<HTMLInputElement>(null)
+  const formatSevenDigit = (inputValue: string): string | null => {
+    const digitsOnly = inputValue.replace(/\D/g, '')
+    if (digitsOnly.length !== 7) return null
+    return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3)}`
+  }
 
   // Update display value when external value changes
   useEffect(() => {
@@ -94,7 +99,7 @@ export function PhoneInput({
           // Use AsYouType formatter
           const formatter = new AsYouType(detectedCountry || defaultCountry)
           const formatted = formatter.input(value)
-          setDisplayValue(formatted)
+          setDisplayValue(formatSevenDigit(value) || formatted)
           if (formatter.country) {
             setDetectedCountry(formatter.country)
           }
@@ -105,13 +110,13 @@ export function PhoneInput({
       try {
         const formatter = new AsYouType(detectedCountry || defaultCountry)
         const formatted = formatter.input(value)
-        setDisplayValue(formatted)
+        setDisplayValue(formatSevenDigit(value) || formatted)
         if (formatter.country) {
           setDetectedCountry(formatter.country)
         }
       } catch {
         // If all else fails, use value as-is
-        setDisplayValue(value)
+        setDisplayValue(formatSevenDigit(value) || value)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,6 +124,7 @@ export function PhoneInput({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value
+    const sevenDigit = formatSevenDigit(inputValue)
 
     // Use AsYouType formatter for real-time formatting
     const formatter = new AsYouType(detectedCountry || defaultCountry)
@@ -129,11 +135,15 @@ export function PhoneInput({
       setDetectedCountry(formatter.country)
     }
 
-    setDisplayValue(formattedValue)
+    setDisplayValue(sevenDigit || formattedValue)
 
     // Call onChange with the formatted value
     // Try to get E.164 format if we can parse it, otherwise use formatted value
     if (onChange) {
+      if (sevenDigit) {
+        onChange(sevenDigit)
+        return
+      }
       try {
         const phoneNumber = parsePhoneNumber(
           inputValue,
@@ -192,11 +202,23 @@ export function PhoneInput({
               }
             }
           } catch {
-            // Keep current value if parsing fails
+            const sevenDigit = formatSevenDigit(displayValue)
+            if (sevenDigit) {
+              setDisplayValue(sevenDigit)
+              if (onChange) {
+                onChange(sevenDigit)
+              }
+            }
           }
         }
       } catch {
-        // Keep current value if parsing fails
+        const sevenDigit = formatSevenDigit(displayValue)
+        if (sevenDigit) {
+          setDisplayValue(sevenDigit)
+          if (onChange) {
+            onChange(sevenDigit)
+          }
+        }
       }
     }
     onBlur?.()

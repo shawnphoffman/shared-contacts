@@ -64,7 +64,7 @@ export default function Header() {
             }}
           >
             <LinkIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Connection</span>
+            <span className="hidden sm:inline">CardDAV</span>
           </Link>
           <Link
             to="/about"

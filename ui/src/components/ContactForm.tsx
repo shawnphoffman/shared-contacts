@@ -15,6 +15,7 @@ import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
 import { validateEmail, validateUrl, normalizeUrl } from '../lib/validation'
+import { normalizePhoneNumber } from '../lib/utils'
 import {
   cropToSquareDataUrl,
   getContactPhotoUrl,
@@ -336,8 +337,13 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
         value: url.value.trim() ? normalizeUrl(url.value) : url.value,
       }))
 
+      const normalizedPhones = phones.map((phone) => ({
+        ...phone,
+        value: normalizePhoneNumber(phone.value) ?? '',
+      }))
+
       // Filter out empty fields before submission
-      const nonEmptyPhones = phones.filter((p) => p.value.trim())
+      const nonEmptyPhones = normalizedPhones.filter((p) => p.value.trim())
       const nonEmptyEmails = emails.filter((e) => e.value.trim())
       const nonEmptyAddresses = addresses.filter((a) => a.value.trim())
       const nonEmptyUrls = normalizedUrls.filter((u) => u.value.trim())

@@ -15,6 +15,7 @@ import {
   Plus,
   Search,
   RefreshCw,
+  Trash2,
 } from 'lucide-react'
 import { useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
@@ -57,6 +58,7 @@ function ContactsIndexPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   const getNameParts = (contact: Contact) => {
     const firstName = contact.first_name?.trim() ?? ''
@@ -160,9 +162,7 @@ function ContactsIndexPage() {
         const { firstName } = getNameParts(contact)
         return (
           <div>
-            <div className="font-medium">
-              {firstName || 'Unnamed Contact'}
-            </div>
+            <div className="font-medium">{firstName || 'Unnamed Contact'}</div>
             {contact.nickname && (
               <div className="text-sm text-gray-500">{contact.nickname}</div>
             )}
@@ -377,6 +377,53 @@ function ContactsIndexPage() {
     (id) => rowSelection[id],
   )
 
+  const handleBulkDelete = async () => {
+    if (selectedContactIds.length === 0 || isBulkDeleting) {
+      return
+    }
+
+    const shouldDelete = window.confirm(
+      `Delete ${selectedContactIds.length} contact${
+        selectedContactIds.length === 1 ? '' : 's'
+      }? This cannot be undone.`,
+    )
+    if (!shouldDelete) {
+      return
+    }
+
+    setIsBulkDeleting(true)
+    try {
+      const results = await Promise.allSettled(
+        selectedContactIds.map(async (id) => {
+          const response = await fetch(`/api/contacts/${id}`, {
+            method: 'DELETE',
+          })
+          if (!response.ok) {
+            const errorText = await response.text()
+            throw new Error(
+              errorText || `Failed to delete contact with id ${id}`,
+            )
+          }
+        }),
+      )
+      const failed = results.filter((result) => result.status === 'rejected')
+      if (failed.length > 0) {
+        alert(
+          `Failed to delete ${failed.length} contact${
+            failed.length === 1 ? '' : 's'
+          }.`,
+        )
+      }
+    } catch (error) {
+      console.error('Error deleting contacts:', error)
+      alert('Failed to delete selected contacts.')
+    } finally {
+      setIsBulkDeleting(false)
+      await refetch()
+      setRowSelection({})
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -418,13 +465,25 @@ function ContactsIndexPage() {
             <RefreshCw className="size-4" />
           </Button>
         </div>
-        {selectedContactIds.length >= 2 && (
+        {selectedContactIds.length >= 1 && (
           <div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-end">
-            <div className="w-full sm:w-auto">
-              <MergeButton
-                contactIds={selectedContactIds}
-                onMergeSuccess={() => setRowSelection({})}
-              />
+            <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2">
+              <Button
+                variant="destructive"
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                {isBulkDeleting
+                  ? 'Deleting...'
+                  : `Delete ${selectedContactIds.length}`}
+              </Button>
+              {selectedContactIds.length >= 2 && (
+                <MergeButton
+                  contactIds={selectedContactIds}
+                  onMergeSuccess={() => setRowSelection({})}
+                />
+              )}
             </div>
           </div>
         )}
