@@ -38,6 +38,7 @@ function getMigrationFiles(): string[] {
 		'07_add_sync_tracking.sql',
 		'08_add_structured_address_fields.sql',
 		'09_add_contact_photo.sql',
+		'10_add_vcard_v3_fields.sql',
 	]
 }
 

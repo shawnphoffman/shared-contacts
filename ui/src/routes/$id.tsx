@@ -170,6 +170,40 @@ function ContactDetailPage() {
     country: contact.address_country || '',
   }
 
+  const orgUnits = contact.org_units?.filter(Boolean) ?? []
+  const categories = contact.categories?.filter(Boolean) ?? []
+  const labels = contact.labels?.filter((label) => label.value.trim()) ?? []
+  const logos = contact.logos?.filter((logo) => logo.value.trim()) ?? []
+  const sounds = contact.sounds?.filter((sound) => sound.value.trim()) ?? []
+  const keys = contact.keys?.filter((key) => key.value.trim()) ?? []
+  const customFields =
+    contact.custom_fields?.filter(
+      (field) => field.key.trim() && field.value.trim(),
+    ) ?? []
+
+  const hasAdvancedFields = Boolean(
+    contact.middle_name ||
+      contact.name_prefix ||
+      contact.name_suffix ||
+      contact.maiden_name ||
+      contact.role ||
+      contact.mailer ||
+      contact.time_zone ||
+      contact.geo ||
+      contact.agent ||
+      contact.prod_id ||
+      contact.revision ||
+      contact.sort_string ||
+      contact.class ||
+      orgUnits.length > 0 ||
+      categories.length > 0 ||
+      labels.length > 0 ||
+      logos.length > 0 ||
+      sounds.length > 0 ||
+      keys.length > 0 ||
+      customFields.length > 0,
+  )
+
   return (
     <div className="container mx-auto p-6 max-w-2xl">
       <div className="flex justify-between items-center mb-6">
@@ -389,6 +423,182 @@ function ContactDetailPage() {
               <div className="flex-1">
                 <p className="text-sm text-gray-500 mb-2">Notes</p>
                 <p className="whitespace-pre-wrap">{contact.notes}</p>
+              </div>
+            </div>
+          )}
+          {hasAdvancedFields && (
+            <div className="pt-4 border-t space-y-3">
+              <p className="text-sm font-medium text-gray-700">
+                Advanced fields
+              </p>
+              <div className="space-y-2 text-sm">
+                {contact.name_prefix && (
+                  <div>
+                    <span className="text-gray-500">Name Prefix:</span>{' '}
+                    {contact.name_prefix}
+                  </div>
+                )}
+                {contact.middle_name && (
+                  <div>
+                    <span className="text-gray-500">Middle Name:</span>{' '}
+                    {contact.middle_name}
+                  </div>
+                )}
+                {contact.name_suffix && (
+                  <div>
+                    <span className="text-gray-500">Name Suffix:</span>{' '}
+                    {contact.name_suffix}
+                  </div>
+                )}
+                {contact.maiden_name && (
+                  <div>
+                    <span className="text-gray-500">Maiden Name:</span>{' '}
+                    {contact.maiden_name}
+                  </div>
+                )}
+                {contact.role && (
+                  <div>
+                    <span className="text-gray-500">Role:</span> {contact.role}
+                  </div>
+                )}
+                {contact.mailer && (
+                  <div>
+                    <span className="text-gray-500">Mailer:</span>{' '}
+                    {contact.mailer}
+                  </div>
+                )}
+                {contact.time_zone && (
+                  <div>
+                    <span className="text-gray-500">Time Zone:</span>{' '}
+                    {contact.time_zone}
+                  </div>
+                )}
+                {contact.geo && (
+                  <div>
+                    <span className="text-gray-500">Geo:</span> {contact.geo}
+                  </div>
+                )}
+                {contact.agent && (
+                  <div>
+                    <span className="text-gray-500">Agent:</span>{' '}
+                    {contact.agent}
+                  </div>
+                )}
+                {contact.prod_id && (
+                  <div>
+                    <span className="text-gray-500">Product ID:</span>{' '}
+                    {contact.prod_id}
+                  </div>
+                )}
+                {contact.revision && (
+                  <div>
+                    <span className="text-gray-500">Revision:</span>{' '}
+                    {contact.revision}
+                  </div>
+                )}
+                {contact.sort_string && (
+                  <div>
+                    <span className="text-gray-500">Sort String:</span>{' '}
+                    {contact.sort_string}
+                  </div>
+                )}
+                {contact.class && (
+                  <div>
+                    <span className="text-gray-500">Class:</span> {contact.class}
+                  </div>
+                )}
+                {orgUnits.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Organization Units:</span>{' '}
+                    {orgUnits.join(', ')}
+                  </div>
+                )}
+                {categories.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Categories:</span>{' '}
+                    {categories.join(', ')}
+                  </div>
+                )}
+                {labels.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Labels:</span>
+                    <div className="mt-1 space-y-1">
+                      {labels.map((label, index) => (
+                        <div key={index}>
+                          {label.value}
+                          {label.type && (
+                            <span className="text-gray-500 text-xs ml-2">
+                              ({label.type})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {logos.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Logos:</span>
+                    <div className="mt-1 space-y-1">
+                      {logos.map((logo, index) => (
+                        <div key={index}>
+                          {logo.value}
+                          {logo.type && (
+                            <span className="text-gray-500 text-xs ml-2">
+                              ({logo.type})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {sounds.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Sounds:</span>
+                    <div className="mt-1 space-y-1">
+                      {sounds.map((sound, index) => (
+                        <div key={index}>
+                          {sound.value}
+                          {sound.type && (
+                            <span className="text-gray-500 text-xs ml-2">
+                              ({sound.type})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {keys.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Keys:</span>
+                    <div className="mt-1 space-y-1">
+                      {keys.map((key, index) => (
+                        <div key={index}>
+                          {key.value}
+                          {key.type && (
+                            <span className="text-gray-500 text-xs ml-2">
+                              ({key.type})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {customFields.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Custom Fields:</span>
+                    <div className="mt-1 space-y-1">
+                      {customFields.map((field, index) => (
+                        <div key={index}>
+                          {field.key}: {field.value}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

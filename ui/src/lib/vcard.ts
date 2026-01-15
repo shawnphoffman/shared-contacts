@@ -21,6 +21,10 @@ function foldVCardLine(line: string): string[] {
   return lines
 }
 
+function normalizeVCardText(value: string): string {
+  return value.replace(/\r\n|\r|\n/g, '\\n')
+}
+
 function normalizePhotoBase64(
   photoBlob: Uint8Array | string | null | undefined,
 ): string | null {
@@ -42,6 +46,8 @@ export function generateVCard(contact: {
   first_name?: string | null
   last_name?: string | null
   middle_name?: string | null
+  name_prefix?: string | null
+  name_suffix?: string | null
   nickname?: string | null
   maiden_name?: string | null
   email?: string | null
@@ -49,7 +55,9 @@ export function generateVCard(contact: {
   phones?: Array<{ value: string; type?: string }> | null
   emails?: Array<{ value: string; type?: string }> | null
   organization?: string | null
+  org_units?: string[] | null
   job_title?: string | null
+  role?: string | null
   address?: string | null
   addresses?: Array<{ value: string; type?: string }> | null
   address_street?: string | null
@@ -61,6 +69,20 @@ export function generateVCard(contact: {
   birthday?: Date | string | null
   homepage?: string | null
   urls?: Array<{ value: string; type?: string }> | null
+  categories?: string[] | null
+  labels?: Array<{ value: string; type?: string }> | null
+  logos?: Array<{ value: string; type?: string }> | null
+  sounds?: Array<{ value: string; type?: string }> | null
+  keys?: Array<{ value: string; type?: string }> | null
+  mailer?: string | null
+  time_zone?: string | null
+  geo?: string | null
+  agent?: string | null
+  prod_id?: string | null
+  revision?: string | null
+  sort_string?: string | null
+  class?: string | null
+  custom_fields?: Array<{ key: string; value: string; params?: string[] }> | null
   notes?: string | null
   photo_blob?: Uint8Array | string | null
   photo_mime?: string | null
@@ -70,6 +92,8 @@ export function generateVCard(contact: {
   const firstName = contact.first_name || ''
   const middleName = contact.middle_name || ''
   const lastName = contact.last_name || ''
+  const namePrefix = contact.name_prefix || ''
+  const nameSuffix = contact.name_suffix || ''
 
   // vCard N format: Last;First;Middle;Prefix;Suffix
   const lines: string[] = [
@@ -77,11 +101,15 @@ export function generateVCard(contact: {
     'VERSION:3.0',
     `UID:${uid}`,
     `FN:${fullName}`,
-    `N:${lastName};${firstName};${middleName};;`,
+    `N:${lastName};${firstName};${middleName};${namePrefix};${nameSuffix}`,
   ]
 
   if (contact.nickname) {
     lines.push(`NICKNAME:${contact.nickname}`)
+  }
+
+  if (contact.sort_string) {
+    lines.push(`SORT-STRING:${contact.sort_string}`)
   }
 
   // Photo (base64)
@@ -116,11 +144,37 @@ export function generateVCard(contact: {
   } else if (contact.phone) {
     lines.push(`TEL;TYPE=CELL:${contact.phone}`)
   }
-  if (contact.organization) {
-    lines.push(`ORG:${contact.organization}`)
+  if (contact.organization || (contact.org_units && contact.org_units.length > 0)) {
+    const units = contact.org_units?.filter(Boolean) || []
+    const orgParts = [contact.organization || '', ...units]
+    lines.push(`ORG:${orgParts.join(';')}`)
   }
   if (contact.job_title) {
     lines.push(`TITLE:${contact.job_title}`)
+  }
+  if (contact.role) {
+    lines.push(`ROLE:${contact.role}`)
+  }
+  if (contact.mailer) {
+    lines.push(`MAILER:${contact.mailer}`)
+  }
+  if (contact.time_zone) {
+    lines.push(`TZ:${contact.time_zone}`)
+  }
+  if (contact.geo) {
+    lines.push(`GEO:${contact.geo}`)
+  }
+  if (contact.agent) {
+    lines.push(...foldVCardLine(`AGENT:${normalizeVCardText(contact.agent)}`))
+  }
+  if (contact.prod_id) {
+    lines.push(`PRODID:${contact.prod_id}`)
+  }
+  if (contact.revision) {
+    lines.push(`REV:${contact.revision}`)
+  }
+  if (contact.class) {
+    lines.push(`CLASS:${contact.class}`)
   }
   const formatStructuredAddress = () => {
     const street = [contact.address_street, contact.address_extended]
@@ -224,15 +278,81 @@ export function generateVCard(contact: {
   } else if (contact.homepage) {
     lines.push(`URL:${contact.homepage}`)
   }
+
+  if (contact.categories && contact.categories.length > 0) {
+    const categories = contact.categories.map((entry) => entry.trim()).filter(Boolean)
+    if (categories.length > 0) {
+      lines.push(`CATEGORIES:${categories.join(',')}`)
+    }
+  }
+
+  if (contact.labels && contact.labels.length > 0) {
+    for (const label of contact.labels) {
+      if (label.value) {
+        const type = label.type ? `;TYPE=${label.type}` : ''
+        lines.push(
+          ...foldVCardLine(`LABEL${type}:${normalizeVCardText(label.value)}`),
+        )
+      }
+    }
+  }
+
+  if (contact.logos && contact.logos.length > 0) {
+    for (const logo of contact.logos) {
+      if (logo.value) {
+        const type = logo.type ? `;TYPE=${logo.type}` : ''
+        lines.push(
+          ...foldVCardLine(`LOGO${type}:${normalizeVCardText(logo.value)}`),
+        )
+      }
+    }
+  }
+
+  if (contact.sounds && contact.sounds.length > 0) {
+    for (const sound of contact.sounds) {
+      if (sound.value) {
+        const type = sound.type ? `;TYPE=${sound.type}` : ''
+        lines.push(
+          ...foldVCardLine(`SOUND${type}:${normalizeVCardText(sound.value)}`),
+        )
+      }
+    }
+  }
+
+  if (contact.keys && contact.keys.length > 0) {
+    for (const key of contact.keys) {
+      if (key.value) {
+        const type = key.type ? `;TYPE=${key.type}` : ''
+        lines.push(
+          ...foldVCardLine(`KEY${type}:${normalizeVCardText(key.value)}`),
+        )
+      }
+    }
+  }
   if (contact.maiden_name) {
     // Maiden name can be added to notes or as a custom field
     const existingNotes = contact.notes || ''
     const maidenNote = `Maiden name: ${contact.maiden_name}`
-    lines.push(
-      `NOTE:${existingNotes ? `${existingNotes}\n${maidenNote}` : maidenNote}`,
-    )
+    const noteValue = existingNotes
+      ? `${existingNotes}\n${maidenNote}`
+      : maidenNote
+    const normalizedNote = normalizeVCardText(noteValue)
+    lines.push(...foldVCardLine(`NOTE:${normalizedNote}`))
   } else if (contact.notes) {
-    lines.push(`NOTE:${contact.notes}`)
+    const normalizedNote = normalizeVCardText(contact.notes)
+    lines.push(...foldVCardLine(`NOTE:${normalizedNote}`))
+  }
+
+  if (contact.custom_fields && contact.custom_fields.length > 0) {
+    for (const customField of contact.custom_fields) {
+      if (!customField.key || !customField.value) continue
+      const params = customField.params?.length ? `;${customField.params.join(';')}` : ''
+      lines.push(
+        ...foldVCardLine(
+          `${customField.key}${params}:${normalizeVCardText(customField.value)}`,
+        ),
+      )
+    }
   }
 
   lines.push('END:VCARD')

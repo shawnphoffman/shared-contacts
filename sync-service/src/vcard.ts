@@ -18,12 +18,28 @@ export interface VCardData {
 	emails?: VCardField[] // Multiple emails
 	tels?: VCardField[] // Multiple phone numbers
 	org?: string
+	orgUnits?: string[]
 	title?: string
+	role?: string
+	mailer?: string
+	tz?: string
+	geo?: string
+	agent?: string
+	prodid?: string
+	rev?: string
+	sortString?: string
+	class?: string
 	adr?: string // Deprecated: use addresses array
 	addresses?: VCardField[] // Multiple addresses
 	bday?: string // Birthday (YYYYMMDD or YYYY-MM-DD)
 	url?: string // Deprecated: use urls array
 	urls?: VCardField[] // Multiple URLs
+	categories?: string[]
+	labels?: VCardField[]
+	logos?: VCardField[]
+	sounds?: VCardField[]
+	keys?: VCardField[]
+	customFields?: Array<{ key: string; value: string; params?: string[] }>
 	note?: string
 	photo?: { data: string; type?: string }
 	version?: string
@@ -39,6 +55,11 @@ export function parseVCard(vcardString: string): VCardData {
 		tels: [],
 		addresses: [],
 		urls: [],
+		labels: [],
+		logos: [],
+		sounds: [],
+		keys: [],
+		customFields: [],
 	}
 
 	let currentLine = ''
@@ -77,15 +98,23 @@ export function parseVCard(vcardString: string): VCardData {
 
 function normalizeVCardTypes(types: string[]): string | undefined {
 	const normalized = types
-		.flatMap((type) => type.split(','))
-		.map((type) => type.trim().replace(/^"|"$/g, ''))
+		.flatMap(type => type.split(','))
+		.map(type => type.trim().replace(/^"|"$/g, ''))
 		.filter(Boolean)
-		.map((type) => type.toUpperCase())
+		.map(type => type.toUpperCase())
 
 	if (normalized.length === 0) return undefined
 
 	const unique = Array.from(new Set(normalized))
 	return unique.join(',')
+}
+
+function normalizeVCardText(value: string): string {
+	return value.replace(/\r\n|\r|\n/g, '\\n')
+}
+
+function unescapeVCardText(value: string): string {
+	return value.replace(/\\n/g, '\n')
 }
 
 function parseVCardLine(line: string, data: VCardData): void {
@@ -152,10 +181,43 @@ function parseVCardLine(line: string, data: VCardData): void {
 			}
 			break
 		case 'ORG':
-			data.org = value
+			if (value.includes(';')) {
+				const parts = value.split(';')
+				data.org = parts[0] || ''
+				data.orgUnits = parts.slice(1).filter(Boolean)
+			} else {
+				data.org = value
+			}
 			break
 		case 'TITLE':
 			data.title = value
+			break
+		case 'ROLE':
+			data.role = value
+			break
+		case 'MAILER':
+			data.mailer = value
+			break
+		case 'TZ':
+			data.tz = value
+			break
+		case 'GEO':
+			data.geo = value
+			break
+		case 'AGENT':
+			data.agent = unescapeVCardText(value)
+			break
+		case 'PRODID':
+			data.prodid = value
+			break
+		case 'REV':
+			data.rev = value
+			break
+		case 'SORT-STRING':
+			data.sortString = value
+			break
+		case 'CLASS':
+			data.class = value
 			break
 		case 'ADR':
 			if (!data.addresses) data.addresses = []
@@ -180,12 +242,45 @@ function parseVCardLine(line: string, data: VCardData): void {
 			}
 			break
 		case 'NOTE':
-			data.note = value
+			data.note = unescapeVCardText(value)
+			break
+		case 'CATEGORIES':
+			data.categories = value
+				.split(',')
+				.map(entry => entry.trim())
+				.filter(Boolean)
+			break
+		case 'LABEL':
+			if (!data.labels) data.labels = []
+			data.labels.push({ value: unescapeVCardText(value), type })
+			break
+		case 'LOGO':
+			if (!data.logos) data.logos = []
+			data.logos.push({ value: unescapeVCardText(value), type })
+			break
+		case 'SOUND':
+			if (!data.sounds) data.sounds = []
+			data.sounds.push({ value: unescapeVCardText(value), type })
+			break
+		case 'KEY':
+			if (!data.keys) data.keys = []
+			data.keys.push({ value: unescapeVCardText(value), type })
 			break
 		case 'PHOTO':
 			data.photo = {
 				data: value,
 				type,
+			}
+			break
+		default:
+			if (baseKey.startsWith('X-')) {
+				if (!data.customFields) data.customFields = []
+				const params = parts.slice(1)
+				data.customFields.push({
+					key: baseKey,
+					value: unescapeVCardText(value),
+					params: params.length > 0 ? params : undefined,
+				})
 			}
 			break
 	}
@@ -201,12 +296,16 @@ export function generateVCard(
 		first_name?: string | null
 		last_name?: string | null
 		middle_name?: string | null
+		name_prefix?: string | null
+		name_suffix?: string | null
 		nickname?: string | null
 		maiden_name?: string | null
 		email?: string | null
 		phone?: string | null
 		organization?: string | null
+		org_units?: string[] | null
 		job_title?: string | null
+		role?: string | null
 		address?: string | null
 		address_street?: string | null
 		address_extended?: string | null
@@ -216,6 +315,20 @@ export function generateVCard(
 		address_country?: string | null
 		birthday?: Date | string | null
 		homepage?: string | null
+		categories?: string[] | null
+		labels?: Array<{ value: string; type?: string }> | null
+		logos?: Array<{ value: string; type?: string }> | null
+		sounds?: Array<{ value: string; type?: string }> | null
+		keys?: Array<{ value: string; type?: string }> | null
+		mailer?: string | null
+		time_zone?: string | null
+		geo?: string | null
+		agent?: string | null
+		prod_id?: string | null
+		revision?: string | null
+		sort_string?: string | null
+		class?: string | null
+		custom_fields?: Array<{ key: string; value: string; params?: string[] }> | null
 		notes?: string | null
 		photo_blob?: Buffer | null
 		photo_mime?: string | null
@@ -241,8 +354,8 @@ export function generateVCard(
 	const lastName = nameParts[0] || contact?.last_name || ''
 	const firstName = nameParts[1] || contact?.first_name || ''
 	const additional = nameParts[2] || contact?.middle_name || ''
-	const prefix = nameParts[3] || ''
-	const suffix = nameParts[4] || ''
+	const prefix = nameParts[3] || contact?.name_prefix || ''
+	const suffix = nameParts[4] || contact?.name_suffix || ''
 
 	if (lastName || firstName || additional || prefix || suffix) {
 		lines.push(`N:${lastName};${firstName};${additional};${prefix};${suffix}`)
@@ -299,9 +412,11 @@ export function generateVCard(
 	}
 
 	// Organization
-	const org = data.org || contact?.organization
-	if (org) {
-		lines.push(`ORG:${org}`)
+	const org = data.org || contact?.organization || ''
+	const units = data.orgUnits || contact?.org_units || []
+	if (org || units.length > 0) {
+		const orgParts = [org, ...units.filter(Boolean)]
+		lines.push(`ORG:${orgParts.join(';')}`)
 	}
 
 	// Job title
@@ -309,11 +424,45 @@ export function generateVCard(
 	if (title) {
 		lines.push(`TITLE:${title}`)
 	}
+	const role = data.role || contact?.role
+	if (role) {
+		lines.push(`ROLE:${role}`)
+	}
+	const mailer = data.mailer || contact?.mailer
+	if (mailer) {
+		lines.push(`MAILER:${mailer}`)
+	}
+	const tz = data.tz || contact?.time_zone
+	if (tz) {
+		lines.push(`TZ:${tz}`)
+	}
+	const geo = data.geo || contact?.geo
+	if (geo) {
+		lines.push(`GEO:${geo}`)
+	}
+	const agent = data.agent || contact?.agent
+	if (agent) {
+		lines.push(...foldVCardLine(`AGENT:${normalizeVCardText(agent)}`))
+	}
+	const prodid = data.prodid || contact?.prod_id
+	if (prodid) {
+		lines.push(`PRODID:${prodid}`)
+	}
+	const rev = data.rev || contact?.revision
+	if (rev) {
+		lines.push(`REV:${rev}`)
+	}
+	const sortString = data.sortString || contact?.sort_string
+	if (sortString) {
+		lines.push(`SORT-STRING:${sortString}`)
+	}
+	const classValue = data.class || contact?.class
+	if (classValue) {
+		lines.push(`CLASS:${classValue}`)
+	}
 
 	const formatStructuredAddress = () => {
-		const street = [contact?.address_street, contact?.address_extended]
-			.filter(Boolean)
-			.join(', ')
+		const street = [contact?.address_street, contact?.address_extended].filter(Boolean).join(', ')
 		const parts = [
 			'',
 			'',
@@ -334,9 +483,7 @@ export function generateVCard(
 			const poBox = parts[0] || ''
 			const extended = parts[1] || ''
 			if (parts.length >= 8) {
-				const street = [parts[2] || '', parts[3] || '']
-					.filter(Boolean)
-					.join(', ')
+				const street = [parts[2] || '', parts[3] || ''].filter(Boolean).join(', ')
 				const city = parts[4] || ''
 				const state = parts[5] || ''
 				const postal = parts[6] || ''
@@ -344,9 +491,7 @@ export function generateVCard(
 				return [poBox, '', street, city, state, postal, country].join(';')
 			}
 			if (parts.length >= 7) {
-				const street = [parts[2] || '', extended]
-					.filter(Boolean)
-					.join(', ')
+				const street = [parts[2] || '', extended].filter(Boolean).join(', ')
 				const city = parts[3] || ''
 				const state = parts[4] || ''
 				const postal = parts[5] || ''
@@ -433,7 +578,55 @@ export function generateVCard(
 		note = note ? `${note}\n${maidenNote}` : maidenNote
 	}
 	if (note) {
-		lines.push(`NOTE:${note}`)
+		const normalizedNote = note.replace(/\r\n|\r|\n/g, '\\n')
+		lines.push(...foldVCardLine(`NOTE:${normalizedNote}`))
+	}
+
+	const categories = data.categories || contact?.categories || []
+	if (categories.length > 0) {
+		const formatted = categories.map(entry => entry.trim()).filter(Boolean)
+		if (formatted.length > 0) {
+			lines.push(`CATEGORIES:${formatted.join(',')}`)
+		}
+	}
+
+	const labels = contact?.labels || data.labels || []
+	for (const label of labels) {
+		if (label.value) {
+			const type = label.type ? `;TYPE=${label.type}` : ''
+			lines.push(...foldVCardLine(`LABEL${type}:${normalizeVCardText(label.value)}`))
+		}
+	}
+
+	const logos = contact?.logos || data.logos || []
+	for (const logo of logos) {
+		if (logo.value) {
+			const type = logo.type ? `;TYPE=${logo.type}` : ''
+			lines.push(...foldVCardLine(`LOGO${type}:${normalizeVCardText(logo.value)}`))
+		}
+	}
+
+	const sounds = contact?.sounds || data.sounds || []
+	for (const sound of sounds) {
+		if (sound.value) {
+			const type = sound.type ? `;TYPE=${sound.type}` : ''
+			lines.push(...foldVCardLine(`SOUND${type}:${normalizeVCardText(sound.value)}`))
+		}
+	}
+
+	const keys = contact?.keys || data.keys || []
+	for (const key of keys) {
+		if (key.value) {
+			const type = key.type ? `;TYPE=${key.type}` : ''
+			lines.push(...foldVCardLine(`KEY${type}:${normalizeVCardText(key.value)}`))
+		}
+	}
+
+	const customFields = data.customFields || contact?.custom_fields || []
+	for (const customField of customFields) {
+		if (!customField.key || !customField.value) continue
+		const params = customField.params?.length ? `;${customField.params.join(';')}` : ''
+		lines.push(...foldVCardLine(`${customField.key}${params}:${normalizeVCardText(customField.value)}`))
 	}
 
 	lines.push('END:VCARD')
@@ -454,10 +647,7 @@ function foldVCardLine(line: string): string[] {
 	return lines
 }
 
-function getPhotoBase64(
-	data: VCardData,
-	contact?: { photo_blob?: Buffer | null }
-): string | null {
+function getPhotoBase64(data: VCardData, contact?: { photo_blob?: Buffer | null }): string | null {
 	if (data.photo?.data) return data.photo.data
 	if (contact?.photo_blob) {
 		return contact.photo_blob.toString('base64')
@@ -465,10 +655,7 @@ function getPhotoBase64(
 	return null
 }
 
-function getPhotoType(
-	data: VCardData,
-	contact?: { photo_mime?: string | null }
-): string {
+function getPhotoType(data: VCardData, contact?: { photo_mime?: string | null }): string {
 	if (data.photo?.type) {
 		return data.photo.type.toUpperCase()
 	}

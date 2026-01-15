@@ -488,6 +488,8 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			const firstName = nameParts[1] || ''
 			const lastName = nameParts[0] || ''
 			const middleName = nameParts[2] || ''
+			const namePrefix = nameParts[3] || ''
+			const nameSuffix = nameParts[4] || ''
 			const fullName = vcardData.fn || `${firstName} ${middleName} ${lastName}`.trim() || 'Unknown'
 
 			// Parse birthday (BDAY format: YYYYMMDD or YYYY-MM-DD)
@@ -564,6 +566,8 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				first_name: firstName || null,
 				last_name: lastName || null,
 				middle_name: middleName || null,
+				name_prefix: namePrefix || null,
+				name_suffix: nameSuffix || null,
 				nickname: vcardData.nickname || null,
 				maiden_name: maidenName,
 				// Backward compatibility: set single values from arrays
@@ -577,8 +581,43 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				addresses: addresses.length > 0 ? addresses : null,
 				urls: urls.length > 0 ? urls : null,
 				organization: vcardData.org || null,
+				org_units:
+					vcardData.orgUnits && vcardData.orgUnits.length > 0
+						? vcardData.orgUnits
+						: null,
 				job_title: vcardData.title || null,
+				role: vcardData.role || null,
 				birthday: birthday,
+				categories:
+					vcardData.categories && vcardData.categories.length > 0
+						? vcardData.categories
+						: null,
+				labels:
+					vcardData.labels && vcardData.labels.length > 0
+						? vcardData.labels
+						: null,
+				logos:
+					vcardData.logos && vcardData.logos.length > 0
+						? vcardData.logos
+						: null,
+				sounds:
+					vcardData.sounds && vcardData.sounds.length > 0
+						? vcardData.sounds
+						: null,
+				keys:
+					vcardData.keys && vcardData.keys.length > 0 ? vcardData.keys : null,
+				mailer: vcardData.mailer || null,
+				time_zone: vcardData.tz || null,
+				geo: vcardData.geo || null,
+				agent: vcardData.agent || null,
+				prod_id: vcardData.prodid || null,
+				revision: vcardData.rev || null,
+				sort_string: vcardData.sortString || null,
+				class: vcardData.class || null,
+				custom_fields:
+					vcardData.customFields && vcardData.customFields.length > 0
+						? vcardData.customFields
+						: null,
 				notes: notes,
 				photo_blob: photoBlob,
 				photo_mime: photoMime,

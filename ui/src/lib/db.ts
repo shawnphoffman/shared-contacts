@@ -46,6 +46,8 @@ export interface Contact {
   first_name: string | null
   last_name: string | null
   middle_name: string | null
+  name_prefix: string | null
+  name_suffix: string | null
   nickname: string | null
   maiden_name: string | null
   email: string | null // Deprecated: use emails array
@@ -53,7 +55,9 @@ export interface Contact {
   phones: ContactField[] | null // Multiple phone numbers
   emails: ContactField[] | null // Multiple emails
   organization: string | null
+  org_units: string[] | null
   job_title: string | null
+  role: string | null
   address: string | null // Deprecated: use addresses array
   addresses: ContactField[] | null // Multiple addresses
   // Structured address fields for easier querying and display
@@ -66,6 +70,20 @@ export interface Contact {
   birthday: Date | null
   homepage: string | null // Deprecated: use urls array
   urls: ContactField[] | null // Multiple URLs
+  categories: string[] | null
+  labels: ContactField[] | null
+  logos: ContactField[] | null
+  sounds: ContactField[] | null
+  keys: ContactField[] | null
+  mailer: string | null
+  time_zone: string | null
+  geo: string | null
+  agent: string | null
+  prod_id: string | null
+  revision: string | null
+  sort_string: string | null
+  class: string | null
+  custom_fields: Array<{ key: string; value: string; params?: string[] }> | null
   notes: string | null
   photo_blob: Uint8Array | string | null
   photo_mime: string | null
@@ -104,6 +122,31 @@ export async function getAllContacts(): Promise<Contact[]> {
           : row.addresses
     if (row.urls)
       row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+    if (row.org_units)
+      row.org_units =
+        typeof row.org_units === 'string'
+          ? JSON.parse(row.org_units)
+          : row.org_units
+    if (row.categories)
+      row.categories =
+        typeof row.categories === 'string'
+          ? JSON.parse(row.categories)
+          : row.categories
+    if (row.labels)
+      row.labels =
+        typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
+    if (row.logos)
+      row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
+    if (row.sounds)
+      row.sounds =
+        typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
+    if (row.keys)
+      row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
+    if (row.custom_fields)
+      row.custom_fields =
+        typeof row.custom_fields === 'string'
+          ? JSON.parse(row.custom_fields)
+          : row.custom_fields
     return row
   })
 }
@@ -127,6 +170,31 @@ export async function getContactById(id: string): Promise<Contact | null> {
         : row.addresses
   if (row.urls)
     row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  if (row.org_units)
+    row.org_units =
+      typeof row.org_units === 'string'
+        ? JSON.parse(row.org_units)
+        : row.org_units
+  if (row.categories)
+    row.categories =
+      typeof row.categories === 'string'
+        ? JSON.parse(row.categories)
+        : row.categories
+  if (row.labels)
+    row.labels =
+      typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
+  if (row.logos)
+    row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
+  if (row.sounds)
+    row.sounds =
+      typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
+  if (row.keys)
+    row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
+  if (row.custom_fields)
+    row.custom_fields =
+      typeof row.custom_fields === 'string'
+        ? JSON.parse(row.custom_fields)
+        : row.custom_fields
   return row
 }
 
@@ -214,6 +282,8 @@ export async function createContact(
     'first_name',
     'last_name',
     'middle_name',
+    'name_prefix',
+    'name_suffix',
     'nickname',
     'maiden_name',
     'email',
@@ -221,7 +291,9 @@ export async function createContact(
     'phones',
     'emails',
     'organization',
+    'org_units',
     'job_title',
+    'role',
     'address',
     'addresses',
     'address_street',
@@ -233,6 +305,20 @@ export async function createContact(
     'birthday',
     'homepage',
     'urls',
+    'categories',
+    'labels',
+    'logos',
+    'sounds',
+    'keys',
+    'mailer',
+    'time_zone',
+    'geo',
+    'agent',
+    'prod_id',
+    'revision',
+    'sort_string',
+    'class',
+    'custom_fields',
     'notes',
     'photo_blob',
     'photo_mime',
@@ -265,7 +351,14 @@ export async function createContact(
         (field === 'phones' ||
           field === 'emails' ||
           field === 'addresses' ||
-          field === 'urls') &&
+          field === 'urls' ||
+          field === 'org_units' ||
+          field === 'categories' ||
+          field === 'labels' ||
+          field === 'logos' ||
+          field === 'sounds' ||
+          field === 'keys' ||
+          field === 'custom_fields') &&
         Array.isArray(value)
       ) {
         values.push(JSON.stringify(value))
@@ -279,7 +372,14 @@ export async function createContact(
       field === 'phones' ||
       field === 'emails' ||
       field === 'addresses' ||
-      field === 'urls'
+      field === 'urls' ||
+      field === 'org_units' ||
+      field === 'categories' ||
+      field === 'labels' ||
+      field === 'logos' ||
+      field === 'sounds' ||
+      field === 'keys' ||
+      field === 'custom_fields'
     ) {
       // Default empty arrays for JSONB fields
       columns.push(field)
@@ -314,6 +414,31 @@ export async function createContact(
         : row.addresses
   if (row.urls)
     row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  if (row.org_units)
+    row.org_units =
+      typeof row.org_units === 'string'
+        ? JSON.parse(row.org_units)
+        : row.org_units
+  if (row.categories)
+    row.categories =
+      typeof row.categories === 'string'
+        ? JSON.parse(row.categories)
+        : row.categories
+  if (row.labels)
+    row.labels =
+      typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
+  if (row.logos)
+    row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
+  if (row.sounds)
+    row.sounds =
+      typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
+  if (row.keys)
+    row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
+  if (row.custom_fields)
+    row.custom_fields =
+      typeof row.custom_fields === 'string'
+        ? JSON.parse(row.custom_fields)
+        : row.custom_fields
   return row
 }
 
@@ -343,6 +468,8 @@ export async function updateContact(
     'first_name',
     'last_name',
     'middle_name',
+    'name_prefix',
+    'name_suffix',
     'nickname',
     'maiden_name',
     'email',
@@ -350,7 +477,9 @@ export async function updateContact(
     'phones',
     'emails',
     'organization',
+    'org_units',
     'job_title',
+    'role',
     'address',
     'addresses',
     'address_street',
@@ -362,6 +491,20 @@ export async function updateContact(
     'birthday',
     'homepage',
     'urls',
+    'categories',
+    'labels',
+    'logos',
+    'sounds',
+    'keys',
+    'mailer',
+    'time_zone',
+    'geo',
+    'agent',
+    'prod_id',
+    'revision',
+    'sort_string',
+    'class',
+    'custom_fields',
     'notes',
     'photo_blob',
     'photo_mime',
@@ -386,7 +529,14 @@ export async function updateContact(
         (field === 'phones' ||
           field === 'emails' ||
           field === 'addresses' ||
-          field === 'urls') &&
+          field === 'urls' ||
+          field === 'org_units' ||
+          field === 'categories' ||
+          field === 'labels' ||
+          field === 'logos' ||
+          field === 'sounds' ||
+          field === 'keys' ||
+          field === 'custom_fields') &&
         Array.isArray(contact[field])
       ) {
         values.push(JSON.stringify(contact[field]))
@@ -421,6 +571,31 @@ export async function updateContact(
         : row.addresses
   if (row.urls)
     row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
+  if (row.org_units)
+    row.org_units =
+      typeof row.org_units === 'string'
+        ? JSON.parse(row.org_units)
+        : row.org_units
+  if (row.categories)
+    row.categories =
+      typeof row.categories === 'string'
+        ? JSON.parse(row.categories)
+        : row.categories
+  if (row.labels)
+    row.labels =
+      typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
+  if (row.logos)
+    row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
+  if (row.sounds)
+    row.sounds =
+      typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
+  if (row.keys)
+    row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
+  if (row.custom_fields)
+    row.custom_fields =
+      typeof row.custom_fields === 'string'
+        ? JSON.parse(row.custom_fields)
+        : row.custom_fields
   return row
 }
 
