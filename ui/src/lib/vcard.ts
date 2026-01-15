@@ -52,6 +52,12 @@ export function generateVCard(contact: {
   job_title?: string | null
   address?: string | null
   addresses?: Array<{ value: string; type?: string }> | null
+  address_street?: string | null
+  address_extended?: string | null
+  address_city?: string | null
+  address_state?: string | null
+  address_postal?: string | null
+  address_country?: string | null
   birthday?: Date | string | null
   homepage?: string | null
   urls?: Array<{ value: string; type?: string }> | null
@@ -116,16 +122,55 @@ export function generateVCard(contact: {
   if (contact.job_title) {
     lines.push(`TITLE:${contact.job_title}`)
   }
+  const formatStructuredAddress = () => {
+    const parts = [
+      '',
+      '',
+      contact.address_street || '',
+      contact.address_extended || '',
+      contact.address_city || '',
+      contact.address_state || '',
+      contact.address_postal || '',
+      contact.address_country || '',
+    ]
+    return parts.join(';')
+  }
+
+  const formatAddressValue = (value: string): string => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    if (trimmed.includes(';')) {
+      return trimmed
+    }
+    return `;;${trimmed};;;;`
+  }
+
+  const hasStructuredAddress =
+    contact.address_street ||
+    contact.address_extended ||
+    contact.address_city ||
+    contact.address_state ||
+    contact.address_postal ||
+    contact.address_country
+
   // Addresses - use arrays if available, fall back to single value
   if (contact.addresses && contact.addresses.length > 0) {
     for (const address of contact.addresses) {
       if (address.value) {
         const type = address.type || 'HOME'
-        lines.push(`ADR;TYPE=${type}:;;${address.value};;;;`)
+        const formatted = formatAddressValue(address.value)
+        if (formatted) {
+          lines.push(`ADR;TYPE=${type}:${formatted}`)
+        }
       }
     }
+  } else if (hasStructuredAddress) {
+    lines.push(`ADR;TYPE=HOME:${formatStructuredAddress()}`)
   } else if (contact.address) {
-    lines.push(`ADR;TYPE=HOME:;;${contact.address};;;;`)
+    const formatted = formatAddressValue(contact.address)
+    if (formatted) {
+      lines.push(`ADR;TYPE=HOME:${formatted}`)
+    }
   }
   if (contact.birthday) {
     // vCard BDAY format: YYYYMMDD or YYYY-MM-DD

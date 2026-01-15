@@ -1,6 +1,10 @@
 import { createFileRoute, useNavigate, notFound } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ContactForm, type ContactPayload } from '../components/ContactForm'
+import {
+  formatAddressForDisplay,
+  parseAddress,
+} from '../components/AddressInput'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import {
@@ -154,6 +158,15 @@ function ContactDetailPage() {
     .map((part) => part[0]?.toUpperCase())
     .join('')
 
+  const fallbackStructuredAddress = {
+    street: contact.address_street || '',
+    extended: contact.address_extended || '',
+    city: contact.address_city || '',
+    state: contact.address_state || '',
+    postal: contact.address_postal || '',
+    country: contact.address_country || '',
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-2xl">
       <div className="flex justify-between items-center mb-6">
@@ -293,17 +306,33 @@ function ContactDetailPage() {
                   {contact.addresses && contact.addresses.length > 0
                     ? contact.addresses.map((address, index) => (
                         <div key={index}>
-                          <p className="whitespace-pre-line">
-                            {address.value}
+                          <div className="space-y-1">
+                            {formatAddressForDisplay(
+                              parseAddress(address.value || ''),
+                            ).map((line, lineIndex) => (
+                              <p key={lineIndex}>{line}</p>
+                            ))}
                             {address.type && (
-                              <span className="text-gray-500 text-xs ml-2">
+                              <p className="text-gray-500 text-xs">
                                 ({address.type})
-                              </span>
+                              </p>
                             )}
-                          </p>
+                          </div>
                         </div>
                       ))
-                    : contact.address && <p>{contact.address}</p>}
+                    : (() => {
+                        const structured = contact.address
+                          ? parseAddress(contact.address)
+                          : fallbackStructuredAddress
+                        const lines = formatAddressForDisplay(structured)
+                        return lines.length > 0 ? (
+                          <div className="space-y-1">
+                            {lines.map((line, lineIndex) => (
+                              <p key={lineIndex}>{line}</p>
+                            ))}
+                          </div>
+                        ) : null
+                      })()}
                 </div>
               </div>
             </div>

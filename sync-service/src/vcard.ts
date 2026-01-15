@@ -189,6 +189,12 @@ export function generateVCard(
 		organization?: string | null
 		job_title?: string | null
 		address?: string | null
+		address_street?: string | null
+		address_extended?: string | null
+		address_city?: string | null
+		address_state?: string | null
+		address_postal?: string | null
+		address_country?: string | null
 		birthday?: Date | string | null
 		homepage?: string | null
 		notes?: string | null
@@ -285,22 +291,59 @@ export function generateVCard(
 		lines.push(`TITLE:${title}`)
 	}
 
+	const formatStructuredAddress = () => {
+		const parts = [
+			'',
+			'',
+			contact?.address_street || '',
+			contact?.address_extended || '',
+			contact?.address_city || '',
+			contact?.address_state || '',
+			contact?.address_postal || '',
+			contact?.address_country || '',
+		]
+		return parts.join(';')
+	}
+
+	const formatAddressValue = (value: string): string => {
+		const trimmed = value.trim()
+		if (!trimmed) return ''
+		if (trimmed.includes(';')) {
+			return trimmed
+		}
+		return `;;${trimmed};;;;`
+	}
+
+	const hasStructuredAddress =
+		contact?.address_street ||
+		contact?.address_extended ||
+		contact?.address_city ||
+		contact?.address_state ||
+		contact?.address_postal ||
+		contact?.address_country
+
 	// Addresses - use arrays if available, fall back to single values
 	const addresses = contact?.addresses || data.addresses || []
 	if (addresses.length > 0) {
 		for (const address of addresses) {
 			if (address.value) {
 				const type = address.type || 'HOME'
-				// vCard address format: ;;street;city;state;postal;country
-				// For now, we'll store the value as-is if it's already formatted, or wrap it
-				lines.push(`ADR;TYPE=${type}:;;${address.value};;;;`)
+				const formatted = formatAddressValue(address.value)
+				if (formatted) {
+					lines.push(`ADR;TYPE=${type}:${formatted}`)
+				}
 			}
 		}
+	} else if (hasStructuredAddress) {
+		lines.push(`ADR;TYPE=HOME:${formatStructuredAddress()}`)
 	} else {
 		// Backward compatibility: single address
 		const address = data.adr || contact?.address
 		if (address) {
-			lines.push(`ADR;TYPE=HOME:;;${address};;;;`)
+			const formatted = formatAddressValue(address)
+			if (formatted) {
+				lines.push(`ADR;TYPE=HOME:${formatted}`)
+			}
 		}
 	}
 

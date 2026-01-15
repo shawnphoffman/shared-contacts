@@ -18,21 +18,63 @@ export interface StructuredAddress {
  * Also handles plain text addresses and tries to extract structured components
  */
 export function parseAddress(addressValue: string): StructuredAddress {
-  // Check if it's in vCard format (starts with ;;)
-  if (addressValue.startsWith(';;')) {
-    const parts = addressValue.split(';')
-    return {
-      street: parts[2] || '',
-      extended: parts[3] || '', // Extended address (line 2)
-      city: parts[4] || '',
-      state: parts[5] || '',
-      postal: parts[6] || '',
-      country: parts[7] || '',
+  const trimmedValue = addressValue.trim()
+
+  // Handle vCard/structured formats (semicolon-delimited)
+  if (trimmedValue.includes(';')) {
+    const parts = trimmedValue.split(';')
+
+    // vCard format with empty PO box + extended (starts with ";;")
+    if (parts[0] === '' && parts[1] === '') {
+      if (parts.length >= 8) {
+        return {
+          street: parts[2] || '',
+          extended: parts[3] || '', // Address line 2
+          city: parts[4] || '',
+          state: parts[5] || '',
+          postal: parts[6] || '',
+          country: parts[7] || '',
+        }
+      }
+
+      // vCard format without extended line
+      return {
+        street: parts[2] || '',
+        extended: '',
+        city: parts[3] || '',
+        state: parts[4] || '',
+        postal: parts[5] || '',
+        country: parts[6] || '',
+      }
+    }
+
+    // Structured format without leading empty fields
+    if (parts.length >= 6) {
+      return {
+        street: parts[0] || '',
+        extended: parts[1] || '',
+        city: parts[2] || '',
+        state: parts[3] || '',
+        postal: parts[4] || '',
+        country: parts[5] || '',
+      }
+    }
+
+    // Structured format without extended line
+    if (parts.length === 5) {
+      return {
+        street: parts[0] || '',
+        extended: '',
+        city: parts[1] || '',
+        state: parts[2] || '',
+        postal: parts[3] || '',
+        country: parts[4] || '',
+      }
     }
   }
 
   // If it's plain text, try to parse common formats
-  if (!addressValue.trim()) {
+  if (!trimmedValue) {
     return {
       street: '',
       extended: '',
@@ -49,7 +91,7 @@ export function parseAddress(addressValue: string): StructuredAddress {
   // - "123 Main St, City, State, ZIP"
   // - "123 Main St, City, State ZIP, Country"
   // - "123 Main St, City, State, ZIP, Country"
-  const trimmed = addressValue.trim()
+  const trimmed = trimmedValue
 
   // Split by commas
   const parts = trimmed
@@ -191,6 +233,53 @@ export function parseAddress(addressValue: string): StructuredAddress {
     postal,
     country,
   }
+}
+
+/**
+ * Format structured address for display (multi-line).
+ */
+export function formatAddressForDisplay(address: StructuredAddress): string[] {
+  const lines: string[] = []
+
+  if (address.street) {
+    lines.push(address.street)
+  }
+  if (address.extended) {
+    lines.push(address.extended)
+  }
+
+  const locality = [address.city, address.state, address.postal]
+    .filter(Boolean)
+    .join(' ')
+  if (locality) {
+    lines.push(locality)
+  }
+
+  if (address.country) {
+    lines.push(address.country)
+  }
+
+  return lines
+}
+
+/**
+ * Format structured address for compact display (single line).
+ */
+export function formatAddressForSingleLine(
+  address: StructuredAddress,
+): string {
+  const parts = [
+    address.street,
+    address.extended,
+    address.city,
+    address.state,
+    address.postal,
+    address.country,
+  ]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+
+  return parts.join(', ')
 }
 
 /**

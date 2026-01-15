@@ -5,6 +5,10 @@ import { Mail, Phone, Building, MapPin } from 'lucide-react'
 import type { Contact } from '../lib/db'
 import { formatPhoneNumber } from '../lib/utils'
 import { getContactPhotoUrl } from '../lib/image'
+import {
+  formatAddressForSingleLine,
+  parseAddress,
+} from './AddressInput'
 
 interface ContactCardProps {
   contact: Contact
@@ -23,6 +27,21 @@ export function ContactCard({ contact }: ContactCardProps) {
   useEffect(() => {
     setShowPhoto(true)
   }, [contact.id, contact.photo_hash, contact.photo_updated_at])
+
+  const structuredAddress =
+    contact.addresses && contact.addresses.length > 0
+      ? parseAddress(contact.addresses[0]?.value || '')
+      : contact.address
+        ? parseAddress(contact.address)
+        : {
+            street: contact.address_street || '',
+            extended: contact.address_extended || '',
+            city: contact.address_city || '',
+            state: contact.address_state || '',
+            postal: contact.address_postal || '',
+            country: contact.address_country || '',
+          }
+  const addressLine = formatAddressForSingleLine(structuredAddress)
 
   return (
     <Link to="/$id" params={{ id: contact.id }}>
@@ -76,10 +95,10 @@ export function ContactCard({ contact }: ContactCardProps) {
               <span>{contact.organization}</span>
             </div>
           )}
-          {contact.address && (
+          {addressLine && (
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="w-4 h-4 text-gray-400" />
-              <span className="truncate">{contact.address}</span>
+              <span className="truncate">{addressLine}</span>
             </div>
           )}
         </CardContent>
