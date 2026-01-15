@@ -28,6 +28,7 @@ I also have a large extended family that I'd love to stay in touch with as much 
 ![Contacts list](docs/contacts-1.png)
 ![Contact details](docs/contacts-2.png)
 ![Contact edit](docs/contacts-3.png)
+![Synced with Apple Contacts](docs/contacts-4.png)
 
 ## Backup and Restore
 
