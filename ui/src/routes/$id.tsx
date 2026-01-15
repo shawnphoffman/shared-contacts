@@ -19,6 +19,8 @@ import {
   Mail,
   Phone,
   Building,
+  Briefcase,
+  StickyNote,
   MapPin,
   Edit,
   Trash2,
@@ -287,9 +289,12 @@ function ContactDetailPage() {
             </div>
           )}
           {contact.job_title && (
-            <div>
-              <p className="text-sm text-gray-500">Job Title</p>
-              <p>{contact.job_title}</p>
+            <div className="flex items-center gap-3">
+              <Briefcase className="w-5 h-5 text-gray-400" />
+              <div>
+                <p className="text-sm text-gray-500">Job Title</p>
+                <p>{contact.job_title}</p>
+              </div>
             </div>
           )}
           {((contact.addresses && contact.addresses.length > 0) ||
@@ -379,9 +384,12 @@ function ContactDetailPage() {
             </div>
           )}
           {contact.notes && (
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Notes</p>
-              <p className="whitespace-pre-wrap">{contact.notes}</p>
+            <div className="flex items-start gap-3">
+              <StickyNote className="w-5 h-5 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-2">Notes</p>
+                <p className="whitespace-pre-wrap">{contact.notes}</p>
+              </div>
             </div>
           )}
         </CardContent>
