@@ -78,18 +78,6 @@ COPY migrations /app/migrations
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Create init script for radicale (similar to original)
-RUN cat > /init-radicale.sh << 'EOF' && chmod +x /init-radicale.sh
-#!/bin/sh
-if [ ! -f /data/users ]; then
-echo "Creating empty users file..."
-touch /data/users 2>/dev/null || true
-chmod 666 /data/users 2>/dev/null || chmod 644 /data/users 2>/dev/null || true
-echo "Users file created. Add users with: docker exec -it <container> htpasswd -B /data/users username"
-fi
-exec /app/bin/python /app/bin/radicale --config /config/config
-EOF
-
 # Expose ports
 EXPOSE 3030 3001 5232
 

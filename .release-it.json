@@ -15,7 +15,7 @@
 		]
 	},
 	"github": {
-		"release": true,
+		"release": false,
 		"releaseName": "v${version}",
 		"releaseNotes": "bash ./scripts/generate-release-notes.sh ${version}"
 	},
