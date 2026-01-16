@@ -32,6 +32,8 @@
   },
   "homepage": "https://github.com/shawnphoffman/shared-contacts#readme",
   "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.4",
+    "auto-changelog": "^2.5.0",
     "release-it": "^19.2.3"
   }
 }
