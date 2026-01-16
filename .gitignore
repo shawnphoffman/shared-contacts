@@ -43,3 +43,4 @@ temp/
 app.config.timestamp_*.js
 *.timestamp.*
 
+/ignore
