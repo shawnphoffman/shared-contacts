@@ -5,27 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.3](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.5.1...v0.5.3) (2026-01-16)
+
+## [0.6.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.5.1...v0.6.0) (2026-01-17)
+
+### Features
+
+* add API health check route and update route tree to include health endpoint ([f01d981](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/f01d981602beb350cf637aba506885c282f5e29b))
+* add backfill endpoint for shared contacts and implement backfill functionality in user management ([a90b419](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/a90b419042186d4a30db5a59c2f8d12e724c6165))
+* implement sync service for API requests and update route imports ([7adda99](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/7adda99c972b3d681f250cd94378c42d599e0250))
 
 ### Bug Fixes
 
-- update release notes script execution in .release-it.json ([0711b68](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/0711b68041bbd29b60525f9f34390e14e322a2d7))
+* update phone number format in sample contacts migration ([d9b7499](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/d9b7499a5934cb648da95b5f302048806b09551b))
+* update release notes script execution in .release-it.json ([0711b68](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/0711b68041bbd29b60525f9f34390e14e322a2d7))
 
 ### Documentation
 
-- add new screenshot for Apple Contacts synchronization in README.md ([454b3b0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/454b3b0eddda8d302090f807f2fc119d1da14f04))
+* add new screenshot for Apple Contacts synchronization in README.md ([454b3b0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/454b3b0eddda8d302090f807f2fc119d1da14f04))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [v0.5.3](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.5.1...v0.5.3)
+#### [v0.6.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.5.1...v0.6.0)
 
+- 🔧 Chore: update configuration files and improve code formatting across the project [`dbbd496`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/dbbd4968c551e1b9ddbd2d7ad1ab3e070d48c814)
+- ♻️ Refactor: standardize route definitions and improve code formatting in routeTree.gen.ts [`62a5d36`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/62a5d363f19820d7644a5b7ea057fe254a198289)
+- ♻️ Refactor: update ESLint configuration to ignore the config file and remove unused type import in merge.ts for improved clarity [`1cf9cd9`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/1cf9cd9e89a8e9e54e94dbee83b756fa733b9c57)
 - 🔧 Chore: update .gitignore and package.json [`cefe1b7`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/cefe1b777c92e5a4500850a27a3f9a0a23d9b5ed)
+- ♻️ Refactor: standardize import formatting and clean up whitespace across various components for improved readability [`6f48431`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6f484316ca98c5db69cf0e6de8f25367b7905f24)
+- ♻️ Refactor: update .env.example and docker-compose.prod.yml for improved configuration clarity and consistency; remove deprecated ui/.env.example file [`ea7c212`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/ea7c2127f94ae9ad55b638875acfc9414dd3b733)
+- 🔧 Chore: update package-lock.json to version 0.5.1, add new dependencies including bcrypt, cors, and express, and remove deprecated packages [`0fb1a58`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/0fb1a5814ddbebe65a2c43462ab0acf26811f0c3)
+- ♻️ Refactor: enhance error handling by replacing 'any' type with 'unknown' in various service files for improved type safety [`c34029d`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/c34029d487f284bbc9e6f440009bc2371612f4bc)
 - 🔧 Chore: update package dependencies for release management [`e477e80`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/e477e8082ff10180530ced18e1d44e5d172011c1)
+- 🔧 Chore: add GNU AGPLv3 license file and update README to reflect new licensing terms [`a66b495`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/a66b4958c7de718f9a08097bdd2669c39b64d783)
+- ✨ Feature: add backfill endpoint for shared contacts and implement backfill functionality in user management [`a90b419`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/a90b419042186d4a30db5a59c2f8d12e724c6165)
+- 🔧 Chore: enhance linting and formatting scripts in package.json files across the project [`dfecdd3`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/dfecdd315792878dd8748c90a2cf12d3b252f7fd)
+- ♻️ Refactor: remove version management script to streamline project structure and reduce complexity [`089bfe4`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/089bfe49ba68fae60968286d8d7aec6532f671d1)
+- 🔧 Chore: disable GitHub release in .release-it.json and remove init script from Dockerfile [`109375d`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/109375d3c300ad70fe049db01d6ce236bd136a62)
+- 🔧 Chore: update Docker and docker-compose configurations to enhance service stability and logging, and adjust environment variable paths [`63bcdcd`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/63bcdcdeac21f95489f24da9b72d5ff62255f14f)
+- 🔧 Chore: update docker-compose files to improve service configuration and add RADICALE_URL environment variable [`ac7fc59`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/ac7fc595777e2f9416673559bdd19fda598e054e)
+- ♻️ Refactor: simplify docker-compose configuration by removing unnecessary environment variables and comments, and standardizing paths for improved clarity [`6caafe0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6caafe042596a83c0e9b077b9c0f0fd6e0166ddd)
 - Update issue templates [`6ef7ae1`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6ef7ae118efc4d78c6ec1fc1bc6472fedb2e989d)
+- ♻️ Refactor: rename pool variable to dbPool for clarity in database query functions [`29b7f03`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/29b7f039272a7e698b9afd6114f8b5082c3ec335)
+- ♻️ Refactor: simplify CardDAV URL construction by using the UI origin and updating fallback for SSR to improve consistency and clarity [`672bfba`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/672bfba7d3a966610f992b94ea7aed61eb0ddc51)
+- ✨ Feature: add API health check route and update route tree to include health endpoint [`f01d981`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/f01d981602beb350cf637aba506885c282f5e29b)
+- ♻️ Refactor: move user initialization script to a separate file and update Dockerfile to copy it [`732c033`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/732c0331e1a42f969e295351abc0616e04e775c2)
 - Add sponsorship details for Ko-fi and Buy Me a Coffee [`2f8194a`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/2f8194a89d1e337079ecc4095ea58822125f40db)
+- ♻️ Refactor: enhance MultiFieldInput component by updating default type options and simplifying options retrieval logic [`3290840`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/32908404781ef68f0a08e4c166b0ab8aa560e175)
+- ♻️ Refactor: clean up whitespace and improve string handling in ContactsIndexPage component [`25daf56`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/25daf562075cbdeb9ff867b7a68518587ef309ca)
+- 🔧 Chore: update ESLint configuration to ignore specific directories for improved linting performance [`edae861`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/edae861da98fd87d5bead0dd4df6cca6d9a58fd5)
+- ♻️ Refactor: replace json utility with Response.json for consistency in health check route [`6476f1b`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6476f1be73c72cb02d563cc1680c6e1b5f41dc5b)
+- ♻️ Refactor: remove versioning scripts from package.json for improved simplicity and clarity [`fe71b29`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/fe71b29abd9f1e1ceea9e3aee9504b0491418442)
+- ♻️ Refactor: remove optional chaining in email and phone extraction logic for improved readability [`2a857c3`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/2a857c3c492a391cb56be20cb15774bc581b113a)
+- ♻️ Refactor: update validation error state type and improve email filtering logic in ContactForm component [`f9491ce`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/f9491ce0ba25e8a0bfe741cc96c8fbdae4de3f83)
+- ✨ Feature: implement sync service for API requests and update route imports [`7adda99`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/7adda99c972b3d681f250cd94378c42d599e0250)
+- 🔧 Chore: release v0.5.3 [`052d58e`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/052d58ea4327d1f79ab054b714c433bcba9923f2)
 - Release 0.5.2 [`d5bfa4b`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/d5bfa4ba9b54cee409fc96e908b81a99edcd0b43)
+- ♻️ Refactor: improve address formatting logic and clean up code in AddressInput component [`eca4c3e`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/eca4c3e4cecedac22e28dfad04522a2991d3d11d)
+- ♻️ Refactor: comment out important notice section in CardDAVConnectionPage for clarity [`d313943`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/d31394305971640b8a1d70bb0bf9f43e62bf9b71)
+- 🐛 Fix: update phone number format in sample contacts migration [`d9b7499`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/d9b7499a5934cb648da95b5f302048806b09551b)
+- ♻️ Refactor: replace loose equality with strict equality in FieldError component for improved type safety [`66b6a0e`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/66b6a0e1f847ad001ba02de4177fb053d546ea05)
+- ♻️ Refactor: simplify GET handler in about route by removing async keyword [`404cf5b`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/404cf5b2ecdb236cfa79813b0cd35d114cfbdd9e)
+- ♻️ Refactor: remove optional chaining in character extraction logic for consistency and clarity [`f0608fb`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/f0608fb94301ef784c77c4d1ab96d7dea70e674a)
+- ♻️ Refactor: simplify character extraction logic in ContactCard component [`fb0586d`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/fb0586d20e15e708e27763e2ebf2811c1291eefa)
 - 🐛 Fix: update release notes script execution in .release-it.json [`0711b68`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/0711b68041bbd29b60525f9f34390e14e322a2d7)
 - Fix warning message in README.md [`ed92322`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/ed923227406d32864a2ae60e971410cf0d7864c3)
 - 📝 Docs: add new screenshot for Apple Contacts synchronization in README.md [`454b3b0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/454b3b0eddda8d302090f807f2fc119d1da14f04)
