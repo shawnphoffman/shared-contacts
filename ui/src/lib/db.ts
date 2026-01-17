@@ -99,8 +99,8 @@ export interface Contact {
 }
 
 export async function getAllContacts(): Promise<Array<Contact>> {
-	const pool = getPool()
-	const result = await pool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC')
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC')
 	// Parse JSONB fields
 	return result.rows.map(row => {
 		if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
@@ -119,8 +119,8 @@ export async function getAllContacts(): Promise<Array<Contact>> {
 }
 
 export async function getContactById(id: string): Promise<Contact | null> {
-	const pool = getPool()
-	const result = await pool.query('SELECT * FROM contacts WHERE id = $1', [id])
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT * FROM contacts WHERE id = $1', [id])
 	if (!result.rows[0]) return null
 	// Parse JSONB fields
 	const row = result.rows[0]
@@ -139,8 +139,8 @@ export async function getContactById(id: string): Promise<Contact | null> {
 }
 
 export async function getContactByVcardId(vcardId: string): Promise<Contact | null> {
-	const pool = getPool()
-	const result = await pool.query('SELECT * FROM contacts WHERE vcard_id = $1', [vcardId])
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT * FROM contacts WHERE vcard_id = $1', [vcardId])
 	return result.rows[0] || null
 }
 
@@ -149,8 +149,8 @@ export async function getContactByVcardId(vcardId: string): Promise<Contact | nu
  */
 export async function getContactByEmail(email: string): Promise<Contact | null> {
 	if (!email) return null
-	const pool = getPool()
-	const result = await pool.query('SELECT * FROM contacts WHERE LOWER(email) = LOWER($1) LIMIT 1', [email])
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(email) = LOWER($1) LIMIT 1', [email])
 	return result.rows[0] || null
 }
 
@@ -158,7 +158,7 @@ export async function getContactByEmail(email: string): Promise<Contact | null> 
  * Find existing contact by name and phone (for duplicate detection)
  */
 export async function findDuplicateContact(fullName: string | null, email: string | null, phone: string | null): Promise<Contact | null> {
-	const pool = getPool()
+	const dbPool = getPool()
 
 	// Try email first (most reliable)
 	if (email) {
@@ -168,13 +168,13 @@ export async function findDuplicateContact(fullName: string | null, email: strin
 
 	// Try name + phone combination
 	if (fullName && phone) {
-		const result = await pool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND phone = $2 LIMIT 1', [fullName, phone])
+		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND phone = $2 LIMIT 1', [fullName, phone])
 		if (result.rows[0]) return result.rows[0]
 	}
 
 	// Try just name (if it's a unique name)
 	if (fullName && fullName !== 'Unnamed Contact') {
-		const result = await pool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) LIMIT 1', [fullName])
+		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) LIMIT 1', [fullName])
 		if (result.rows[0]) return result.rows[0]
 	}
 
@@ -182,10 +182,10 @@ export async function findDuplicateContact(fullName: string | null, email: strin
 }
 
 export async function createContact(contact: Partial<Contact>): Promise<Contact> {
-	const pool = getPool()
+	const dbPool = getPool()
 
 	// Check which columns exist in the database
-	const columnCheck = await pool.query(`
+	const columnCheck = await dbPool.query(`
     SELECT column_name
     FROM information_schema.columns
     WHERE table_name = 'contacts' AND table_schema = 'public'
@@ -309,7 +309,7 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 		throw new Error('No valid columns to insert')
 	}
 
-	const result = await pool.query(
+	const result = await dbPool.query(
 		`INSERT INTO contacts (${columns.join(', ')})
      VALUES (${placeholders.join(', ')})
      RETURNING *`,
@@ -332,10 +332,10 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 }
 
 export async function updateContact(id: string, contact: Partial<Contact>): Promise<Contact> {
-	const pool = getPool()
+	const dbPool = getPool()
 
 	// Check which columns exist in the database
-	const columnCheck = await pool.query(`
+	const columnCheck = await dbPool.query(`
     SELECT column_name
     FROM information_schema.columns
     WHERE table_name = 'contacts' AND table_schema = 'public'
@@ -436,7 +436,7 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 	}
 
 	values.push(id)
-	const result = await pool.query(`UPDATE contacts SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`, values)
+	const result = await dbPool.query(`UPDATE contacts SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`, values)
 	// Parse JSONB fields
 	const row = result.rows[0]
 	if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
@@ -454,6 +454,6 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 }
 
 export async function deleteContact(id: string): Promise<void> {
-	const pool = getPool()
-	await pool.query('DELETE FROM contacts WHERE id = $1', [id])
+	const dbPool = getPool()
+	await dbPool.query('DELETE FROM contacts WHERE id = $1', [id])
 }
