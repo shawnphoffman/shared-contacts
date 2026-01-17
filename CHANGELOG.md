@@ -6,28 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.6.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.5.1...v0.6.0) (2026-01-17)
-
-### Features
-
-* add API health check route and update route tree to include health endpoint ([f01d981](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/f01d981602beb350cf637aba506885c282f5e29b))
-* add backfill endpoint for shared contacts and implement backfill functionality in user management ([a90b419](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/a90b419042186d4a30db5a59c2f8d12e724c6165))
-* implement sync service for API requests and update route imports ([7adda99](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/7adda99c972b3d681f250cd94378c42d599e0250))
-
-### Bug Fixes
-
-* update phone number format in sample contacts migration ([d9b7499](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/d9b7499a5934cb648da95b5f302048806b09551b))
-* update release notes script execution in .release-it.json ([0711b68](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/0711b68041bbd29b60525f9f34390e14e322a2d7))
-
-### Documentation
-
-* add new screenshot for Apple Contacts synchronization in README.md ([454b3b0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/454b3b0eddda8d302090f807f2fc119d1da14f04))
+## [0.6.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.0...v0.6.1) (2026-01-17)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.6.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.0...v0.6.1)
+
+- ♻️ Refactor: replace pnpm with npm in Dockerfiles for consistency and simplify dependency installation [`f938ccb`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/f938ccb5d7abccea9eff821432e8a18ad7534851)
+
 #### [v0.6.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.5.1...v0.6.0)
+
+> 16 January 2026
 
 - 🔧 Chore: update configuration files and improve code formatting across the project [`dbbd496`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/dbbd4968c551e1b9ddbd2d7ad1ab3e070d48c814)
 - ♻️ Refactor: standardize route definitions and improve code formatting in routeTree.gen.ts [`62a5d36`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/62a5d363f19820d7644a5b7ea057fe254a198289)
@@ -45,6 +36,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - 🔧 Chore: disable GitHub release in .release-it.json and remove init script from Dockerfile [`109375d`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/109375d3c300ad70fe049db01d6ce236bd136a62)
 - 🔧 Chore: update Docker and docker-compose configurations to enhance service stability and logging, and adjust environment variable paths [`63bcdcd`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/63bcdcdeac21f95489f24da9b72d5ff62255f14f)
 - 🔧 Chore: update docker-compose files to improve service configuration and add RADICALE_URL environment variable [`ac7fc59`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/ac7fc595777e2f9416673559bdd19fda598e054e)
+- 🔧 Chore: release v0.6.0 [`6027cc4`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6027cc4cd67c48ffdae9cf8fe547ff5e2a99064d)
 - ♻️ Refactor: simplify docker-compose configuration by removing unnecessary environment variables and comments, and standardizing paths for improved clarity [`6caafe0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6caafe042596a83c0e9b077b9c0f0fd6e0166ddd)
 - Update issue templates [`6ef7ae1`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6ef7ae118efc4d78c6ec1fc1bc6472fedb2e989d)
 - ♻️ Refactor: rename pool variable to dbPool for clarity in database query functions [`29b7f03`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/29b7f039272a7e698b9afd6114f8b5082c3ec335)
