@@ -1,14 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-
-const SYNC_SERVICE_URL = process.env.SYNC_SERVICE_URL || 'http://sync-service:3001'
-
-async function proxyRequest(path: string, options?: RequestInit) {
-  const url = `${SYNC_SERVICE_URL}${path}`
-  const response = await fetch(url, options)
-  const data = await response.json()
-  return { data, status: response.status }
-}
+import { proxyRequest } from './_proxy'
 
 export const Route = createFileRoute('/api/radicale-users/$username')({
   server: {

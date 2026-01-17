@@ -5,6 +5,7 @@ import {
   createUser,
   updateUserPassword,
   deleteUser,
+  backfillSharedContactsForUser,
 } from './htpasswd'
 
 const app = express()
@@ -66,6 +67,19 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
       return res.status(409).json({ error: error.message })
     }
     res.status(500).json({ error: 'Failed to create user' })
+  }
+})
+
+// Backfill shared contacts for a user
+app.post('/api/radicale-users/backfill/:username', async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params
+		console.log('backfilling user', username)
+    await backfillSharedContactsForUser(username)
+    res.json({ success: true })
+  } catch (error: any) {
+    console.error('Error backfilling shared contacts:', error)
+    res.status(500).json({ error: 'Failed to backfill shared contacts' })
   }
 })
 

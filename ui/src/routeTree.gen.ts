@@ -26,6 +26,7 @@ import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.imp
 import { Route as ApiContactsDuplicatesRouteImport } from './routes/api/contacts.duplicates'
 import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
+import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
 
 const RadicaleUsersRoute = RadicaleUsersRouteImport.update({
@@ -114,6 +115,12 @@ const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiContactsRoute,
 } as any)
+const ApiRadicaleUsersUsernameBackfillRoute =
+  ApiRadicaleUsersUsernameBackfillRouteImport.update({
+    id: '/backfill',
+    path: '/backfill',
+    getParentRoute: () => ApiRadicaleUsersUsernameRoute,
+  } as any)
 const ApiContactsIdPhotoRoute = ApiContactsIdPhotoRouteImport.update({
   id: '/photo',
   path: '/photo',
@@ -137,8 +144,9 @@ export interface FileRoutesByFullPath {
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
-  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
+  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+  '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -157,8 +165,9 @@ export interface FileRoutesByTo {
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
-  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
+  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+  '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -178,8 +187,9 @@ export interface FileRoutesById {
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
-  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRoute
+  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+  '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/api/contacts/merge'
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
+    | '/api/radicale-users/$username/backfill'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/api/contacts/merge'
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
+    | '/api/radicale-users/$username/backfill'
   id:
     | '__root__'
     | '/'
@@ -242,6 +254,7 @@ export interface FileRouteTypes {
     | '/api/contacts/merge'
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
+    | '/api/radicale-users/$username/backfill'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -379,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactsIdRouteImport
       parentRoute: typeof ApiContactsRoute
     }
+    '/api/radicale-users/$username/backfill': {
+      id: '/api/radicale-users/$username/backfill'
+      path: '/backfill'
+      fullPath: '/api/radicale-users/$username/backfill'
+      preLoaderRoute: typeof ApiRadicaleUsersUsernameBackfillRouteImport
+      parentRoute: typeof ApiRadicaleUsersUsernameRoute
+    }
     '/api/contacts/$id/photo': {
       id: '/api/contacts/$id/photo'
       path: '/photo'
@@ -421,12 +441,27 @@ const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(
   ApiContactsRouteChildren,
 )
 
+interface ApiRadicaleUsersUsernameRouteChildren {
+  ApiRadicaleUsersUsernameBackfillRoute: typeof ApiRadicaleUsersUsernameBackfillRoute
+}
+
+const ApiRadicaleUsersUsernameRouteChildren: ApiRadicaleUsersUsernameRouteChildren =
+  {
+    ApiRadicaleUsersUsernameBackfillRoute:
+      ApiRadicaleUsersUsernameBackfillRoute,
+  }
+
+const ApiRadicaleUsersUsernameRouteWithChildren =
+  ApiRadicaleUsersUsernameRoute._addFileChildren(
+    ApiRadicaleUsersUsernameRouteChildren,
+  )
+
 interface ApiRadicaleUsersRouteChildren {
-  ApiRadicaleUsersUsernameRoute: typeof ApiRadicaleUsersUsernameRoute
+  ApiRadicaleUsersUsernameRoute: typeof ApiRadicaleUsersUsernameRouteWithChildren
 }
 
 const ApiRadicaleUsersRouteChildren: ApiRadicaleUsersRouteChildren = {
-  ApiRadicaleUsersUsernameRoute: ApiRadicaleUsersUsernameRoute,
+  ApiRadicaleUsersUsernameRoute: ApiRadicaleUsersUsernameRouteWithChildren,
 }
 
 const ApiRadicaleUsersRouteWithChildren =

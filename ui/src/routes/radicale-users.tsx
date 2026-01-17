@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Plus, Edit, Trash2, Users } from 'lucide-react'
+import { Plus, Edit, Trash2, Users, RefreshCw } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table'
+import { Item } from '@/components/ui/item'
 
 export const Route = createFileRoute('/radicale-users')({
   component: RadicaleUsersPage,
@@ -89,6 +90,19 @@ async function deleteUser(username: string): Promise<void> {
   }
 }
 
+async function backfillSharedContacts(username: string): Promise<void> {
+  const response = await fetch(
+    `/api/radicale-users/${encodeURIComponent(username)}/backfill`,
+    {
+      method: 'POST',
+    },
+  )
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'Failed to backfill shared contacts')
+  }
+}
+
 function RadicaleUsersPage() {
   const queryClient = useQueryClient()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -97,6 +111,7 @@ function RadicaleUsersPage() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [formData, setFormData] = useState({ username: '', password: '' })
   const [error, setError] = useState<string | null>(null)
+  const [backfillMessage, setBackfillMessage] = useState<string | null>(null)
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['radicale-users'],
@@ -155,6 +170,33 @@ function RadicaleUsersPage() {
     },
   })
 
+  const backfillMutation = useMutation({
+    mutationFn: backfillSharedContacts,
+    onSuccess: (_data, username) => {
+      setBackfillMessage(`Backfill complete for ${username}.`)
+      setError(null)
+    },
+    onError: (err: Error) => {
+      setError(err.message)
+      setBackfillMessage(null)
+    },
+  })
+
+  const backfillAllMutation = useMutation({
+    mutationFn: async (usernames: string[]) => {
+      await Promise.all(usernames.map((username) => backfillSharedContacts(username)))
+      return usernames.length
+    },
+    onSuccess: (count) => {
+      setBackfillMessage(`Backfill complete for ${count} user${count === 1 ? '' : 's'}.`)
+      setError(null)
+    },
+    onError: (err: Error) => {
+      setError(err.message)
+      setBackfillMessage(null)
+    },
+  })
+
   const handleCreate = () => {
     setError(null)
     if (!formData.username || !formData.password) {
@@ -206,8 +248,9 @@ function RadicaleUsersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto p-6 gap-6 flex flex-col">
+			{/*  */}
+      <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8" />
           <h1 className="text-3xl font-bold">Radicale Users</h1>
@@ -218,10 +261,33 @@ function RadicaleUsersPage() {
         </Button>
       </div>
 
-      <p className="text-gray-600 mb-6">
+      <div className="text-muted-foreground">
         Manage users who can sync contacts via Radicale. These users are
         separate from the web UI authentication.
-      </p>
+      </div>
+      <Item variant="outline" className='flex flex-col gap-2 '>
+        <div className="flex items-center w-full justify-between gap-4">
+          <div>
+            If a user cannot see existing shared contacts, run a backfill to
+            copy the shared address book into their Radicale account.
+          </div>
+          {users.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => backfillAllMutation.mutate(users.map((user) => user.username))}
+              disabled={backfillAllMutation.isPending}
+            >
+              <RefreshCw className="w-4 h-4 mr-1" />
+              {backfillAllMutation.isPending ? 'Backfilling...' : 'Backfill All Users'}
+            </Button>
+          )}
+        </div>
+        {backfillMessage && (
+					// TODO
+          <Item variant="outline">{backfillMessage}</Item>
+        )}
+      </Item>
 
       {users.length === 0 ? (
         <div className="text-center py-12 border rounded-lg">
@@ -246,6 +312,15 @@ function RadicaleUsersPage() {
                   <TableCell className="font-medium">{user.username}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => backfillMutation.mutate(user.username)}
+                        disabled={backfillMutation.isPending}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Backfill
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

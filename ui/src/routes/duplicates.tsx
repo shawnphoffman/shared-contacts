@@ -219,7 +219,7 @@ function DuplicatesPage() {
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-          <span className="ml-3 text-gray-600">Loading duplicates...</span>
+          <span className="ml-3 text-muted-foreground">Loading duplicates...</span>
         </div>
       </div>
     )
@@ -240,7 +240,7 @@ function DuplicatesPage() {
           </Button>
         </div>
         <div className="text-center py-12">
-          <p className="text-lg text-gray-600 mb-4">
+          <p className="text-lg text-muted-foreground mb-4">
             {duplicates && duplicates.totalGroups > 0
               ? 'No duplicate groups to review'
               : 'No duplicate contacts found!'}
@@ -370,7 +370,7 @@ function DuplicatesPage() {
                               </span>
                             )}
                           </div>
-                          <div className="mt-1 space-y-1 text-sm text-gray-600">
+                          <div className="mt-1 space-y-1 text-sm text-muted-foreground">
                             {contact.email && (
                               <div className="flex items-center gap-2">
                                 <Mail className="w-3 h-3" />

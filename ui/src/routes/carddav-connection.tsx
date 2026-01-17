@@ -137,7 +137,7 @@ function CardDAVConnectionPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold mb-2">CardDAV Connection</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Configure your CardDAV client to sync contacts with this server.
         </p>
       </div>
@@ -174,7 +174,7 @@ function CardDAVConnectionPage() {
               <User className="w-4 h-4 text-gray-500" />
               <label className="text-sm font-medium">Authentication:</label>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground dark:text-gray-400">
               Use the username and password configured in the{' '}
               <a
                 href="/radicale-users"
@@ -191,7 +191,7 @@ function CardDAVConnectionPage() {
               <Lock className="w-4 h-4 text-gray-500" />
               <label className="text-sm font-medium">Security:</label>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground dark:text-gray-400">
               For production use, ensure you're using HTTPS. If your server is
               behind a reverse proxy (like Traefik or Nginx), configure SSL/TLS
               at the proxy level.
@@ -268,7 +268,7 @@ function CardDAVConnectionPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
               You need to create at least one user before you can sync contacts.
               Users are managed separately from web UI accounts.
             </p>
@@ -291,7 +291,7 @@ function CardDAVConnectionPage() {
           {/* iOS Contacts */}
           <div>
             <h3 className="font-semibold mb-2">iOS Contacts</h3>
-            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
               <li>Open Settings → Contacts → Accounts</li>
               <li>Tap "Add Account" → "Other"</li>
               <li>Tap "Add CardDAV Account"</li>
@@ -320,7 +320,7 @@ function CardDAVConnectionPage() {
           {/* Android (DAVx⁵) */}
           <div>
             <h3 className="font-semibold mb-2">Android (DAVx⁵)</h3>
-            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
               <li>Install DAVx⁵ from Google Play Store</li>
               <li>Open DAVx⁵ and tap "Login"</li>
               <li>Select "Login with URL and user name"</li>
@@ -348,7 +348,7 @@ function CardDAVConnectionPage() {
           {/* Thunderbird */}
           <div>
             <h3 className="font-semibold mb-2">Thunderbird</h3>
-            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
               <li>Install the "CardBook" add-on</li>
               <li>Open CardBook → File → New → CardDAV Address Book</li>
               <li>
@@ -377,7 +377,7 @@ function CardDAVConnectionPage() {
           {/* macOS Contacts */}
           <div>
             <h3 className="font-semibold mb-2">macOS Contacts</h3>
-            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
               <li>Open Contacts app</li>
               <li>Go to Contacts → Settings → Accounts</li>
               <li>Click "+" → "Other Contacts Account"</li>
@@ -407,7 +407,7 @@ function CardDAVConnectionPage() {
         <CardHeader>
           <CardTitle>Troubleshooting</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+        <CardContent className="space-y-2 text-sm text-muted-foreground dark:text-gray-400">
           <p>
             <strong>Connection fails:</strong> Verify the server URL is correct
             and accessible from your network. If behind a firewall, ensure port
