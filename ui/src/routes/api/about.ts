@@ -6,7 +6,7 @@ import { json } from '@tanstack/react-start'
 export const Route = createFileRoute('/api/about')({
 	server: {
 		handlers: {
-			GET: async () => {
+			GET: () => {
 				try {
 					// Try to read root package.json first (for version and repo info)
 					let version = 'unknown'
