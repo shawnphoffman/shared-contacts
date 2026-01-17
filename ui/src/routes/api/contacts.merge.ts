@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { getContactById, updateContact, deleteContact, type Contact } from '../../lib/db'
-import { generateVCard, extractUID } from '../../lib/vcard'
+import {  deleteContact, getContactById, updateContact } from '../../lib/db'
+import { extractUID, generateVCard } from '../../lib/vcard'
 import { mergeContacts } from '../../lib/merge'
+import type {Contact} from '../../lib/db';
 
 function sanitizeContact(contact: Contact): Omit<Contact, 'photo_blob'> {
 	const { photo_blob, ...rest } = contact
@@ -27,7 +28,7 @@ export const Route = createFileRoute('/api/contacts/merge')({
 					}
 
 					// Fetch all contacts
-					const contacts: Contact[] = []
+					const contacts: Array<Contact> = []
 					for (const id of contactIds) {
 						const contact = await getContactById(id)
 						if (!contact) {
@@ -41,7 +42,7 @@ export const Route = createFileRoute('/api/contacts/merge')({
 
 					// Primary contact is the oldest (first in sorted array)
 					const sorted = [...contacts].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-					const primaryContact = sorted[0]!
+					const primaryContact = sorted[0]
 
 					// Generate new vCard for merged contact
 					const vcardData = generateVCard(mergedData)
@@ -55,7 +56,7 @@ export const Route = createFileRoute('/api/contacts/merge')({
 					})
 
 					// Delete all other contacts
-					const deletedIds: string[] = []
+					const deletedIds: Array<string> = []
 					for (const contact of sorted.slice(1)) {
 						await deleteContact(contact.id)
 						deletedIds.push(contact.id)

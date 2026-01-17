@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { getAllContacts, updateContact, deleteContact } from '../../lib/db'
-import { generateVCard, extractUID } from '../../lib/vcard'
+import { deleteContact, getAllContacts, updateContact } from '../../lib/db'
+import { extractUID, generateVCard } from '../../lib/vcard'
 import type { Contact } from '../../lib/db'
 
 /**
@@ -40,7 +40,7 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 					const allContacts = await getAllContacts()
 
 					// Group contacts by email (case-insensitive)
-					const emailGroups = new Map<string, Contact[]>()
+					const emailGroups = new Map<string, Array<Contact>>()
 					for (const contact of allContacts) {
 						if (contact.email) {
 							const emailKey = contact.email.toLowerCase().trim()
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 					}
 
 					// Group contacts by name + phone
-					const namePhoneGroups = new Map<string, Contact[]>()
+					const namePhoneGroups = new Map<string, Array<Contact>>()
 					for (const contact of allContacts) {
 						if (contact.full_name && contact.phone) {
 							const key = `${contact.full_name.toLowerCase().trim()}|${contact.phone.trim()}`
@@ -75,7 +75,7 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 							// Sort by created_at - keep the oldest one
 							contacts.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-							const primary = contacts[0]!
+							const primary = contacts[0]
 							const duplicates = contacts.slice(1)
 
 							// Merge all duplicates into primary
@@ -126,7 +126,7 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 								// Sort by created_at - keep the oldest one
 								unprocessed.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-								const primary = unprocessed[0]!
+								const primary = unprocessed[0]
 								const duplicates = unprocessed.slice(1)
 
 								// Merge all duplicates into primary

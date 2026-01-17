@@ -1,9 +1,10 @@
+import crypto from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import crypto from 'crypto'
-import { getContactById, updateContact, deleteContact, type Contact } from '../../lib/db'
-import { generateVCard, extractUID } from '../../lib/vcard'
+import {  deleteContact, getContactById, updateContact } from '../../lib/db'
+import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
+import type {Contact} from '../../lib/db';
 
 const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
 

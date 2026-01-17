@@ -14,7 +14,11 @@
 		"version:set": "node scripts/version.js set",
 		"release": "release-it",
 		"format": "prettier --write .",
-		"format:check": "prettier --check ."
+		"format:check": "prettier --check .",
+		"lint": "npm --prefix ui run lint && npm --prefix sync-service run lint",
+		"lint:fix": "npm --prefix ui run lint -- --fix && npm --prefix sync-service run lint -- --fix",
+		"lint:ui": "npm --prefix ui run lint",
+		"lint:sync": "npm --prefix sync-service run lint"
 	},
 	"keywords": [
 		"carddav",
@@ -24,7 +28,6 @@
 		"sync"
 	],
 	"author": "Shawn Hoffman",
-	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/shawnphoffman/shared-contacts.git"

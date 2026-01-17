@@ -1,5 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Cropper from 'react-easy-crop'
+import { normalizeUrl, validateEmail, validateUrl } from '../lib/validation'
+import { normalizePhoneNumber } from '../lib/utils'
+import {  cropToSquareDataUrl, getContactPhotoUrl, readFileAsDataUrl } from '../lib/image'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -8,9 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
-import { validateEmail, validateUrl, normalizeUrl } from '../lib/validation'
-import { normalizePhoneNumber } from '../lib/utils'
-import { cropToSquareDataUrl, getContactPhotoUrl, readFileAsDataUrl, type CropArea } from '../lib/image'
+import type {CropArea} from '../lib/image';
 import type { Contact, ContactField } from '../lib/db'
 
 export type ContactPayload = Partial<Contact> & {
@@ -41,10 +42,10 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 	// Initialize arrays from contact, or migrate from single values
 	// Always return at least one empty field so users don't need to click "+"
 	const initializeArray = (
-		array: ContactField[] | null | undefined,
+		array: Array<ContactField> | null | undefined,
 		singleValue: string | null | undefined,
 		defaultType: string
-	): ContactField[] => {
+	): Array<ContactField> => {
 		if (array && array.length > 0) {
 			return array
 		}
@@ -55,7 +56,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 		return [{ value: '', type: defaultType }]
 	}
 
-	const initializeOptionalArray = (array: ContactField[] | null | undefined): ContactField[] => {
+	const initializeOptionalArray = (array: Array<ContactField> | null | undefined): Array<ContactField> => {
 		if (array && array.length > 0) {
 			return array
 		}
@@ -85,15 +86,15 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 		birthday: formatDateForInput(contact?.birthday),
 	})
 
-	const [phones, setPhones] = useState<ContactField[]>(initializeArray(contact?.phones, contact?.phone, 'CELL'))
-	const [emails, setEmails] = useState<ContactField[]>(initializeArray(contact?.emails, contact?.email, 'INTERNET'))
-	const [addresses, setAddresses] = useState<ContactField[]>(initializeArray(contact?.addresses, contact?.address, 'HOME'))
-	const [urls, setUrls] = useState<ContactField[]>(initializeArray(contact?.urls, contact?.homepage, 'HOME'))
-	const [labels, setLabels] = useState<ContactField[]>(initializeOptionalArray(contact?.labels))
-	const [logos, setLogos] = useState<ContactField[]>(initializeOptionalArray(contact?.logos))
-	const [sounds, setSounds] = useState<ContactField[]>(initializeOptionalArray(contact?.sounds))
-	const [keys, setKeys] = useState<ContactField[]>(initializeOptionalArray(contact?.keys))
-	const [customFields, setCustomFields] = useState<Array<{ key: string; value: string; params?: string[] }>>(
+	const [phones, setPhones] = useState<Array<ContactField>>(initializeArray(contact?.phones, contact?.phone, 'CELL'))
+	const [emails, setEmails] = useState<Array<ContactField>>(initializeArray(contact?.emails, contact?.email, 'INTERNET'))
+	const [addresses, setAddresses] = useState<Array<ContactField>>(initializeArray(contact?.addresses, contact?.address, 'HOME'))
+	const [urls, setUrls] = useState<Array<ContactField>>(initializeArray(contact?.urls, contact?.homepage, 'HOME'))
+	const [labels, setLabels] = useState<Array<ContactField>>(initializeOptionalArray(contact?.labels))
+	const [logos, setLogos] = useState<Array<ContactField>>(initializeOptionalArray(contact?.logos))
+	const [sounds, setSounds] = useState<Array<ContactField>>(initializeOptionalArray(contact?.sounds))
+	const [keys, setKeys] = useState<Array<ContactField>>(initializeOptionalArray(contact?.keys))
+	const [customFields, setCustomFields] = useState<Array<{ key: string; value: string; params?: Array<string> }>>(
 		contact?.custom_fields && contact.custom_fields.length > 0 ? contact.custom_fields : []
 	)
 	const [orgUnitsInput, setOrgUnitsInput] = useState(contact?.org_units?.join(', ') || '')
@@ -134,7 +135,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 	}, [formData.first_name, formData.last_name])
 
 	// Validate emails
-	const validateEmails = (emailFields: ContactField[]): boolean => {
+	const validateEmails = (emailFields: Array<ContactField>): boolean => {
 		const errors: Record<number, string | null> = {}
 		let isValid = true
 
@@ -157,7 +158,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 	}
 
 	// Validate URLs
-	const validateUrls = (urlFields: ContactField[]): boolean => {
+	const validateUrls = (urlFields: Array<ContactField>): boolean => {
 		const errors: Record<number, string | null> = {}
 		let isValid = true
 
@@ -180,14 +181,14 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 	}
 
 	// Handle email changes with validation
-	const handleEmailsChange = (newEmails: ContactField[]) => {
+	const handleEmailsChange = (newEmails: Array<ContactField>) => {
 		setEmails(newEmails)
 		// Validate after a short delay to avoid showing errors while typing
 		setTimeout(() => validateEmails(newEmails), 300)
 	}
 
 	// Handle URL changes with validation and normalization
-	const handleUrlsChange = (newUrls: ContactField[]) => {
+	const handleUrlsChange = (newUrls: Array<ContactField>) => {
 		// Normalize URLs (add protocol if missing)
 		const normalized = newUrls.map(url => ({
 			...url,
@@ -250,7 +251,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 		setCustomFields([...customFields, { key: '', value: '' }])
 	}
 
-	const updateCustomField = (index: number, updates: Partial<{ key: string; value: string; params?: string[] }>) => {
+	const updateCustomField = (index: number, updates: Partial<{ key: string; value: string; params?: Array<string> }>) => {
 		const next = [...customFields]
 		next[index] = { ...next[index], ...updates }
 		setCustomFields(next)
@@ -278,7 +279,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 
 		setIsSubmitting(true)
 		try {
-			const parseListInput = (value: string): string[] =>
+			const parseListInput = (value: string): Array<string> =>
 				value
 					.split(',')
 					.map(entry => entry.trim())
@@ -311,7 +312,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 			// Extract structured address fields from the first address (primary address)
 			let structuredAddressFields: Partial<Contact> = {}
 			if (nonEmptyAddresses.length > 0) {
-				const primaryAddress = nonEmptyAddresses[0]!.value
+				const primaryAddress = nonEmptyAddresses[0].value
 				const parsed = parseAddress(primaryAddress)
 				structuredAddressFields = {
 					address_street: parsed.street || null,

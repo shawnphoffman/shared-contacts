@@ -1,7 +1,7 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { readFileSync, existsSync } from 'fs'
-import { join } from 'path'
 
 export const Route = createFileRoute('/api/about')({
 	server: {

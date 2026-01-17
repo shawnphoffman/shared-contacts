@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Button } from './ui/button'
 import { Merge } from 'lucide-react'
+import { Button } from './ui/button'
 
 interface DuplicatesResponse {
 	groups: Array<{
@@ -50,7 +50,7 @@ export function DeduplicateButton() {
 					setDeclinedGroups(new Set())
 					return
 				}
-				const declined = JSON.parse(stored) as string[]
+				const declined = JSON.parse(stored) as Array<string>
 				setDeclinedGroups(new Set(declined))
 			} catch {
 				setDeclinedGroups(new Set())

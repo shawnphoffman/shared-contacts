@@ -7,9 +7,9 @@ function generateUID(): string {
 	return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
 }
 
-function foldVCardLine(line: string): string[] {
+function foldVCardLine(line: string): Array<string> {
 	const maxLength = 75
-	const lines: string[] = []
+	const lines: Array<string> = []
 	let remaining = line
 
 	while (remaining.length > maxLength) {
@@ -53,7 +53,7 @@ export function generateVCard(contact: {
 	phones?: Array<{ value: string; type?: string }> | null
 	emails?: Array<{ value: string; type?: string }> | null
 	organization?: string | null
-	org_units?: string[] | null
+	org_units?: Array<string> | null
 	job_title?: string | null
 	role?: string | null
 	address?: string | null
@@ -67,7 +67,7 @@ export function generateVCard(contact: {
 	birthday?: Date | string | null
 	homepage?: string | null
 	urls?: Array<{ value: string; type?: string }> | null
-	categories?: string[] | null
+	categories?: Array<string> | null
 	labels?: Array<{ value: string; type?: string }> | null
 	logos?: Array<{ value: string; type?: string }> | null
 	sounds?: Array<{ value: string; type?: string }> | null
@@ -80,7 +80,7 @@ export function generateVCard(contact: {
 	revision?: string | null
 	sort_string?: string | null
 	class?: string | null
-	custom_fields?: Array<{ key: string; value: string; params?: string[] }> | null
+	custom_fields?: Array<{ key: string; value: string; params?: Array<string> }> | null
 	notes?: string | null
 	photo_blob?: Uint8Array | string | null
 	photo_mime?: string | null
@@ -94,7 +94,7 @@ export function generateVCard(contact: {
 	const nameSuffix = contact.name_suffix || ''
 
 	// vCard N format: Last;First;Middle;Prefix;Suffix
-	const lines: string[] = [
+	const lines: Array<string> = [
 		'BEGIN:VCARD',
 		'VERSION:3.0',
 		`UID:${uid}`,

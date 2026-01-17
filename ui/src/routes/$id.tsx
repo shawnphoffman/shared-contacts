@@ -1,15 +1,16 @@
-import { createFileRoute, useNavigate, notFound } from '@tanstack/react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ContactForm, type ContactPayload } from '../components/ContactForm'
+import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Briefcase, Building, Edit, Globe, Mail, MapPin, Phone, StickyNote, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ContactForm  } from '../components/ContactForm'
 import { formatAddressForDisplay, parseAddress } from '../components/AddressInput'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
-import { Mail, Phone, Building, Briefcase, StickyNote, MapPin, Edit, Trash2, Globe } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import type { Contact } from '../lib/db'
 import { formatPhoneNumber } from '../lib/utils'
 import { getContactPhotoUrl } from '../lib/image'
+import type {ContactPayload} from '../components/ContactForm';
+import type { Contact } from '../lib/db'
 
 export const Route = createFileRoute('/$id')({
 	beforeLoad: ({ params }) => {

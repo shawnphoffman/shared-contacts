@@ -1,14 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
+	
 	flexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
-	useReactTable,
-	type SortingState,
+	useReactTable 
 } from '@tanstack/react-table'
-import { ArrowUpDown, ArrowUp, ArrowDown, Plus, Search, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
@@ -17,7 +17,8 @@ import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
-import type { ColumnDef } from '@tanstack/react-table'
+import type {ColumnDef, SortingState 
+} from '@tanstack/react-table';
 import type { Contact } from '../lib/db'
 
 // Extend ColumnMeta to include className

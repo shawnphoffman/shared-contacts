@@ -1,19 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { createContact, updateContact, findDuplicateContact, type Contact } from '../../lib/db'
-import { generateVCard, extractUID } from '../../lib/vcard'
+import {  createContact, findDuplicateContact, updateContact } from '../../lib/db'
+import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
+import type {Contact} from '../../lib/db';
 
 /**
  * Simple CSV parser that handles quoted fields
  */
-function parseCSVLine(line: string): string[] {
-	const values: string[] = []
+function parseCSVLine(line: string): Array<string> {
+	const values: Array<string> = []
 	let current = ''
 	let inQuotes = false
 
 	for (let i = 0; i < line.length; i++) {
-		const char = line[i]!
+		const char = line[i]
 
 		if (char === '"') {
 			if (inQuotes && line[i + 1] === '"') {
@@ -114,12 +115,12 @@ function parseCSV(csvText: string): Array<Record<string, string>> {
 	if (lines.length === 0) return []
 
 	// Parse header
-	const headers = parseCSVLine(lines[0]!).map(h => h.trim())
+	const headers = parseCSVLine(lines[0]).map(h => h.trim())
 	const rows: Array<Record<string, string>> = []
 
 	// Parse data rows
 	for (let i = 1; i < lines.length; i++) {
-		const line = lines[i]!
+		const line = lines[i]
 		const values = parseCSVLine(line)
 		const row: Record<string, string> = {}
 
@@ -222,7 +223,7 @@ export const Route = createFileRoute('/api/contacts/import')({
 					// Process each row
 					for (let i = 0; i < rows.length; i++) {
 						try {
-							const contactData = mapCSVRowToContact(rows[i]!)
+							const contactData = mapCSVRowToContact(rows[i])
 
 							// Skip if no meaningful data
 							if (!contactData.full_name && !contactData.email && !contactData.phone) {

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Code, Database, ExternalLink, Info, Settings } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { ExternalLink, Info, Code, Database, Settings } from 'lucide-react'
 import { Separator } from '../components/ui/separator'
 
 export const Route = createFileRoute('/about')({

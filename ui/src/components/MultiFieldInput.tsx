@@ -6,10 +6,10 @@ import type { ContactField } from '../lib/db'
 
 interface MultiFieldInputProps {
 	label: string
-	fields: ContactField[]
-	onChange: (fields: ContactField[]) => void
+	fields: Array<ContactField>
+	onChange: (fields: Array<ContactField>) => void
 	placeholder?: string
-	typeOptions?: string[]
+	typeOptions?: Array<string>
 	defaultType?: string
 	inputType?: 'text' | 'email' | 'tel' | 'url'
 	renderInput?: (field: ContactField, index: number, onChange: (value: string) => void) => React.ReactNode

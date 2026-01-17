@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Mail, Phone, Building, MapPin } from 'lucide-react'
-import type { Contact } from '../lib/db'
+import { Building, Mail, MapPin, Phone } from 'lucide-react'
 import { formatPhoneNumber } from '../lib/utils'
 import { getContactPhotoUrl } from '../lib/image'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { formatAddressForSingleLine, parseAddress } from './AddressInput'
+import type { Contact } from '../lib/db'
 
 interface ContactCardProps {
 	contact: Contact

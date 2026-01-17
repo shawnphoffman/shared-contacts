@@ -1,13 +1,13 @@
 {
 	"name": "shared-contacts-sync-service",
-	"version": "0.5.1",
 	"description": "Sync service for CardDAV contacts between Radicale and PostgreSQL",
 	"main": "dist/index.js",
 	"scripts": {
 		"build": "tsc",
 		"start": "node dist/index.js",
 		"dev": "ts-node src/index.ts",
-		"watch": "tsc --watch"
+		"watch": "tsc --watch",
+		"lint": "eslint ."
 	},
 	"keywords": [
 		"carddav",
@@ -15,7 +15,6 @@
 		"contacts"
 	],
 	"author": "",
-	"license": "MIT",
 	"dependencies": {
 		"pg": "^8.11.3",
 		"chokidar": "^3.5.3",
@@ -25,12 +24,15 @@
 		"cors": "^2.8.5"
 	},
 	"devDependencies": {
+		"@eslint/js": "^9.36.0",
 		"@types/node": "^20.10.5",
 		"@types/pg": "^8.10.9",
 		"@types/express": "^4.17.21",
 		"@types/bcrypt": "^5.0.2",
 		"@types/cors": "^2.8.17",
+		"eslint": "^9.36.0",
 		"ts-node": "^10.9.2",
+		"typescript-eslint": "^8.46.0",
 		"typescript": "^5.3.3"
 	}
 }

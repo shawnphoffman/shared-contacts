@@ -1,20 +1,20 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2, Merge } from 'lucide-react'
 import { Button } from './ui/button'
-import { Merge, Loader2 } from 'lucide-react'
 
 interface MergeResult {
 	message: string
 	primaryContactId: string
-	deletedContactIds: string[]
+	deletedContactIds: Array<string>
 	mergedContact: unknown
 }
 
 interface MergeButtonProps {
-	contactIds: string[]
+	contactIds: Array<string>
 	onMergeSuccess?: () => void
 }
 
-async function mergeContacts(contactIds: string[]): Promise<MergeResult> {
+async function mergeContacts(contactIds: Array<string>): Promise<MergeResult> {
 	const response = await fetch('/api/contacts/merge', {
 		method: 'POST',
 		headers: {

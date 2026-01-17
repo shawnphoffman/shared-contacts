@@ -48,14 +48,14 @@ export interface Contact {
 	maiden_name: string | null
 	email: string | null // Deprecated: use emails array
 	phone: string | null // Deprecated: use phones array
-	phones: ContactField[] | null // Multiple phone numbers
-	emails: ContactField[] | null // Multiple emails
+	phones: Array<ContactField> | null // Multiple phone numbers
+	emails: Array<ContactField> | null // Multiple emails
 	organization: string | null
-	org_units: string[] | null
+	org_units: Array<string> | null
 	job_title: string | null
 	role: string | null
 	address: string | null // Deprecated: use addresses array
-	addresses: ContactField[] | null // Multiple addresses
+	addresses: Array<ContactField> | null // Multiple addresses
 	// Structured address fields for easier querying and display
 	address_street: string | null
 	address_extended: string | null // Deprecated: address line 2 not synced
@@ -65,12 +65,12 @@ export interface Contact {
 	address_country: string | null
 	birthday: Date | null
 	homepage: string | null // Deprecated: use urls array
-	urls: ContactField[] | null // Multiple URLs
-	categories: string[] | null
-	labels: ContactField[] | null
-	logos: ContactField[] | null
-	sounds: ContactField[] | null
-	keys: ContactField[] | null
+	urls: Array<ContactField> | null // Multiple URLs
+	categories: Array<string> | null
+	labels: Array<ContactField> | null
+	logos: Array<ContactField> | null
+	sounds: Array<ContactField> | null
+	keys: Array<ContactField> | null
 	mailer: string | null
 	time_zone: string | null
 	geo: string | null
@@ -79,7 +79,7 @@ export interface Contact {
 	revision: string | null
 	sort_string: string | null
 	class: string | null
-	custom_fields: Array<{ key: string; value: string; params?: string[] }> | null
+	custom_fields: Array<{ key: string; value: string; params?: Array<string> }> | null
 	notes: string | null
 	photo_blob: Uint8Array | string | null
 	photo_mime: string | null
@@ -98,7 +98,7 @@ export interface Contact {
 	radicale_file_mtime: Date | null
 }
 
-export async function getAllContacts(): Promise<Contact[]> {
+export async function getAllContacts(): Promise<Array<Contact>> {
 	const pool = getPool()
 	const result = await pool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC')
 	// Parse JSONB fields
@@ -192,7 +192,7 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
   `)
 	const existingColumns = new Set(columnCheck.rows.map((r: any) => r.column_name))
 
-	const fields: (keyof Contact)[] = [
+	const fields: Array<keyof Contact> = [
 		'vcard_id',
 		'full_name',
 		'first_name',
@@ -247,9 +247,9 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 		'last_synced_to_radicale_at',
 	]
 
-	const columns: string[] = []
-	const values: any[] = []
-	const placeholders: string[] = []
+	const columns: Array<string> = []
+	const values: Array<any> = []
+	const placeholders: Array<string> = []
 	let paramIndex = 1
 
 	for (const field of fields) {
@@ -342,11 +342,11 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
   `)
 	const existingColumns = new Set(columnCheck.rows.map((r: any) => r.column_name))
 
-	const updates: string[] = []
-	const values: any[] = []
+	const updates: Array<string> = []
+	const values: Array<any> = []
 	let paramIndex = 1
 
-	const fields: (keyof Contact)[] = [
+	const fields: Array<keyof Contact> = [
 		'vcard_id',
 		'full_name',
 		'first_name',

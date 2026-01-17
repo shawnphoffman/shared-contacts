@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Input } from './ui/input'
 
 /**
@@ -205,8 +205,8 @@ export function parseAddress(addressValue: string): StructuredAddress {
 /**
  * Format structured address for display (multi-line).
  */
-export function formatAddressForDisplay(address: StructuredAddress): string[] {
-	const lines: string[] = []
+export function formatAddressForDisplay(address: StructuredAddress): Array<string> {
+	const lines: Array<string> = []
 
 	if (address.street) {
 		lines.push(address.street)

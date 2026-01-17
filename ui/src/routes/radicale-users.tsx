@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Plus, Edit, Trash2, Users, RefreshCw } from 'lucide-react'
+import { Edit, Plus, RefreshCw, Trash2, Users } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
@@ -17,7 +17,7 @@ interface RadicaleUser {
 	username: string
 }
 
-async function fetchUsers(): Promise<RadicaleUser[]> {
+async function fetchUsers(): Promise<Array<RadicaleUser>> {
 	const response = await fetch('/api/radicale-users')
 	if (!response.ok) {
 		throw new Error('Failed to fetch users')
@@ -142,7 +142,7 @@ function RadicaleUsersPage() {
 	})
 
 	const backfillAllMutation = useMutation({
-		mutationFn: async (usernames: string[]) => {
+		mutationFn: async (usernames: Array<string>) => {
 			await Promise.all(usernames.map(username => backfillSharedContacts(username)))
 			return usernames.length
 		},

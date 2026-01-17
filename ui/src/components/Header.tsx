@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { NotebookTabs, Users, Upload, Link as LinkIcon, Info } from 'lucide-react'
+import { Info, Link as LinkIcon, NotebookTabs, Upload, Users } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 

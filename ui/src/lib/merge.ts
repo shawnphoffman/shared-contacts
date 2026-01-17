@@ -1,7 +1,7 @@
 import type { Contact, ContactField } from './db'
 
 export interface DuplicateGroup {
-	contacts: Contact[]
+	contacts: Array<Contact>
 	matchType: 'email' | 'phone' | 'name' | 'fuzzy_name'
 	matchReason: string
 }
@@ -67,24 +67,24 @@ export function phonesMatch(phone1: string | null, phone2: string | null): boole
  * - Primary contact is the oldest
  * - Merges all properties with intelligent deduplication
  */
-export function mergeContacts(contacts: Contact[]): Partial<Contact> {
+export function mergeContacts(contacts: Array<Contact>): Partial<Contact> {
 	if (contacts.length === 0) {
 		throw new Error('Cannot merge empty contact list')
 	}
 
 	if (contacts.length === 1) {
-		return contacts[0]!
+		return contacts[0]
 	}
 
 	// Sort by created_at (oldest first)
 	const sorted = [...contacts].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-	const primary = sorted[0]!
+	const primary = sorted[0]
 	const others = sorted.slice(1)
 
 	// Collect all emails and phones for deduplication
-	const emails: string[] = []
-	const phones: string[] = []
+	const emails: Array<string> = []
+	const phones: Array<string> = []
 
 	// Collect emails (deduplicate by normalization)
 	for (const contact of sorted) {
@@ -107,7 +107,7 @@ export function mergeContacts(contacts: Contact[]): Partial<Contact> {
 	}
 
 	// Collect notes from all contacts
-	const notesParts: string[] = []
+	const notesParts: Array<string> = []
 	if (primary.notes) {
 		notesParts.push(primary.notes)
 	}
@@ -188,8 +188,8 @@ export function normalizeName(name: string | null): string | null {
 /**
  * Get all emails from a contact (from both email field and emails array)
  */
-export function getContactEmails(contact: Contact): string[] {
-	const emails: string[] = []
+export function getContactEmails(contact: Contact): Array<string> {
+	const emails: Array<string> = []
 
 	// Add single email field if present
 	if (contact.email) {
@@ -211,8 +211,8 @@ export function getContactEmails(contact: Contact): string[] {
 /**
  * Get all phones from a contact (from both phone field and phones array)
  */
-export function getContactPhones(contact: Contact): string[] {
-	const phones: string[] = []
+export function getContactPhones(contact: Contact): Array<string> {
+	const phones: Array<string> = []
 
 	// Add single phone field if present
 	if (contact.phone) {
@@ -245,7 +245,7 @@ export function namesMatch(name1: string | null, name2: string | null): boolean 
 /**
  * Common name variations mapping
  */
-const NAME_VARIATIONS: Record<string, string[]> = {
+const NAME_VARIATIONS: Record<string, Array<string>> = {
 	robert: ['bob', 'rob', 'robby'],
 	william: ['bill', 'will', 'billy'],
 	richard: ['rick', 'dick', 'rich'],
@@ -294,10 +294,10 @@ export function namesFuzzyMatch(name1: string | null, name2: string | null): boo
 	if (significant1.length > 0 && significant2.length > 0) {
 		// Check if first and last names match (common pattern)
 		if (significant1.length >= 2 && significant2.length >= 2) {
-			const first1 = significant1[0]!
-			const last1 = significant1[significant1.length - 1]!
-			const first2 = significant2[0]!
-			const last2 = significant2[significant2.length - 1]!
+			const first1 = significant1[0]
+			const last1 = significant1[significant1.length - 1]
+			const first2 = significant2[0]
+			const last2 = significant2[significant2.length - 1]
 
 			// Check name variations
 			const checkVariation = (n1: string, n2: string): boolean => {
@@ -368,12 +368,12 @@ export function namesFuzzyMatch(name1: string | null, name2: string | null): boo
  * Detect duplicate contacts and group them
  * Returns groups of contacts that are potential duplicates
  */
-export function detectDuplicates(contacts: Contact[]): DuplicateGroup[] {
-	const groups: DuplicateGroup[] = []
+export function detectDuplicates(contacts: Array<Contact>): Array<DuplicateGroup> {
+	const groups: Array<DuplicateGroup> = []
 	const processed = new Set<string>() // Track contacts that have been grouped
 
 	// 1. Group by email (case-insensitive)
-	const emailGroups = new Map<string, Contact[]>()
+	const emailGroups = new Map<string, Array<Contact>>()
 	for (const contact of contacts) {
 		const emails = getContactEmails(contact)
 		for (const email of emails) {
@@ -403,7 +403,7 @@ export function detectDuplicates(contacts: Contact[]): DuplicateGroup[] {
 	}
 
 	// 2. Group by phone (normalized)
-	const phoneGroups = new Map<string, Contact[]>()
+	const phoneGroups = new Map<string, Array<Contact>>()
 	for (const contact of contacts) {
 		// Skip if already processed
 		if (processed.has(contact.id)) continue
@@ -436,7 +436,7 @@ export function detectDuplicates(contacts: Contact[]): DuplicateGroup[] {
 	}
 
 	// 3. Group by exact name match
-	const nameGroups = new Map<string, Contact[]>()
+	const nameGroups = new Map<string, Array<Contact>>()
 	for (const contact of contacts) {
 		// Skip if already processed
 		if (processed.has(contact.id)) continue
@@ -470,11 +470,11 @@ export function detectDuplicates(contacts: Contact[]): DuplicateGroup[] {
 	}
 
 	// 4. Group by fuzzy name match
-	const fuzzyGroups: Contact[][] = []
+	const fuzzyGroups: Array<Array<Contact>> = []
 	const fuzzyProcessed = new Set<string>()
 
 	for (let i = 0; i < contacts.length; i++) {
-		const contact1 = contacts[i]!
+		const contact1 = contacts[i]
 		if (processed.has(contact1.id) || fuzzyProcessed.has(contact1.id)) continue
 
 		const name1 = contact1.full_name || (contact1.first_name && contact1.last_name ? `${contact1.first_name} ${contact1.last_name}` : null)
@@ -484,7 +484,7 @@ export function detectDuplicates(contacts: Contact[]): DuplicateGroup[] {
 		const fuzzyGroup = [contact1]
 
 		for (let j = i + 1; j < contacts.length; j++) {
-			const contact2 = contacts[j]!
+			const contact2 = contacts[j]
 			if (processed.has(contact2.id) || fuzzyProcessed.has(contact2.id)) continue
 
 			const name2 =
@@ -509,9 +509,9 @@ export function detectDuplicates(contacts: Contact[]): DuplicateGroup[] {
 		const uniqueContacts = Array.from(new Map(groupContacts.map(c => [c.id, c])).values())
 		if (uniqueContacts.length > 1) {
 			const name1 =
-				uniqueContacts[0]!.full_name ||
-				(uniqueContacts[0]!.first_name && uniqueContacts[0]!.last_name
-					? `${uniqueContacts[0]!.first_name} ${uniqueContacts[0]!.last_name}`
+				uniqueContacts[0].full_name ||
+				(uniqueContacts[0].first_name && uniqueContacts[0].last_name
+					? `${uniqueContacts[0].first_name} ${uniqueContacts[0].last_name}`
 					: 'Unknown')
 			groups.push({
 				contacts: uniqueContacts,

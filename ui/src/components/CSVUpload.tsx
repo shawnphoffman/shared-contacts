@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { CheckCircle2, Loader2, Upload, XCircle } from 'lucide-react'
 import { Button } from './ui/button'
-import { Upload, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 
 interface ImportResult {
 	message: string

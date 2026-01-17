@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Copy, Check, Server, User, Lock, Link as LinkIcon } from 'lucide-react'
+import { Check, Copy, Link as LinkIcon, Lock, Server, User } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
@@ -15,7 +15,7 @@ interface RadicaleUser {
 	username: string
 }
 
-async function fetchUsers(): Promise<RadicaleUser[]> {
+async function fetchUsers(): Promise<Array<RadicaleUser>> {
 	const response = await fetch('/api/radicale-users')
 	if (!response.ok) {
 		throw new Error('Failed to fetch users')

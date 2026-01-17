@@ -1,22 +1,22 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { Loader2, Mail, Merge, Phone, RefreshCw, User, UserCheck, X } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Checkbox } from '../components/ui/checkbox'
-import { Merge, Loader2, RefreshCw, Mail, Phone, User, UserCheck, X } from 'lucide-react'
-import type { Contact } from '../lib/db'
 import { formatPhoneNumber } from '../lib/utils'
+import type { Contact } from '../lib/db'
 
 interface DuplicateGroup {
-	contacts: Contact[]
+	contacts: Array<Contact>
 	matchType: 'email' | 'phone' | 'name' | 'fuzzy_name'
 	matchReason: string
 }
 
 interface DuplicatesResponse {
-	groups: DuplicateGroup[]
+	groups: Array<DuplicateGroup>
 	totalGroups: number
 	totalDuplicates: number
 }
@@ -35,11 +35,11 @@ async function fetchDuplicates(): Promise<DuplicatesResponse> {
 interface MergeResult {
 	message: string
 	primaryContactId: string
-	deletedContactIds: string[]
+	deletedContactIds: Array<string>
 	mergedContact: Contact
 }
 
-async function mergeContacts(contactIds: string[]): Promise<MergeResult> {
+async function mergeContacts(contactIds: Array<string>): Promise<MergeResult> {
 	const response = await fetch('/api/contacts/merge', {
 		method: 'POST',
 		headers: {
@@ -112,7 +112,7 @@ function DuplicatesPage() {
 		try {
 			const stored = localStorage.getItem(DECLINED_GROUPS_STORAGE_KEY)
 			if (stored) {
-				const declined = JSON.parse(stored) as string[]
+				const declined = JSON.parse(stored) as Array<string>
 				setDeclinedGroups(new Set(declined))
 			}
 		} catch (error) {

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { CSVUpload } from '../components/CSVUpload'
 import { Upload } from 'lucide-react'
+import { CSVUpload } from '../components/CSVUpload'
 
 export const Route = createFileRoute('/import')({
 	component: ImportPage,
