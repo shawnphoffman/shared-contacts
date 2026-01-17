@@ -24,44 +24,19 @@ async function fetchUsers(): Promise<Array<RadicaleUser>> {
 }
 
 function getCardDAVBaseUrl(): string {
-	// In production, this should come from an environment variable
-	// For now, we'll construct it from the current location
+	// Always use the UI origin and proxy through /carddav
 	if (typeof window !== 'undefined') {
-		const protocol = window.location.protocol
-		const hostname = window.location.hostname
-		const currentPort = window.location.port
-
-		// For local development (localhost or 127.0.0.1), use direct Radicale port
-		const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0'
-
-		if (isLocalhost) {
-			// Local development - Radicale runs on port 5232
-			return `${protocol}//${hostname}:5232`
-		}
-
-		// Production: Check if we're behind a reverse proxy
-		// If on standard ports (80/443) or same port as UI, assume reverse proxy
-		const isStandardPort = !currentPort || currentPort === '80' || currentPort === '443'
-		const isUIPort = currentPort === '3030'
-
-		if (isStandardPort || isUIPort) {
-			// Likely behind reverse proxy - CardDAV might be at /carddav path
-			const port = currentPort && !isStandardPort ? `:${currentPort}` : ''
-			return `${protocol}//${hostname}${port}/carddav`
-		} else {
-			// Direct connection - use Radicale port
-			return `${protocol}//${hostname}:5232`
-		}
+		return `${window.location.origin}/carddav`
 	}
 	// Fallback for SSR
-	return 'http://localhost:5232'
+	return 'http://localhost:3030/carddav'
 }
 
-function getCardDAVUrl(_username: string): string {
+function getCardDAVUrl(username: string): string {
 	const baseUrl = getCardDAVBaseUrl()
 	// The shared contacts collection is accessible to all authenticated users
 	// The collection path is /shared-contacts (flat structure under collection-root)
-	return `${baseUrl}/shared-contacts/`
+	return `${baseUrl}/${encodeURIComponent(username)}/shared-contacts/`
 }
 
 function CopyButton({ text, label }: { text: string; label: string }) {
