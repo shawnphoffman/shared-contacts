@@ -61,7 +61,7 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 
 ## License
 
-MIT
+GNU AGPLv3
 
 ## Contributing
 
