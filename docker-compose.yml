@@ -1,14 +1,16 @@
+name: shared-contacts-dev
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: shared-contacts-postgres-dev
+    container_name: shared-contacts-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sharedcontacts}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sharedcontacts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sharedcontacts} # TODO use a generator?
       POSTGRES_DB: ${POSTGRES_DB:-sharedcontacts}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d
+      - ./migrations:/docker-entrypoint-initdb.d # wtf is this?
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     networks:
@@ -20,33 +22,35 @@ services:
       retries: 5
 
   radicale:
+    container_name: shared-contacts-radicale
     build:
       context: ./radicale
       dockerfile: Dockerfile
-    container_name: shared-contacts-radicale-dev
+    restart: unless-stopped
     environment:
-      RADICALE_SERVER_HOSTS: "0.0.0.0:5232"
-      RADICALE_SERVER_SSL: "False"
-      RADICALE_AUTH_TYPE: "htpasswd"
-      RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt"
-      RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users"
+      RADICALE_SERVER_HOSTS: "0.0.0.0:5232" # needed?
+      RADICALE_SERVER_SSL: "False" # needed?
+      RADICALE_AUTH_TYPE: "htpasswd" # needed?
+      RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt" # needed?
+      RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users" # needed?
     volumes:
       - radicale_data:/data
       - ./radicale/config:/config
     ports:
-      - "${RADICALE_PORT:-5232}:5232"
+      - "${RADICALE_PORT:-5232}:5232" # needed?
     networks:
       - shared-contacts-network
     depends_on:
       postgres:
         condition: service_healthy
-    entrypoint: ["/init-radicale.sh"]
+    entrypoint: [ "/init-radicale.sh" ]
 
   sync-service:
+    container_name: shared-contacts-sync
     build:
       context: .
       dockerfile: ./sync-service/Dockerfile
-    container_name: shared-contacts-sync-dev
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
       RADICALE_STORAGE_PATH: /radicale-data/collections
@@ -56,7 +60,7 @@ services:
     volumes:
       - radicale_data:/radicale-data
     ports:
-      - "${API_PORT:-3001}:3001"
+      - "${API_PORT:-3001}:3001" # needed?
     networks:
       - shared-contacts-network
     depends_on:
@@ -65,45 +69,27 @@ services:
       radicale:
         condition: service_started
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" ]
       interval: 5s
       timeout: 3s
       retries: 10
       start_period: 10s
-    restart: unless-stopped
 
-  # ui:
-  #   build:
-  #     context: .
-  #     dockerfile: ./ui/Dockerfile
-  #   container_name: shared-contacts-ui-dev
-  #   environment:
-  #     DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
-  #     NODE_ENV: production
-  #     SYNC_SERVICE_URL: http://sync-service:3001
-  #   ports:
-  #     - "${UI_PORT:-3030}:3030"
-  #   networks:
-  #     - shared-contacts-network
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     sync-service:
-  #       condition: service_healthy
-  #   restart: unless-stopped
-  #   profiles:
-  #     - production
-
-  ui-dev:
+  ui:
+    container_name: shared-contacts-ui
     build:
       context: .
       dockerfile: ./ui/Dockerfile.dev
-    container_name: shared-contacts-ui-dev-dev
     working_dir: /app
+    # Install dependencies and start dev server
+    # pnpm run ensures binaries in node_modules/.bin are found
+    command: sh -c "pnpm install && pnpm run dev"
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
-      NODE_ENV: development
+      NODE_ENV: development # needed?
       SYNC_SERVICE_URL: http://sync-service:3001
+      RADICALE_URL: http://radicale:5232
       PORT: 3030
       HOST: 0.0.0.0
       CHOKIDAR_USEPOLLING: "true"
@@ -123,10 +109,6 @@ services:
         condition: service_healthy
       sync-service:
         condition: service_healthy
-    # Install dependencies and start dev server
-    # pnpm run ensures binaries in node_modules/.bin are found
-    command: sh -c "pnpm install && pnpm run dev"
-    restart: unless-stopped
     stdin_open: true
     tty: true
 

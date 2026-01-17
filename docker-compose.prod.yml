@@ -46,6 +46,7 @@ services:
       # UI configuration
       NODE_ENV: production
       SYNC_SERVICE_URL: http://localhost:3001
+      RADICALE_URL: http://localhost:5232
       PORT: 3030
       HOST: 0.0.0.0
     volumes:
@@ -63,15 +64,15 @@ services:
       # Check both UI availability and sync-service readiness (migrations complete)
       # The sync-service /ready endpoint returns 503 until migrations complete
       # This ensures migrations finish before the container is marked healthy
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3030/',(r1)=>{if(r1.statusCode!==200)process.exit(1);require('http').get('http://localhost:3001/ready',(r2)=>{process.exit(r2.statusCode===200?0:1)}).on('error',()=>process.exit(1))}).on('error',()=>process.exit(1))\" || exit 1"]
+      test: [ "CMD-SHELL", "node -e \"require('http').get('http://localhost:3030/',(r1)=>{if(r1.statusCode!==200)process.exit(1);require('http').get('http://localhost:3001/ready',(r2)=>{process.exit(r2.statusCode===200?0:1)}).on('error',()=>process.exit(1))}).on('error',()=>process.exit(1))\" || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     restart: always
     labels:
-      - "com.sharedcontacts.service=app"
-      - "com.sharedcontacts.description=Combined application (Radicale, Sync Service, UI)"
+      - com.sharedcontacts.service=app
+      - com.sharedcontacts.description=Combined application (Radicale, Sync Service, UI)
       # Traefik
       - traefik.enable=true
       - traefik.docker.network=proxy_net
