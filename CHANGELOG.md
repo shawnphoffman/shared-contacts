@@ -6,15 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.6.2](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.1...v0.6.2) (2026-01-17)
+## [0.6.3](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.2...v0.6.3) (2026-01-17)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.6.3](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.2...v0.6.3)
+
+- ♻️ Refactor: replace pnpm with npm in various files for consistency and update CardDAV connection documentation with direct and proxy URL options [`c9c0695`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/c9c0695203d2d2b111cee1d593891d9cba6d38c3)
+- ♻️ Refactor: update text sizes in various components for improved readability and consistency [`92f20e4`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/92f20e4ec93e477d6d35b6ba86b4c00b834f7d50)
+
 #### [v0.6.2](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.1...v0.6.2)
 
+> 16 January 2026
+
 - 🔧 Chore: comment out ports and Traefik labels in docker-compose.prod.yml for cleaner configuration and future reference [`185fe73`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/185fe733c551edbba916b5e0205dd006c14eb326)
+- 🔧 Chore: release v0.6.2 [`42157fe`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/42157fe1e6031bd017c82d978583bf8a95906fb7)
 - 🔧 Chore: add SYNC_INTERVAL environment variable to docker-compose.prod.yml for configurable sync timing [`56e54e3`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/56e54e31d0ddf0498ca4ccddf57f47c04b4b5a6c)
 
 #### [v0.6.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.0...v0.6.1)
