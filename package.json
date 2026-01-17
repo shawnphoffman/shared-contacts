@@ -8,10 +8,6 @@
 		"npm": ">=9.0.0"
 	},
 	"scripts": {
-		"version:patch": "node scripts/version.js patch",
-		"version:minor": "node scripts/version.js minor",
-		"version:major": "node scripts/version.js major",
-		"version:set": "node scripts/version.js set",
 		"release": "release-it",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
