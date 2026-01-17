@@ -6,15 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.6.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.0...v0.6.1) (2026-01-17)
+## [0.6.2](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.1...v0.6.2) (2026-01-17)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.6.2](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.1...v0.6.2)
+
+- 🔧 Chore: comment out ports and Traefik labels in docker-compose.prod.yml for cleaner configuration and future reference [`185fe73`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/185fe733c551edbba916b5e0205dd006c14eb326)
+- 🔧 Chore: add SYNC_INTERVAL environment variable to docker-compose.prod.yml for configurable sync timing [`56e54e3`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/56e54e31d0ddf0498ca4ccddf57f47c04b4b5a6c)
+
 #### [v0.6.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.0...v0.6.1)
 
+> 16 January 2026
+
 - ♻️ Refactor: replace pnpm with npm in Dockerfiles for consistency and simplify dependency installation [`f938ccb`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/f938ccb5d7abccea9eff821432e8a18ad7534851)
+- 🔧 Chore: release v0.6.1 [`3fa4cc7`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/3fa4cc79040591bfce10ad6fdb96d714db86ceb2)
 
 #### [v0.6.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.5.1...v0.6.0)
 
