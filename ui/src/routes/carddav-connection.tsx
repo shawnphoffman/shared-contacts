@@ -137,7 +137,7 @@ function CardDAVConnectionPage() {
 	}
 
 	return (
-		<div className="container mx-auto p-6 space-y-6">
+		<div className="container mx-auto p-6 space-y-6 max-w-5xl">
 			<div>
 				<h1 className="text-3xl font-bold mb-2">CardDAV Connection</h1>
 				<div className="text-muted-foreground">Configure your CardDAV client to sync contacts with this server.</div>
@@ -159,18 +159,18 @@ function CardDAVConnectionPage() {
 							<div>
 								<div className="font-medium text-foreground dark:text-gray-100">Direct (no reverse proxy)</div>
 								<div className="mt-2 space-y-2">
-									<span className="sm:hidden block text-xs uppercase text-muted-foreground">UI</span>
+									<span className="sm:hidden block text-sm uppercase text-muted-foreground">UI</span>
 									<div className="flex items-center gap-2 ">
-										<span className="hidden sm:block w-24 text-xs uppercase text-muted-foreground">UI</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-xs break-all">
+										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">UI</span>
+										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">
 											{directUiBaseUrl}
 										</code>
 										<CopyButton text={directUiBaseUrl} label="Direct UI URL" />
 									</div>
-									<span className="sm:hidden block text-xs uppercase text-muted-foreground">CardDAV</span>
+									<span className="sm:hidden block text-sm uppercase text-muted-foreground">CardDAV</span>
 									<div className="flex items-center gap-2">
-										<span className="hidden sm:block w-24 text-xs uppercase text-muted-foreground">CardDAV</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-xs break-all">{directBaseUrl}</code>
+										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">CardDAV</span>
+										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{directBaseUrl}</code>
 										<CopyButton text={directBaseUrl} label="Direct CardDAV URL" />
 									</div>
 								</div>
@@ -180,16 +180,16 @@ function CardDAVConnectionPage() {
 							<div>
 								<div className="font-medium text-foreground dark:text-gray-100">Traefik / reverse proxy</div>
 								<div className="mt-2 space-y-2">
-									<span className="sm:hidden block text-xs uppercase text-muted-foreground">UI</span>
+									<span className="sm:hidden block text-sm uppercase text-muted-foreground">UI</span>
 									<div className="flex items-center gap-2">
-										<span className="hidden sm:block w-24 text-xs uppercase text-muted-foreground">UI</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-xs break-all">{proxyUiBaseUrl}</code>
+										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">UI</span>
+										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{proxyUiBaseUrl}</code>
 										<CopyButton text={proxyUiBaseUrl} label="Proxy UI URL" />
 									</div>
-									<span className="sm:hidden block text-xs uppercase text-muted-foreground">CardDAV</span>
+									<span className="sm:hidden block text-sm uppercase text-muted-foreground">CardDAV</span>
 									<div className="flex items-center gap-2">
-										<span className="hidden sm:block w-24 text-xs uppercase text-muted-foreground">CardDAV</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-xs break-all">{proxyBaseUrl}</code>
+										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">CardDAV</span>
+										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{proxyBaseUrl}</code>
 										<CopyButton text={proxyBaseUrl} label="Proxy CardDAV URL" />
 									</div>
 								</div>
@@ -257,11 +257,11 @@ function CardDAVConnectionPage() {
 													<div className="space-y-2">
 														<div>
 															<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
-															<code className="text-xs break-all">{directSubscriptionUrl}</code>
+															<code className="text-sm break-all">{directSubscriptionUrl}</code>
 														</div>
 														<div>
 															<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
-															<code className="text-xs break-all">{proxySubscriptionUrl}</code>
+															<code className="text-sm break-all">{proxySubscriptionUrl}</code>
 														</div>
 													</div>
 												</TableCell>
@@ -303,7 +303,7 @@ function CardDAVConnectionPage() {
 					<CardDescription>Sample labels from docker-compose.prod.yml (contacts.example.com + carddav.example.com)</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<pre className="whitespace-pre-wrap rounded-md bg-gray-100 dark:bg-gray-800 p-4 text-xs text-muted-foreground dark:text-gray-300">
+					<pre className="overflow-y-auto whitespace-pre leading-normal rounded-md bg-gray-100 dark:bg-gray-800 p-4 text-sm text-muted-foreground dark:text-gray-300">
 						<code>{traefikExample}</code>
 					</pre>
 				</CardContent>
@@ -448,20 +448,16 @@ function CardDAVConnectionPage() {
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm text-muted-foreground dark:text-gray-400">
 					<div>
-						<strong>Connection fails:</strong> Verify the server URL is correct and accessible from your network. If behind a firewall,
-						ensure port 5232 (or your configured port) is open.
+						<strong>Connection fails:</strong> Verify the server URL is correct and accessible from your network.
 					</div>
 					<div>
-						<strong>Authentication fails:</strong> Double-check your username and password. CardDAV credentials are separate from web UI
-						credentials.
+						<strong>Authentication fails:</strong> Double-check your username and password.
 					</div>
 					<div>
-						<strong>HTTPS required:</strong> Some clients require HTTPS. If using HTTP, ensure your client allows insecure connections, or
-						set up a reverse proxy with SSL/TLS.
+						<strong>HTTPS required:</strong> Some clients require HTTPS. If using HTTP, ensure your client allows insecure connections, or set up a reverse proxy with SSL/TLS.
 					</div>
 					<div>
-						<strong>No contacts appear:</strong> Make sure contacts exist in the web UI. The sync service automatically synchronizes
-						contacts between the database and CardDAV.
+						<strong>No contacts appear:</strong> Make sure contacts exist in the web UI. The sync service automatically synchronizes contacts between the database and CardDAV.
 					</div>
 				</CardContent>
 			</Card>

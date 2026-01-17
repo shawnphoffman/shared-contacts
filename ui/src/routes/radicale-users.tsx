@@ -207,7 +207,7 @@ function RadicaleUsersPage() {
 	}
 
 	return (
-		<div className="container mx-auto p-6 gap-6 flex flex-col">
+		<div className="container mx-auto p-6 gap-6 flex flex-col max-w-2xl">
 			{/*  */}
 			<div className="flex justify-between items-center">
 				<div className="flex items-center gap-3">
@@ -224,7 +224,7 @@ function RadicaleUsersPage() {
 				Manage users who can sync contacts via Radicale. These users are separate from the web UI authentication.
 			</div>
 			<Item variant="outline" className="flex flex-col gap-2 ">
-				<div className="flex items-center w-full justify-between gap-4">
+				<div className="flex flex-col sm:flex-row items-center w-full justify-between gap-4">
 					<div>
 						If a user cannot see existing shared contacts, run a backfill to copy the shared address book into their Radicale account.
 					</div>
@@ -267,7 +267,7 @@ function RadicaleUsersPage() {
 								<TableRow key={user.username}>
 									<TableCell className="font-medium">{user.username}</TableCell>
 									<TableCell className="text-right">
-										<div className="flex justify-end gap-2">
+										<div className="flex flex-col sm:flex-row justify-end gap-2">
 											<Button
 												variant="outline"
 												size="sm"

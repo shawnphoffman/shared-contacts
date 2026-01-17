@@ -222,7 +222,7 @@ function ContactDetailPage() {
 												<div key={index}>
 													<a href={`mailto:${email.value}`} className="text-blue-600 hover:underline">
 														{email.value}
-														{email.type && <span className="text-gray-500 text-xs ml-2">({email.type})</span>}
+														{email.type && <span className="text-gray-500 text-sm ml-2">({email.type})</span>}
 													</a>
 												</div>
 											))
@@ -246,7 +246,7 @@ function ContactDetailPage() {
 												<div key={index}>
 													<a href={`tel:${phone.value}`} className="text-blue-600 hover:underline">
 														{formatPhoneNumber(phone.value)}
-														{phone.type && <span className="text-gray-500 text-xs ml-2">({phone.type})</span>}
+														{phone.type && <span className="text-gray-500 text-sm ml-2">({phone.type})</span>}
 													</a>
 												</div>
 											))
@@ -293,7 +293,7 @@ function ContactDetailPage() {
 														{formatAddressForDisplay(parseAddress(address.value || '')).map((line, lineIndex) => (
 															<p key={lineIndex}>{line}</p>
 														))}
-														{address.type && <p className="text-gray-500 text-xs">({address.type})</p>}
+														{address.type && <p className="text-gray-500 text-sm">({address.type})</p>}
 													</div>
 												</div>
 											))
@@ -323,7 +323,7 @@ function ContactDetailPage() {
 												<div key={index}>
 													<a href={url.value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
 														{url.value}
-														{url.type && <span className="text-gray-500 text-xs ml-2">({url.type})</span>}
+														{url.type && <span className="text-gray-500 text-sm ml-2">({url.type})</span>}
 													</a>
 												</div>
 											))
@@ -431,7 +431,7 @@ function ContactDetailPage() {
 											{labels.map((label, index) => (
 												<div key={index}>
 													{label.value}
-													{label.type && <span className="text-gray-500 text-xs ml-2">({label.type})</span>}
+													{label.type && <span className="text-gray-500 text-sm ml-2">({label.type})</span>}
 												</div>
 											))}
 										</div>
@@ -444,7 +444,7 @@ function ContactDetailPage() {
 											{logos.map((logo, index) => (
 												<div key={index}>
 													{logo.value}
-													{logo.type && <span className="text-gray-500 text-xs ml-2">({logo.type})</span>}
+													{logo.type && <span className="text-gray-500 text-sm ml-2">({logo.type})</span>}
 												</div>
 											))}
 										</div>
@@ -457,7 +457,7 @@ function ContactDetailPage() {
 											{sounds.map((sound, index) => (
 												<div key={index}>
 													{sound.value}
-													{sound.type && <span className="text-gray-500 text-xs ml-2">({sound.type})</span>}
+													{sound.type && <span className="text-gray-500 text-sm ml-2">({sound.type})</span>}
 												</div>
 											))}
 										</div>
@@ -470,7 +470,7 @@ function ContactDetailPage() {
 											{keys.map((key, index) => (
 												<div key={index}>
 													{key.value}
-													{key.type && <span className="text-gray-500 text-xs ml-2">({key.type})</span>}
+													{key.type && <span className="text-gray-500 text-sm ml-2">({key.type})</span>}
 												</div>
 											))}
 										</div>

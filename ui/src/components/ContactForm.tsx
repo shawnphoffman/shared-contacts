@@ -394,7 +394,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 					) : showExistingPhoto && existingPhotoUrl ? (
 						<img src={existingPhotoUrl} alt="Contact" className="h-full w-full object-cover" onError={() => setShowExistingPhoto(false)} />
 					) : (
-						<span className="text-xs text-gray-400">No Photo</span>
+						<span className="text-sm text-gray-400">No Photo</span>
 					)}
 				</div>
 				<div className="flex flex-col gap-2">

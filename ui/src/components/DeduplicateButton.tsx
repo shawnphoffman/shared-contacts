@@ -84,7 +84,7 @@ export function DeduplicateButton() {
 			<Merge className="w-4 h-4 mr-1" />
 			Merge
 			{visibleGroupsCount > 0 && (
-				<span className="ml-1 px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full">{visibleGroupsCount}</span>
+				<span className="ml-1 px-2 py-0.5 text-sm font-semibold bg-primary text-primary-foreground rounded-full">{visibleGroupsCount}</span>
 			)}
 		</Button>
 	)

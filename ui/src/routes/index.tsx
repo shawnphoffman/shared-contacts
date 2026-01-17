@@ -386,7 +386,7 @@ function ContactsIndexPage() {
 	}
 
 	return (
-		<div className="container mx-auto p-6 gap-4 flex flex-col">
+		<div className="container mx-auto p-6 gap-4 flex flex-col max-w-5xl">
 			<div className="flex sm:justify-between sm:items-center flex-col sm:flex-row gap-2">
 				<h1 className="text-3xl font-bold">Contacts</h1>
 				<div className="flex sm:flex-row flex-col sm:items-center gap-2 w-full sm:w-auto justify-between">

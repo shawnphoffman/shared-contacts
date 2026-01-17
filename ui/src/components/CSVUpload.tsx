@@ -109,7 +109,7 @@ export function CSVUpload() {
 						<div className="flex-1">
 							<p className="text-sm font-medium text-green-800 dark:text-green-200">{importMutation.data.message}</p>
 							{importMutation.data.updated > 0 && (
-								<p className="text-xs text-green-600 dark:text-green-400 mt-1">
+								<p className="text-sm text-green-600 dark:text-green-400 mt-1">
 									{importMutation.data.updated} existing contacts were updated
 								</p>
 							)}
@@ -118,7 +118,7 @@ export function CSVUpload() {
 									<summary className="text-sm text-green-700 dark:text-green-300 cursor-pointer">
 										{importMutation.data.errors.length} error(s)
 									</summary>
-									<ul className="mt-2 space-y-1 text-xs text-green-600 dark:text-green-400">
+									<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-400">
 										{importMutation.data.errors.map((error, idx) => (
 											<li key={idx}>
 												Row {error.row}: {error.error}

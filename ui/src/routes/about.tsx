@@ -79,7 +79,7 @@ function AboutPage() {
 	const envVars = Object.entries(info.environment).filter(([_, value]) => value !== null)
 
 	return (
-		<div className="container mx-auto p-6 max-w-4xl">
+		<div className="container mx-auto p-6 max-w-2xl">
 			<div className="mb-6">
 				<h1 className="text-3xl font-bold mb-2">About</h1>
 				<p className="text-muted-foreground">Debug information and system details</p>
