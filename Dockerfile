@@ -1,5 +1,5 @@
 # Stage 1: Build sync-service
-FROM node:20-alpine AS sync-builder
+FROM node:22-alpine AS sync-builder
 
 WORKDIR /app/sync-service
 

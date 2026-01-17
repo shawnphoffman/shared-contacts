@@ -1,5 +1,4 @@
-const DEFAULT_SYNC_SERVICE_URL = 'http://sync-service:3001'
-// const FALLBACK_SYNC_SERVICE_URL = 'http://localhost:3001'
+const DEFAULT_SYNC_SERVICE_URL = 'http://localhost:3001'
 const SYNC_SERVICE_URL = process.env.SYNC_SERVICE_URL || DEFAULT_SYNC_SERVICE_URL
 
 async function parseResponseBody(response: Response) {

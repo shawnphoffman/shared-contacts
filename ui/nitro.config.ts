@@ -1,4 +1,4 @@
-const RADICALE_URL = process.env.RADICALE_URL || 'http://radicale:5232'
+const RADICALE_URL = process.env.RADICALE_URL || 'http://localhost:5232'
 
 export default {
 	devServer: {

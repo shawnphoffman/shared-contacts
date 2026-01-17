@@ -4,110 +4,62 @@ services:
   shared-contacts-postgres:
     image: postgres:15-alpine
     container_name: shared-contacts-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sharedcontacts}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-sharedcontacts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMePlease!!!}
+      POSTGRES_DB: sharedcontacts
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - '${POSTGRES_PORT:-5432}:5432'
+    # ports:
+    #   - '${POSTGRES_PORT:-5432}:5432'
     networks:
-      - shared-contacts-prod-network
+      - shared-contacts-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sharedcontacts}']
+      test: [ 'CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sharedcontacts} -d sharedcontacts' ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    restart: always
-    labels:
-      - 'com.sharedcontacts.service=postgres'
-      - 'com.sharedcontacts.description=PostgreSQL database'
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 3
+        compress: 'true'
 
   shared-contacts-app:
     image: ghcr.io/shawnphoffman/shared-contacts:latest
-    # To use a specific version, replace :latest with :v1.0.0 or :main
     container_name: shared-contacts-app
+    restart: unless-stopped
     environment:
-      # Database connection
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD}@shared-contacts-postgres:5432/${POSTGRES_DB:-sharedcontacts}
-      # Radicale configuration
-      RADICALE_SERVER_HOSTS: '0.0.0.0:5232'
-      RADICALE_SERVER_SSL: 'False'
-      RADICALE_AUTH_TYPE: 'htpasswd'
-      RADICALE_AUTH_HTPASSWD_ENCRYPTION: 'bcrypt'
-      RADICALE_AUTH_HTPASSWD_FILENAME: '/data/users'
-      RADICALE_STORAGE_PATH: /data/collections
-      RADICALE_USERS_FILE: /data/users
-      # Sync service configuration
-      SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
-      API_PORT: ${API_PORT:-3001}
-      # UI configuration
-      NODE_ENV: production
-      SYNC_SERVICE_URL: http://localhost:3001
-      RADICALE_URL: http://localhost:5232
-      PORT: 3030
-      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-ChangeMePlease!!!}@shared-contacts-postgres:5432/sharedcontacts
     volumes:
       - radicale_data:/data
     ports:
-      - '${RADICALE_PORT:-5232}:5232'
-      - '${API_PORT:-3001}:3001'
       - '${UI_PORT:-3030}:3030'
     networks:
-      - shared-contacts-prod-network
+      - shared-contacts-network
     depends_on:
       shared-contacts-postgres:
         condition: service_healthy
     healthcheck:
-      # Check both UI availability and sync-service readiness (migrations complete)
-      # The sync-service /ready endpoint returns 503 until migrations complete
-      # This ensures migrations finish before the container is marked healthy
-      test:
-        [
-          'CMD-SHELL',
-          'node -e "require(''http'').get(''http://localhost:3030/'',(r1)=>{if(r1.statusCode!==200)process.exit(1);require(''http'').get(''http://localhost:3001/ready'',(r2)=>{process.exit(r2.statusCode===200?0:1)}).on(''error'',()=>process.exit(1))}).on(''error'',()=>process.exit(1))" || exit 1',
-        ]
+      test: [ 'CMD-SHELL', 'node -e "require(''http'').get(''http://localhost:3030/api/health'',(r)=>{process.exit(r.statusCode===200?0:1)}).on(''error'',()=>process.exit(1))" || exit 1' ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-    restart: always
-    labels:
-      - com.sharedcontacts.service=app
-      - com.sharedcontacts.description=Combined application (Radicale, Sync Service, UI)
-      # Traefik
-      - traefik.enable=true
-      - traefik.docker.network=proxy_net
-      - traefik.http.middlewares.redir-https.redirectscheme.scheme=https
-      # Contacts UI
-      - traefik.http.routers.contacts.service=contacts
-      - traefik.http.routers.contacts.rule=Host(`contacts.yourdomain`)
-      - traefik.http.routers.contacts.entrypoints=websecure
-      - traefik.http.routers.contacts.tls=true
-      - traefik.http.routers.contacts.tls.certresolver=cloudflare
-      - traefik.http.services.contacts.loadbalancer.server.port=3030
-      #
-      - traefik.http.routers.contacts-http.entrypoints=web
-      - traefik.http.routers.contacts-http.rule=Host(`contacts.yourdomain`)
-      - traefik.http.routers.contacts-http.middlewares=redir-https
-      # CardDAV Server
-      - traefik.http.routers.radicale.service=radicale
-      - traefik.http.routers.radicale.rule=Host(`carddav.yourdomain`)
-      - traefik.http.routers.radicale.entrypoints=websecure
-      - traefik.http.routers.radicale.tls=true
-      - traefik.http.routers.radicale.tls.certresolver=cloudflare
-      - traefik.http.services.radicale.loadbalancer.server.port=5232
-      #
-      - traefik.http.routers.radicale-http.entrypoints=web
-      - traefik.http.routers.radicale-http.rule=Host(`carddav.yourdomain`)
-      - traefik.http.routers.radicale-http.middlewares=redir-https
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 3
+        compress: 'true'
 
 networks:
-  shared-contacts-prod-network:
+  shared-contacts-network:
     driver: bridge
-    name: shared-contacts-prod-network
+    name: shared-contacts-network
 
 volumes:
   postgres_data:

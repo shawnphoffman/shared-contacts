@@ -2,8 +2,8 @@ import bcrypt from 'bcrypt'
 import path from 'path'
 import { readFile, writeFile, access, constants, readdir, copyFile, mkdir } from 'fs/promises'
 
-const USERS_FILE = process.env.RADICALE_USERS_FILE || '/radicale-data/users'
-const RADICALE_STORAGE_PATH = process.env.RADICALE_STORAGE_PATH || '/radicale-data/collections'
+const USERS_FILE = process.env.RADICALE_USERS_FILE || '/data/users'
+const RADICALE_STORAGE_PATH = process.env.RADICALE_STORAGE_PATH || '/data/collections'
 const SHARED_COLLECTION_NAME = 'shared-contacts'
 
 function getSharedAddressBookPathForUser(username: string): string {

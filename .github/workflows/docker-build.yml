@@ -7,10 +7,12 @@ on:
     #   - master
     tags:
       - 'v*'
-  # pull_request:
-  #   branches:
-  #     - main
-  #     - master
+    paths-ignore:
+      - '**.md'
+      - docs/**
+      - .github/**
+      - .cursor/**
+      - '!.github/workflows/docker-build.yml'
 
 env:
   REGISTRY: ghcr.io

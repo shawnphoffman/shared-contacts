@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sharedcontacts}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sharedcontacts} # TODO use a generator?
-      POSTGRES_DB: ${POSTGRES_DB:-sharedcontacts}
+      POSTGRES_DB: sharedcontacts
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d # wtf is this?
@@ -52,7 +52,7 @@ services:
       dockerfile: ./sync-service/Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/sharedcontacts
       RADICALE_STORAGE_PATH: /radicale-data/collections
       RADICALE_USERS_FILE: /radicale-data/users
       SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
@@ -92,7 +92,7 @@ services:
     command: sh -c "pnpm install && pnpm run dev"
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/${POSTGRES_DB:-sharedcontacts}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/sharedcontacts
       NODE_ENV: development # needed?
       SYNC_SERVICE_URL: http://sync-service:3001
       RADICALE_URL: http://radicale:5232
