@@ -6,16 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.6.3](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.2...v0.6.3) (2026-01-17)
+## [0.6.4](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.3...v0.6.4) (2026-01-17)
+
+### Bug Fixes
+
+* enhance contact synchronization logic to handle duplicate vCard IDs and improve error handling during contact creation ([ea08fc0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/ea08fc0d9846596cfa628df1f30c6ac8c3a33d8b))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.6.4](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.3...v0.6.4)
+
+- 🐛 Fix: enhance contact synchronization logic to handle duplicate vCard IDs and improve error handling during contact creation [`ea08fc0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/ea08fc0d9846596cfa628df1f30c6ac8c3a33d8b)
+
 #### [v0.6.3](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.2...v0.6.3)
+
+> 16 January 2026
 
 - ♻️ Refactor: replace pnpm with npm in various files for consistency and update CardDAV connection documentation with direct and proxy URL options [`c9c0695`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/c9c0695203d2d2b111cee1d593891d9cba6d38c3)
 - ♻️ Refactor: update text sizes in various components for improved readability and consistency [`92f20e4`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/92f20e4ec93e477d6d35b6ba86b4c00b834f7d50)
+- 🔧 Chore: release v0.6.3 [`c211695`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/c2116959ffeda35a76b84c67d368e8a70011b11c)
 
 #### [v0.6.2](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.1...v0.6.2)
 
