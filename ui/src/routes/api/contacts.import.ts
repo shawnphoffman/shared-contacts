@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import {  createContact, findDuplicateContact, updateContact } from '../../lib/db'
+import { createContact, findDuplicateContact, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
-import type {Contact} from '../../lib/db';
+import type { Contact } from '../../lib/db'
 
 /**
  * Simple CSV parser that handles quoted fields

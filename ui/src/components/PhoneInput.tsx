@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { AsYouType,  parsePhoneNumber } from 'libphonenumber-js'
+import { AsYouType, parsePhoneNumber } from 'libphonenumber-js'
 import { Input } from './ui/input'
-import type {CountryCode} from 'libphonenumber-js';
+import type { CountryCode } from 'libphonenumber-js'
 import { cn } from '@/lib/utils'
 
 interface PhoneInputProps {

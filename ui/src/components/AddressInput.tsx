@@ -228,9 +228,7 @@ export function formatAddressForDisplay(address: StructuredAddress): Array<strin
  * Format structured address for compact display (single line).
  */
 export function formatAddressForSingleLine(address: StructuredAddress): string {
-	const parts = [address.street, address.city, address.state, address.postal, address.country]
-		.map(part => part.trim())
-		.filter(Boolean)
+	const parts = [address.street, address.city, address.state, address.postal, address.country].map(part => part.trim()).filter(Boolean)
 
 	return parts.join(', ')
 }

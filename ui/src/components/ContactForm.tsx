@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Cropper from 'react-easy-crop'
 import { normalizeUrl, validateEmail, validateUrl } from '../lib/validation'
 import { normalizePhoneNumber } from '../lib/utils'
-import {  cropToSquareDataUrl, getContactPhotoUrl, readFileAsDataUrl } from '../lib/image'
+import { cropToSquareDataUrl, getContactPhotoUrl, readFileAsDataUrl } from '../lib/image'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
-import type {CropArea} from '../lib/image';
+import type { CropArea } from '../lib/image'
 import type { Contact, ContactField } from '../lib/db'
 
 export type ContactPayload = Partial<Contact> & {

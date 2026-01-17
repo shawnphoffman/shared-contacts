@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ContactForm  } from '../components/ContactForm'
-import type {ContactPayload} from '../components/ContactForm';
+import { ContactForm } from '../components/ContactForm'
+import type { ContactPayload } from '../components/ContactForm'
 import type { Contact } from '../lib/db'
 
 export const Route = createFileRoute('/new')({
