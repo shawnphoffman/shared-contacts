@@ -118,7 +118,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 	const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null)
 	const [cropOutputMime, setCropOutputMime] = useState('image/jpeg')
 	const [isSubmitting, setIsSubmitting] = useState(false)
-	const [validationErrors, setValidationErrors] = useState<Record<string, Record<number, string | null>>>({})
+	const [validationErrors, setValidationErrors] = useState<Partial<Record<string, Record<number, string | null>>>>({})
 	const isInitialMount = useRef(true)
 
 	// Calculate full_name from first_name and last_name only when user edits them
@@ -298,7 +298,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 
 			// Filter out empty fields before submission
 			const nonEmptyPhones = normalizedPhones.filter(p => p.value.trim())
-			const nonEmptyEmails = emails.filter(e => e.value.trim())
+			const nonEmptyEmails = emails.filter(emailField => emailField.value.trim())
 			const nonEmptyAddresses = addresses.filter(a => a.value.trim())
 			const nonEmptyUrls = normalizedUrls.filter(u => u.value.trim())
 			const nonEmptyLabels = labels.filter(label => label.value.trim())
@@ -328,7 +328,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 				photoPayload.photo_remove = true
 			} else if (photoData && photoMime) {
 				photoPayload.photo_data = photoData
-				photoPayload.photo_mime = photoMime ?? undefined
+				photoPayload.photo_mime = photoMime
 				photoPayload.photo_width = photoWidth || 512
 				photoPayload.photo_height = photoHeight || 512
 			}
