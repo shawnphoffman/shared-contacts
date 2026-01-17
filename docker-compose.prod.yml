@@ -34,8 +34,8 @@ services:
       SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
     volumes:
       - radicale_data:/data
-    ports:
-      - '${UI_PORT:-3030}:3030'
+    # ports:
+    #   - '${UI_PORT:-3030}:3030'
     networks:
       - shared-contacts-network
     depends_on:
@@ -53,6 +53,33 @@ services:
         max-size: 10m
         max-file: 3
         compress: 'true'
+    # labels:
+    #   # TRAEFIK
+    #   - traefik.enable=true
+    #   - traefik.docker.network=proxy_net
+    #   - traefik.http.middlewares.redir-https.redirectscheme.scheme=https
+    #   # CONTACTS
+    #   - traefik.http.routers.contacts.service=contacts
+    #   - traefik.http.routers.contacts.rule=Host(`contacts.yourdomain`)
+    #   - traefik.http.routers.contacts.entrypoints=websecure
+    #   - traefik.http.routers.contacts.tls=true
+    #   - traefik.http.routers.contacts.tls.certresolver=cloudflare
+    #   - traefik.http.services.contacts.loadbalancer.server.port=3030
+    #   # - HTTP > HTTPS
+    #   - traefik.http.routers.contacts-http.entrypoints=web
+    #   - traefik.http.routers.contacts-http.rule=Host(`contacts.yourdomain`)
+    #   - traefik.http.routers.contacts-http.middlewares=redir-https
+    #   # CARDDAV
+    #   - traefik.http.routers.radicale.service=radicale
+    #   - traefik.http.routers.radicale.rule=Host(`carddav.yourdomain`)
+    #   - traefik.http.routers.radicale.entrypoints=websecure
+    #   - traefik.http.routers.radicale.tls=true
+    #   - traefik.http.routers.radicale.tls.certresolver=cloudflare
+    #   - traefik.http.services.radicale.loadbalancer.server.port=5232
+    #   # - HTTP > HTTPS
+    #   - traefik.http.routers.radicale-http.entrypoints=web
+    #   - traefik.http.routers.radicale-http.rule=Host(`carddav.yourdomain`)
+    #   - traefik.http.routers.radicale-http.middlewares=redir-https
 
 networks:
   shared-contacts-network:
