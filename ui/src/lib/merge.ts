@@ -199,7 +199,7 @@ export function getContactEmails(contact: Contact): Array<string> {
 	// Add emails from array if present
 	if (contact.emails && Array.isArray(contact.emails)) {
 		for (const emailField of contact.emails) {
-			if (emailField?.value) {
+			if (emailField.value) {
 				emails.push(emailField.value)
 			}
 		}
@@ -222,7 +222,7 @@ export function getContactPhones(contact: Contact): Array<string> {
 	// Add phones from array if present
 	if (contact.phones && Array.isArray(contact.phones)) {
 		for (const phoneField of contact.phones) {
-			if (phoneField?.value) {
+			if (phoneField.value) {
 				phones.push(phoneField.value)
 			}
 		}
@@ -302,7 +302,7 @@ export function namesFuzzyMatch(name1: string | null, name2: string | null): boo
 			// Check name variations
 			const checkVariation = (n1: string, n2: string): boolean => {
 				if (n1 === n2) return true
-				const variations = NAME_VARIATIONS[n1] || []
+				const variations = NAME_VARIATIONS[n1]
 				if (variations.includes(n2)) return true
 				// Check reverse
 				for (const [key, values] of Object.entries(NAME_VARIATIONS)) {
