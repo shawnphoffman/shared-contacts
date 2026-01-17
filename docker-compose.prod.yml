@@ -31,6 +31,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-ChangeMePlease!!!}@shared-contacts-postgres:5432/sharedcontacts
+      SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
     volumes:
       - radicale_data:/data
     ports:
