@@ -22,20 +22,17 @@ FROM node:22-alpine AS ui-builder
 
 WORKDIR /app/ui
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
-COPY ui/package.json ui/pnpm-lock.yaml ./
+COPY ui/package.json ui/package-lock.json ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 # Copy source code
 COPY ui/ .
 
 # Build the application
-RUN pnpm build
+RUN npm run build
 
 # Stage 3: Production runtime - based on Radicale with Node.js
 FROM ghcr.io/kozea/radicale:latest
@@ -47,7 +44,6 @@ USER root
 # We'll use Node 22 for both since it's backward compatible
 # Also install netcat for health checks in entrypoint script
 RUN apk add --no-cache nodejs npm netcat-openbsd && \
-	npm install -g pnpm && \
 	rm -rf /var/cache/apk/*
 
 # Create directories for services
@@ -65,7 +61,7 @@ COPY --from=sync-builder /app/sync-service/node_modules /app/sync-service/node_m
 # Copy built ui
 COPY --from=ui-builder /app/ui/.output /app/ui/.output
 COPY --from=ui-builder /app/ui/package.json /app/ui/package.json
-COPY --from=ui-builder /app/ui/pnpm-lock.yaml /app/ui/pnpm-lock.yaml
+COPY --from=ui-builder /app/ui/package-lock.json /app/ui/package-lock.json
 COPY --from=ui-builder /app/ui/node_modules /app/ui/node_modules
 
 # Copy root package.json for about metadata

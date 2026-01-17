@@ -2,34 +2,28 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
-COPY ui/package.json ui/pnpm-lock.yaml ./
+COPY ui/package.json ui/package-lock.json ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 # Copy source code
 COPY ui/ .
 
 # Build the application
-RUN pnpm build
+RUN npm run build
 
 # Production stage
 FROM node:22-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
-COPY ui/package.json ui/pnpm-lock.yaml ./
+COPY ui/package.json ui/package-lock.json ./
 
 # Install all dependencies (Nitro needs them to run)
-RUN pnpm install --frozen-lockfile --prod
+RUN npm ci --omit=dev
 
 # Copy built application output
 COPY --from=builder /app/.output ./.output
