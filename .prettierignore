@@ -1,0 +1,11 @@
+**/node_modules/**
+**/dist/**
+**/build/**
+**/.next/**
+**/.turbo/**
+**/.tanstack/**
+**/.output/**
+**/coverage/**
+**/postgres_data/**
+**/radicale_data/**
+**/*.log

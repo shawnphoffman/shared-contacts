@@ -19,7 +19,5 @@
 		"^build": "📦 Build",
 		"^revert": "⏪ Revert"
 	},
-	"includeBranch": [
-		"main"
-	]
+	"includeBranch": ["main"]
 }

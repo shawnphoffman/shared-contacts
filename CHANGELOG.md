@@ -5,16 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [0.5.3](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.5.1...v0.5.3) (2026-01-16)
 
 ### Bug Fixes
 
-* update release notes script execution in .release-it.json ([0711b68](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/0711b68041bbd29b60525f9f34390e14e322a2d7))
+- update release notes script execution in .release-it.json ([0711b68](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/0711b68041bbd29b60525f9f34390e14e322a2d7))
 
 ### Documentation
 
-* add new screenshot for Apple Contacts synchronization in README.md ([454b3b0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/454b3b0eddda8d302090f807f2fc119d1da14f04))
+- add new screenshot for Apple Contacts synchronization in README.md ([454b3b0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/454b3b0eddda8d302090f807f2fc119d1da14f04))
 
 ### Changelog
 

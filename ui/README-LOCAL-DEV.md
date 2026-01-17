@@ -22,6 +22,7 @@ pnpm install
 ### 2. Configure Environment Variables
 
 1. Copy the example environment file:
+
    ```bash
    cp .env.example .env.local
    ```
@@ -29,11 +30,13 @@ pnpm install
 2. Edit `.env.local` and set your `DATABASE_URL`:
 
    **Option A: Local PostgreSQL**
+
    ```env
    DATABASE_URL=postgresql://postgres:your-password@localhost:5432/sharedcontacts
    ```
 
    **Option B: PostgreSQL in Docker**
+
    ```env
    DATABASE_URL=postgresql://sharedcontacts:sharedcontacts@localhost:5432/sharedcontacts
    ```
@@ -56,6 +59,7 @@ psql -U postgres -d sharedcontacts -f migrations/07_add_sync_tracking.sql
 ```
 
 Or run them all at once:
+
 ```bash
 # From project root
 for migration in migrations/*.sql; do
@@ -73,10 +77,10 @@ The UI will be available at `http://localhost:3030`
 
 ## Environment Variables
 
-| Variable | Required | Description | Default |
-|----------|----------|-------------|---------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string | - |
-| `NODE_ENV` | No | Node environment (`development` or `production`) | `development` |
+| Variable       | Required | Description                                      | Default       |
+| -------------- | -------- | ------------------------------------------------ | ------------- |
+| `DATABASE_URL` | Yes      | PostgreSQL connection string                     | -             |
+| `NODE_ENV`     | No       | Node environment (`development` or `production`) | `development` |
 
 ## Troubleshooting
 
@@ -100,6 +104,7 @@ The UI will be available at `http://localhost:3030`
 If port 3030 is already in use:
 
 1. Change the port in `package.json`:
+
    ```json
    "dev": "vite dev --port 3031"
    ```
@@ -124,4 +129,3 @@ pnpm start
 ```
 
 This builds the application and serves it using Nitro.
-

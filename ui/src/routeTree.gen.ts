@@ -30,465 +30,451 @@ import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/a
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
 
 const RadicaleUsersRoute = RadicaleUsersRouteImport.update({
-  id: '/radicale-users',
-  path: '/radicale-users',
-  getParentRoute: () => rootRouteImport,
+	id: '/radicale-users',
+	path: '/radicale-users',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => rootRouteImport,
+	id: '/new',
+	path: '/new',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const ImportRoute = ImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => rootRouteImport,
+	id: '/import',
+	path: '/import',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const DuplicatesRoute = DuplicatesRouteImport.update({
-  id: '/duplicates',
-  path: '/duplicates',
-  getParentRoute: () => rootRouteImport,
+	id: '/duplicates',
+	path: '/duplicates',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const CarddavConnectionRoute = CarddavConnectionRouteImport.update({
-  id: '/carddav-connection',
-  path: '/carddav-connection',
-  getParentRoute: () => rootRouteImport,
+	id: '/carddav-connection',
+	path: '/carddav-connection',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
+	id: '/about',
+	path: '/about',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const IdRoute = IdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => rootRouteImport,
+	id: '/$id',
+	path: '/$id',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
+	id: '/',
+	path: '/',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
-  id: '/api/radicale-users',
-  path: '/api/radicale-users',
-  getParentRoute: () => rootRouteImport,
+	id: '/api/radicale-users',
+	path: '/api/radicale-users',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const ApiContactsRoute = ApiContactsRouteImport.update({
-  id: '/api/contacts',
-  path: '/api/contacts',
-  getParentRoute: () => rootRouteImport,
+	id: '/api/contacts',
+	path: '/api/contacts',
+	getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAboutRoute = ApiAboutRouteImport.update({
-  id: '/api/about',
-  path: '/api/about',
-  getParentRoute: () => rootRouteImport,
+	id: '/api/about',
+	path: '/api/about',
+	getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRadicaleUsersUsernameRoute =
-  ApiRadicaleUsersUsernameRouteImport.update({
-    id: '/$username',
-    path: '/$username',
-    getParentRoute: () => ApiRadicaleUsersRoute,
-  } as any)
+const ApiRadicaleUsersUsernameRoute = ApiRadicaleUsersUsernameRouteImport.update({
+	id: '/$username',
+	path: '/$username',
+	getParentRoute: () => ApiRadicaleUsersRoute,
+} as any)
 const ApiContactsMergeRoute = ApiContactsMergeRouteImport.update({
-  id: '/merge',
-  path: '/merge',
-  getParentRoute: () => ApiContactsRoute,
+	id: '/merge',
+	path: '/merge',
+	getParentRoute: () => ApiContactsRoute,
 } as any)
 const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => ApiContactsRoute,
+	id: '/import',
+	path: '/import',
+	getParentRoute: () => ApiContactsRoute,
 } as any)
 const ApiContactsDuplicatesRoute = ApiContactsDuplicatesRouteImport.update({
-  id: '/duplicates',
-  path: '/duplicates',
-  getParentRoute: () => ApiContactsRoute,
+	id: '/duplicates',
+	path: '/duplicates',
+	getParentRoute: () => ApiContactsRoute,
 } as any)
 const ApiContactsDeduplicateRoute = ApiContactsDeduplicateRouteImport.update({
-  id: '/deduplicate',
-  path: '/deduplicate',
-  getParentRoute: () => ApiContactsRoute,
+	id: '/deduplicate',
+	path: '/deduplicate',
+	getParentRoute: () => ApiContactsRoute,
 } as any)
 const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ApiContactsRoute,
+	id: '/$id',
+	path: '/$id',
+	getParentRoute: () => ApiContactsRoute,
 } as any)
-const ApiRadicaleUsersUsernameBackfillRoute =
-  ApiRadicaleUsersUsernameBackfillRouteImport.update({
-    id: '/backfill',
-    path: '/backfill',
-    getParentRoute: () => ApiRadicaleUsersUsernameRoute,
-  } as any)
+const ApiRadicaleUsersUsernameBackfillRoute = ApiRadicaleUsersUsernameBackfillRouteImport.update({
+	id: '/backfill',
+	path: '/backfill',
+	getParentRoute: () => ApiRadicaleUsersUsernameRoute,
+} as any)
 const ApiContactsIdPhotoRoute = ApiContactsIdPhotoRouteImport.update({
-  id: '/photo',
-  path: '/photo',
-  getParentRoute: () => ApiContactsIdRoute,
+	id: '/photo',
+	path: '/photo',
+	getParentRoute: () => ApiContactsIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$id': typeof IdRoute
-  '/about': typeof AboutRoute
-  '/carddav-connection': typeof CarddavConnectionRoute
-  '/duplicates': typeof DuplicatesRoute
-  '/import': typeof ImportRoute
-  '/new': typeof NewRoute
-  '/radicale-users': typeof RadicaleUsersRoute
-  '/api/about': typeof ApiAboutRoute
-  '/api/contacts': typeof ApiContactsRouteWithChildren
-  '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
-  '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
-  '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
-  '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
-  '/api/contacts/import': typeof ApiContactsImportRoute
-  '/api/contacts/merge': typeof ApiContactsMergeRoute
-  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
-  '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
-  '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
+	'/': typeof IndexRoute
+	'/$id': typeof IdRoute
+	'/about': typeof AboutRoute
+	'/carddav-connection': typeof CarddavConnectionRoute
+	'/duplicates': typeof DuplicatesRoute
+	'/import': typeof ImportRoute
+	'/new': typeof NewRoute
+	'/radicale-users': typeof RadicaleUsersRoute
+	'/api/about': typeof ApiAboutRoute
+	'/api/contacts': typeof ApiContactsRouteWithChildren
+	'/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+	'/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
+	'/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
+	'/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
+	'/api/contacts/import': typeof ApiContactsImportRoute
+	'/api/contacts/merge': typeof ApiContactsMergeRoute
+	'/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
+	'/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+	'/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$id': typeof IdRoute
-  '/about': typeof AboutRoute
-  '/carddav-connection': typeof CarddavConnectionRoute
-  '/duplicates': typeof DuplicatesRoute
-  '/import': typeof ImportRoute
-  '/new': typeof NewRoute
-  '/radicale-users': typeof RadicaleUsersRoute
-  '/api/about': typeof ApiAboutRoute
-  '/api/contacts': typeof ApiContactsRouteWithChildren
-  '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
-  '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
-  '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
-  '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
-  '/api/contacts/import': typeof ApiContactsImportRoute
-  '/api/contacts/merge': typeof ApiContactsMergeRoute
-  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
-  '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
-  '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
+	'/': typeof IndexRoute
+	'/$id': typeof IdRoute
+	'/about': typeof AboutRoute
+	'/carddav-connection': typeof CarddavConnectionRoute
+	'/duplicates': typeof DuplicatesRoute
+	'/import': typeof ImportRoute
+	'/new': typeof NewRoute
+	'/radicale-users': typeof RadicaleUsersRoute
+	'/api/about': typeof ApiAboutRoute
+	'/api/contacts': typeof ApiContactsRouteWithChildren
+	'/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+	'/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
+	'/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
+	'/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
+	'/api/contacts/import': typeof ApiContactsImportRoute
+	'/api/contacts/merge': typeof ApiContactsMergeRoute
+	'/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
+	'/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+	'/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$id': typeof IdRoute
-  '/about': typeof AboutRoute
-  '/carddav-connection': typeof CarddavConnectionRoute
-  '/duplicates': typeof DuplicatesRoute
-  '/import': typeof ImportRoute
-  '/new': typeof NewRoute
-  '/radicale-users': typeof RadicaleUsersRoute
-  '/api/about': typeof ApiAboutRoute
-  '/api/contacts': typeof ApiContactsRouteWithChildren
-  '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
-  '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
-  '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
-  '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
-  '/api/contacts/import': typeof ApiContactsImportRoute
-  '/api/contacts/merge': typeof ApiContactsMergeRoute
-  '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
-  '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
-  '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
+	__root__: typeof rootRouteImport
+	'/': typeof IndexRoute
+	'/$id': typeof IdRoute
+	'/about': typeof AboutRoute
+	'/carddav-connection': typeof CarddavConnectionRoute
+	'/duplicates': typeof DuplicatesRoute
+	'/import': typeof ImportRoute
+	'/new': typeof NewRoute
+	'/radicale-users': typeof RadicaleUsersRoute
+	'/api/about': typeof ApiAboutRoute
+	'/api/contacts': typeof ApiContactsRouteWithChildren
+	'/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+	'/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
+	'/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
+	'/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
+	'/api/contacts/import': typeof ApiContactsImportRoute
+	'/api/contacts/merge': typeof ApiContactsMergeRoute
+	'/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
+	'/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+	'/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/$id'
-    | '/about'
-    | '/carddav-connection'
-    | '/duplicates'
-    | '/import'
-    | '/new'
-    | '/radicale-users'
-    | '/api/about'
-    | '/api/contacts'
-    | '/api/radicale-users'
-    | '/api/contacts/$id'
-    | '/api/contacts/deduplicate'
-    | '/api/contacts/duplicates'
-    | '/api/contacts/import'
-    | '/api/contacts/merge'
-    | '/api/radicale-users/$username'
-    | '/api/contacts/$id/photo'
-    | '/api/radicale-users/$username/backfill'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/$id'
-    | '/about'
-    | '/carddav-connection'
-    | '/duplicates'
-    | '/import'
-    | '/new'
-    | '/radicale-users'
-    | '/api/about'
-    | '/api/contacts'
-    | '/api/radicale-users'
-    | '/api/contacts/$id'
-    | '/api/contacts/deduplicate'
-    | '/api/contacts/duplicates'
-    | '/api/contacts/import'
-    | '/api/contacts/merge'
-    | '/api/radicale-users/$username'
-    | '/api/contacts/$id/photo'
-    | '/api/radicale-users/$username/backfill'
-  id:
-    | '__root__'
-    | '/'
-    | '/$id'
-    | '/about'
-    | '/carddav-connection'
-    | '/duplicates'
-    | '/import'
-    | '/new'
-    | '/radicale-users'
-    | '/api/about'
-    | '/api/contacts'
-    | '/api/radicale-users'
-    | '/api/contacts/$id'
-    | '/api/contacts/deduplicate'
-    | '/api/contacts/duplicates'
-    | '/api/contacts/import'
-    | '/api/contacts/merge'
-    | '/api/radicale-users/$username'
-    | '/api/contacts/$id/photo'
-    | '/api/radicale-users/$username/backfill'
-  fileRoutesById: FileRoutesById
+	fileRoutesByFullPath: FileRoutesByFullPath
+	fullPaths:
+		| '/'
+		| '/$id'
+		| '/about'
+		| '/carddav-connection'
+		| '/duplicates'
+		| '/import'
+		| '/new'
+		| '/radicale-users'
+		| '/api/about'
+		| '/api/contacts'
+		| '/api/radicale-users'
+		| '/api/contacts/$id'
+		| '/api/contacts/deduplicate'
+		| '/api/contacts/duplicates'
+		| '/api/contacts/import'
+		| '/api/contacts/merge'
+		| '/api/radicale-users/$username'
+		| '/api/contacts/$id/photo'
+		| '/api/radicale-users/$username/backfill'
+	fileRoutesByTo: FileRoutesByTo
+	to:
+		| '/'
+		| '/$id'
+		| '/about'
+		| '/carddav-connection'
+		| '/duplicates'
+		| '/import'
+		| '/new'
+		| '/radicale-users'
+		| '/api/about'
+		| '/api/contacts'
+		| '/api/radicale-users'
+		| '/api/contacts/$id'
+		| '/api/contacts/deduplicate'
+		| '/api/contacts/duplicates'
+		| '/api/contacts/import'
+		| '/api/contacts/merge'
+		| '/api/radicale-users/$username'
+		| '/api/contacts/$id/photo'
+		| '/api/radicale-users/$username/backfill'
+	id:
+		| '__root__'
+		| '/'
+		| '/$id'
+		| '/about'
+		| '/carddav-connection'
+		| '/duplicates'
+		| '/import'
+		| '/new'
+		| '/radicale-users'
+		| '/api/about'
+		| '/api/contacts'
+		| '/api/radicale-users'
+		| '/api/contacts/$id'
+		| '/api/contacts/deduplicate'
+		| '/api/contacts/duplicates'
+		| '/api/contacts/import'
+		| '/api/contacts/merge'
+		| '/api/radicale-users/$username'
+		| '/api/contacts/$id/photo'
+		| '/api/radicale-users/$username/backfill'
+	fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  IdRoute: typeof IdRoute
-  AboutRoute: typeof AboutRoute
-  CarddavConnectionRoute: typeof CarddavConnectionRoute
-  DuplicatesRoute: typeof DuplicatesRoute
-  ImportRoute: typeof ImportRoute
-  NewRoute: typeof NewRoute
-  RadicaleUsersRoute: typeof RadicaleUsersRoute
-  ApiAboutRoute: typeof ApiAboutRoute
-  ApiContactsRoute: typeof ApiContactsRouteWithChildren
-  ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
+	IndexRoute: typeof IndexRoute
+	IdRoute: typeof IdRoute
+	AboutRoute: typeof AboutRoute
+	CarddavConnectionRoute: typeof CarddavConnectionRoute
+	DuplicatesRoute: typeof DuplicatesRoute
+	ImportRoute: typeof ImportRoute
+	NewRoute: typeof NewRoute
+	RadicaleUsersRoute: typeof RadicaleUsersRoute
+	ApiAboutRoute: typeof ApiAboutRoute
+	ApiContactsRoute: typeof ApiContactsRouteWithChildren
+	ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/radicale-users': {
-      id: '/radicale-users'
-      path: '/radicale-users'
-      fullPath: '/radicale-users'
-      preLoaderRoute: typeof RadicaleUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/new': {
-      id: '/new'
-      path: '/new'
-      fullPath: '/new'
-      preLoaderRoute: typeof NewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import': {
-      id: '/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof ImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/duplicates': {
-      id: '/duplicates'
-      path: '/duplicates'
-      fullPath: '/duplicates'
-      preLoaderRoute: typeof DuplicatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/carddav-connection': {
-      id: '/carddav-connection'
-      path: '/carddav-connection'
-      fullPath: '/carddav-connection'
-      preLoaderRoute: typeof CarddavConnectionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$id': {
-      id: '/$id'
-      path: '/$id'
-      fullPath: '/$id'
-      preLoaderRoute: typeof IdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/radicale-users': {
-      id: '/api/radicale-users'
-      path: '/api/radicale-users'
-      fullPath: '/api/radicale-users'
-      preLoaderRoute: typeof ApiRadicaleUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/contacts': {
-      id: '/api/contacts'
-      path: '/api/contacts'
-      fullPath: '/api/contacts'
-      preLoaderRoute: typeof ApiContactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/about': {
-      id: '/api/about'
-      path: '/api/about'
-      fullPath: '/api/about'
-      preLoaderRoute: typeof ApiAboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/radicale-users/$username': {
-      id: '/api/radicale-users/$username'
-      path: '/$username'
-      fullPath: '/api/radicale-users/$username'
-      preLoaderRoute: typeof ApiRadicaleUsersUsernameRouteImport
-      parentRoute: typeof ApiRadicaleUsersRoute
-    }
-    '/api/contacts/merge': {
-      id: '/api/contacts/merge'
-      path: '/merge'
-      fullPath: '/api/contacts/merge'
-      preLoaderRoute: typeof ApiContactsMergeRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/import': {
-      id: '/api/contacts/import'
-      path: '/import'
-      fullPath: '/api/contacts/import'
-      preLoaderRoute: typeof ApiContactsImportRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/duplicates': {
-      id: '/api/contacts/duplicates'
-      path: '/duplicates'
-      fullPath: '/api/contacts/duplicates'
-      preLoaderRoute: typeof ApiContactsDuplicatesRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/deduplicate': {
-      id: '/api/contacts/deduplicate'
-      path: '/deduplicate'
-      fullPath: '/api/contacts/deduplicate'
-      preLoaderRoute: typeof ApiContactsDeduplicateRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/$id': {
-      id: '/api/contacts/$id'
-      path: '/$id'
-      fullPath: '/api/contacts/$id'
-      preLoaderRoute: typeof ApiContactsIdRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/radicale-users/$username/backfill': {
-      id: '/api/radicale-users/$username/backfill'
-      path: '/backfill'
-      fullPath: '/api/radicale-users/$username/backfill'
-      preLoaderRoute: typeof ApiRadicaleUsersUsernameBackfillRouteImport
-      parentRoute: typeof ApiRadicaleUsersUsernameRoute
-    }
-    '/api/contacts/$id/photo': {
-      id: '/api/contacts/$id/photo'
-      path: '/photo'
-      fullPath: '/api/contacts/$id/photo'
-      preLoaderRoute: typeof ApiContactsIdPhotoRouteImport
-      parentRoute: typeof ApiContactsIdRoute
-    }
-  }
+	interface FileRoutesByPath {
+		'/radicale-users': {
+			id: '/radicale-users'
+			path: '/radicale-users'
+			fullPath: '/radicale-users'
+			preLoaderRoute: typeof RadicaleUsersRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/new': {
+			id: '/new'
+			path: '/new'
+			fullPath: '/new'
+			preLoaderRoute: typeof NewRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/import': {
+			id: '/import'
+			path: '/import'
+			fullPath: '/import'
+			preLoaderRoute: typeof ImportRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/duplicates': {
+			id: '/duplicates'
+			path: '/duplicates'
+			fullPath: '/duplicates'
+			preLoaderRoute: typeof DuplicatesRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/carddav-connection': {
+			id: '/carddav-connection'
+			path: '/carddav-connection'
+			fullPath: '/carddav-connection'
+			preLoaderRoute: typeof CarddavConnectionRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/about': {
+			id: '/about'
+			path: '/about'
+			fullPath: '/about'
+			preLoaderRoute: typeof AboutRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/$id': {
+			id: '/$id'
+			path: '/$id'
+			fullPath: '/$id'
+			preLoaderRoute: typeof IdRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/': {
+			id: '/'
+			path: '/'
+			fullPath: '/'
+			preLoaderRoute: typeof IndexRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/api/radicale-users': {
+			id: '/api/radicale-users'
+			path: '/api/radicale-users'
+			fullPath: '/api/radicale-users'
+			preLoaderRoute: typeof ApiRadicaleUsersRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/api/contacts': {
+			id: '/api/contacts'
+			path: '/api/contacts'
+			fullPath: '/api/contacts'
+			preLoaderRoute: typeof ApiContactsRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/api/about': {
+			id: '/api/about'
+			path: '/api/about'
+			fullPath: '/api/about'
+			preLoaderRoute: typeof ApiAboutRouteImport
+			parentRoute: typeof rootRouteImport
+		}
+		'/api/radicale-users/$username': {
+			id: '/api/radicale-users/$username'
+			path: '/$username'
+			fullPath: '/api/radicale-users/$username'
+			preLoaderRoute: typeof ApiRadicaleUsersUsernameRouteImport
+			parentRoute: typeof ApiRadicaleUsersRoute
+		}
+		'/api/contacts/merge': {
+			id: '/api/contacts/merge'
+			path: '/merge'
+			fullPath: '/api/contacts/merge'
+			preLoaderRoute: typeof ApiContactsMergeRouteImport
+			parentRoute: typeof ApiContactsRoute
+		}
+		'/api/contacts/import': {
+			id: '/api/contacts/import'
+			path: '/import'
+			fullPath: '/api/contacts/import'
+			preLoaderRoute: typeof ApiContactsImportRouteImport
+			parentRoute: typeof ApiContactsRoute
+		}
+		'/api/contacts/duplicates': {
+			id: '/api/contacts/duplicates'
+			path: '/duplicates'
+			fullPath: '/api/contacts/duplicates'
+			preLoaderRoute: typeof ApiContactsDuplicatesRouteImport
+			parentRoute: typeof ApiContactsRoute
+		}
+		'/api/contacts/deduplicate': {
+			id: '/api/contacts/deduplicate'
+			path: '/deduplicate'
+			fullPath: '/api/contacts/deduplicate'
+			preLoaderRoute: typeof ApiContactsDeduplicateRouteImport
+			parentRoute: typeof ApiContactsRoute
+		}
+		'/api/contacts/$id': {
+			id: '/api/contacts/$id'
+			path: '/$id'
+			fullPath: '/api/contacts/$id'
+			preLoaderRoute: typeof ApiContactsIdRouteImport
+			parentRoute: typeof ApiContactsRoute
+		}
+		'/api/radicale-users/$username/backfill': {
+			id: '/api/radicale-users/$username/backfill'
+			path: '/backfill'
+			fullPath: '/api/radicale-users/$username/backfill'
+			preLoaderRoute: typeof ApiRadicaleUsersUsernameBackfillRouteImport
+			parentRoute: typeof ApiRadicaleUsersUsernameRoute
+		}
+		'/api/contacts/$id/photo': {
+			id: '/api/contacts/$id/photo'
+			path: '/photo'
+			fullPath: '/api/contacts/$id/photo'
+			preLoaderRoute: typeof ApiContactsIdPhotoRouteImport
+			parentRoute: typeof ApiContactsIdRoute
+		}
+	}
 }
 
 interface ApiContactsIdRouteChildren {
-  ApiContactsIdPhotoRoute: typeof ApiContactsIdPhotoRoute
+	ApiContactsIdPhotoRoute: typeof ApiContactsIdPhotoRoute
 }
 
 const ApiContactsIdRouteChildren: ApiContactsIdRouteChildren = {
-  ApiContactsIdPhotoRoute: ApiContactsIdPhotoRoute,
+	ApiContactsIdPhotoRoute: ApiContactsIdPhotoRoute,
 }
 
-const ApiContactsIdRouteWithChildren = ApiContactsIdRoute._addFileChildren(
-  ApiContactsIdRouteChildren,
-)
+const ApiContactsIdRouteWithChildren = ApiContactsIdRoute._addFileChildren(ApiContactsIdRouteChildren)
 
 interface ApiContactsRouteChildren {
-  ApiContactsIdRoute: typeof ApiContactsIdRouteWithChildren
-  ApiContactsDeduplicateRoute: typeof ApiContactsDeduplicateRoute
-  ApiContactsDuplicatesRoute: typeof ApiContactsDuplicatesRoute
-  ApiContactsImportRoute: typeof ApiContactsImportRoute
-  ApiContactsMergeRoute: typeof ApiContactsMergeRoute
+	ApiContactsIdRoute: typeof ApiContactsIdRouteWithChildren
+	ApiContactsDeduplicateRoute: typeof ApiContactsDeduplicateRoute
+	ApiContactsDuplicatesRoute: typeof ApiContactsDuplicatesRoute
+	ApiContactsImportRoute: typeof ApiContactsImportRoute
+	ApiContactsMergeRoute: typeof ApiContactsMergeRoute
 }
 
 const ApiContactsRouteChildren: ApiContactsRouteChildren = {
-  ApiContactsIdRoute: ApiContactsIdRouteWithChildren,
-  ApiContactsDeduplicateRoute: ApiContactsDeduplicateRoute,
-  ApiContactsDuplicatesRoute: ApiContactsDuplicatesRoute,
-  ApiContactsImportRoute: ApiContactsImportRoute,
-  ApiContactsMergeRoute: ApiContactsMergeRoute,
+	ApiContactsIdRoute: ApiContactsIdRouteWithChildren,
+	ApiContactsDeduplicateRoute: ApiContactsDeduplicateRoute,
+	ApiContactsDuplicatesRoute: ApiContactsDuplicatesRoute,
+	ApiContactsImportRoute: ApiContactsImportRoute,
+	ApiContactsMergeRoute: ApiContactsMergeRoute,
 }
 
-const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(
-  ApiContactsRouteChildren,
-)
+const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(ApiContactsRouteChildren)
 
 interface ApiRadicaleUsersUsernameRouteChildren {
-  ApiRadicaleUsersUsernameBackfillRoute: typeof ApiRadicaleUsersUsernameBackfillRoute
+	ApiRadicaleUsersUsernameBackfillRoute: typeof ApiRadicaleUsersUsernameBackfillRoute
 }
 
-const ApiRadicaleUsersUsernameRouteChildren: ApiRadicaleUsersUsernameRouteChildren =
-  {
-    ApiRadicaleUsersUsernameBackfillRoute:
-      ApiRadicaleUsersUsernameBackfillRoute,
-  }
+const ApiRadicaleUsersUsernameRouteChildren: ApiRadicaleUsersUsernameRouteChildren = {
+	ApiRadicaleUsersUsernameBackfillRoute: ApiRadicaleUsersUsernameBackfillRoute,
+}
 
-const ApiRadicaleUsersUsernameRouteWithChildren =
-  ApiRadicaleUsersUsernameRoute._addFileChildren(
-    ApiRadicaleUsersUsernameRouteChildren,
-  )
+const ApiRadicaleUsersUsernameRouteWithChildren = ApiRadicaleUsersUsernameRoute._addFileChildren(ApiRadicaleUsersUsernameRouteChildren)
 
 interface ApiRadicaleUsersRouteChildren {
-  ApiRadicaleUsersUsernameRoute: typeof ApiRadicaleUsersUsernameRouteWithChildren
+	ApiRadicaleUsersUsernameRoute: typeof ApiRadicaleUsersUsernameRouteWithChildren
 }
 
 const ApiRadicaleUsersRouteChildren: ApiRadicaleUsersRouteChildren = {
-  ApiRadicaleUsersUsernameRoute: ApiRadicaleUsersUsernameRouteWithChildren,
+	ApiRadicaleUsersUsernameRoute: ApiRadicaleUsersUsernameRouteWithChildren,
 }
 
-const ApiRadicaleUsersRouteWithChildren =
-  ApiRadicaleUsersRoute._addFileChildren(ApiRadicaleUsersRouteChildren)
+const ApiRadicaleUsersRouteWithChildren = ApiRadicaleUsersRoute._addFileChildren(ApiRadicaleUsersRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  IdRoute: IdRoute,
-  AboutRoute: AboutRoute,
-  CarddavConnectionRoute: CarddavConnectionRoute,
-  DuplicatesRoute: DuplicatesRoute,
-  ImportRoute: ImportRoute,
-  NewRoute: NewRoute,
-  RadicaleUsersRoute: RadicaleUsersRoute,
-  ApiAboutRoute: ApiAboutRoute,
-  ApiContactsRoute: ApiContactsRouteWithChildren,
-  ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
+	IndexRoute: IndexRoute,
+	IdRoute: IdRoute,
+	AboutRoute: AboutRoute,
+	CarddavConnectionRoute: CarddavConnectionRoute,
+	DuplicatesRoute: DuplicatesRoute,
+	ImportRoute: ImportRoute,
+	NewRoute: NewRoute,
+	RadicaleUsersRoute: RadicaleUsersRoute,
+	ApiAboutRoute: ApiAboutRoute,
+	ApiContactsRoute: ApiContactsRouteWithChildren,
+	ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
 }
-export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
+	interface Register {
+		ssr: true
+		router: Awaited<ReturnType<typeof getRouter>>
+	}
 }

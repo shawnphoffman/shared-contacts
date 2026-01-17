@@ -11,19 +11,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - '${POSTGRES_PORT:-5432}:5432'
     networks:
       - shared-contacts-prod-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sharedcontacts}" ]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sharedcontacts}']
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
     restart: always
     labels:
-      - "com.sharedcontacts.service=postgres"
-      - "com.sharedcontacts.description=PostgreSQL database"
+      - 'com.sharedcontacts.service=postgres'
+      - 'com.sharedcontacts.description=PostgreSQL database'
 
   shared-contacts-app:
     image: ghcr.io/shawnphoffman/shared-contacts:latest
@@ -33,11 +33,11 @@ services:
       # Database connection
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD}@shared-contacts-postgres:5432/${POSTGRES_DB:-sharedcontacts}
       # Radicale configuration
-      RADICALE_SERVER_HOSTS: "0.0.0.0:5232"
-      RADICALE_SERVER_SSL: "False"
-      RADICALE_AUTH_TYPE: "htpasswd"
-      RADICALE_AUTH_HTPASSWD_ENCRYPTION: "bcrypt"
-      RADICALE_AUTH_HTPASSWD_FILENAME: "/data/users"
+      RADICALE_SERVER_HOSTS: '0.0.0.0:5232'
+      RADICALE_SERVER_SSL: 'False'
+      RADICALE_AUTH_TYPE: 'htpasswd'
+      RADICALE_AUTH_HTPASSWD_ENCRYPTION: 'bcrypt'
+      RADICALE_AUTH_HTPASSWD_FILENAME: '/data/users'
       RADICALE_STORAGE_PATH: /data/collections
       RADICALE_USERS_FILE: /data/users
       # Sync service configuration
@@ -52,9 +52,9 @@ services:
     volumes:
       - radicale_data:/data
     ports:
-      - "${RADICALE_PORT:-5232}:5232"
-      - "${API_PORT:-3001}:3001"
-      - "${UI_PORT:-3030}:3030"
+      - '${RADICALE_PORT:-5232}:5232'
+      - '${API_PORT:-3001}:3001'
+      - '${UI_PORT:-3030}:3030'
     networks:
       - shared-contacts-prod-network
     depends_on:
@@ -64,7 +64,11 @@ services:
       # Check both UI availability and sync-service readiness (migrations complete)
       # The sync-service /ready endpoint returns 503 until migrations complete
       # This ensures migrations finish before the container is marked healthy
-      test: [ "CMD-SHELL", "node -e \"require('http').get('http://localhost:3030/',(r1)=>{if(r1.statusCode!==200)process.exit(1);require('http').get('http://localhost:3001/ready',(r2)=>{process.exit(r2.statusCode===200?0:1)}).on('error',()=>process.exit(1))}).on('error',()=>process.exit(1))\" || exit 1" ]
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "require(''http'').get(''http://localhost:3030/'',(r1)=>{if(r1.statusCode!==200)process.exit(1);require(''http'').get(''http://localhost:3001/ready'',(r2)=>{process.exit(r2.statusCode===200?0:1)}).on(''error'',()=>process.exit(1))}).on(''error'',()=>process.exit(1))" || exit 1',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

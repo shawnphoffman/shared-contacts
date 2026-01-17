@@ -526,15 +526,15 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				vcardData.emails && vcardData.emails.length > 0
 					? vcardData.emails
 					: vcardData.email
-					? [{ value: vcardData.email, type: 'INTERNET' }]
-					: []
+						? [{ value: vcardData.email, type: 'INTERNET' }]
+						: []
 
 			const addresses =
 				vcardData.addresses && vcardData.addresses.length > 0
 					? vcardData.addresses
 					: vcardData.adr
-					? [{ value: vcardData.adr, type: 'HOME' }]
-					: []
+						? [{ value: vcardData.adr, type: 'HOME' }]
+						: []
 
 			const urls =
 				vcardData.urls && vcardData.urls.length > 0 ? vcardData.urls : vcardData.url ? [{ value: vcardData.url, type: 'HOME' }] : []
@@ -581,31 +581,15 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				addresses: addresses.length > 0 ? addresses : null,
 				urls: urls.length > 0 ? urls : null,
 				organization: vcardData.org || null,
-				org_units:
-					vcardData.orgUnits && vcardData.orgUnits.length > 0
-						? vcardData.orgUnits
-						: null,
+				org_units: vcardData.orgUnits && vcardData.orgUnits.length > 0 ? vcardData.orgUnits : null,
 				job_title: vcardData.title || null,
 				role: vcardData.role || null,
 				birthday: birthday,
-				categories:
-					vcardData.categories && vcardData.categories.length > 0
-						? vcardData.categories
-						: null,
-				labels:
-					vcardData.labels && vcardData.labels.length > 0
-						? vcardData.labels
-						: null,
-				logos:
-					vcardData.logos && vcardData.logos.length > 0
-						? vcardData.logos
-						: null,
-				sounds:
-					vcardData.sounds && vcardData.sounds.length > 0
-						? vcardData.sounds
-						: null,
-				keys:
-					vcardData.keys && vcardData.keys.length > 0 ? vcardData.keys : null,
+				categories: vcardData.categories && vcardData.categories.length > 0 ? vcardData.categories : null,
+				labels: vcardData.labels && vcardData.labels.length > 0 ? vcardData.labels : null,
+				logos: vcardData.logos && vcardData.logos.length > 0 ? vcardData.logos : null,
+				sounds: vcardData.sounds && vcardData.sounds.length > 0 ? vcardData.sounds : null,
+				keys: vcardData.keys && vcardData.keys.length > 0 ? vcardData.keys : null,
 				mailer: vcardData.mailer || null,
 				time_zone: vcardData.tz || null,
 				geo: vcardData.geo || null,
@@ -614,10 +598,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				revision: vcardData.rev || null,
 				sort_string: vcardData.sortString || null,
 				class: vcardData.class || null,
-				custom_fields:
-					vcardData.customFields && vcardData.customFields.length > 0
-						? vcardData.customFields
-						: null,
+				custom_fields: vcardData.customFields && vcardData.customFields.length > 0 ? vcardData.customFields : null,
 				notes: notes,
 				photo_blob: photoBlob,
 				photo_mime: photoMime,

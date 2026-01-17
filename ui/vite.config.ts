@@ -6,28 +6,28 @@ import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
 const config = defineConfig({
-  server: {
-    port: 3030,
-    host: '0.0.0.0',
-    watch: {
-      usePolling: true,
-      interval: 1000,
-    },
-    hmr: {
-      host: 'localhost',
-      port: 3030,
-    },
-  },
-  plugins: [
-    nitro(),
-    // this is the plugin that enables path aliases
-    viteTsConfigPaths({
-      projects: ['./tsconfig.json'],
-    }),
-    tailwindcss(),
-    tanstackStart(),
-    viteReact(),
-  ],
+	server: {
+		port: 3030,
+		host: '0.0.0.0',
+		watch: {
+			usePolling: true,
+			interval: 1000,
+		},
+		hmr: {
+			host: 'localhost',
+			port: 3030,
+		},
+	},
+	plugins: [
+		nitro(),
+		// this is the plugin that enables path aliases
+		viteTsConfigPaths({
+			projects: ['./tsconfig.json'],
+		}),
+		tailwindcss(),
+		tanstackStart(),
+		viteReact(),
+	],
 })
 
 export default config

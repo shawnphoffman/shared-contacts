@@ -9,8 +9,7 @@
 		"serve": "vite preview",
 		"test": "vitest run",
 		"lint": "eslint",
-		"format": "prettier",
-		"check": "prettier --write . && eslint --fix"
+		"format": "prettier --write"
 	},
 	"dependencies": {
 		"@radix-ui/react-checkbox": "^1.3.3",
