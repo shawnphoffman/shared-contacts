@@ -6,8 +6,8 @@ and Tailwind CSS.
 ## Local Development
 
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 The dev server runs on `http://localhost:3030`.
@@ -15,14 +15,14 @@ The dev server runs on `http://localhost:3030`.
 ## Build + Preview
 
 ```bash
-pnpm build
-pnpm start
+npm run build
+npm run start
 ```
 
 ## Lint + Format + Test
 
 ```bash
-pnpm lint
-pnpm format
-pnpm test
+npm run lint
+npm run format
+npm test
 ```

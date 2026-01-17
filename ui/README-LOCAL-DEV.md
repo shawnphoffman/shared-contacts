@@ -5,7 +5,7 @@ This guide explains how to run the UI locally without Docker for development.
 ## Prerequisites
 
 1. **Node.js 22+** - Required for TanStack Start
-2. **pnpm** - Package manager (install with `npm install -g pnpm`)
+2. **npm** - Comes with Node.js
 3. **PostgreSQL** - Either:
    - Local PostgreSQL installation, OR
    - PostgreSQL running in Docker (from docker-compose)
@@ -16,7 +16,7 @@ This guide explains how to run the UI locally without Docker for development.
 
 ```bash
 cd ui
-pnpm install
+npm install
 ```
 
 ### 2. Configure Environment Variables
@@ -70,7 +70,7 @@ done
 ### 4. Start Development Server
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 The UI will be available at `http://localhost:3030`
@@ -111,7 +111,7 @@ If port 3030 is already in use:
 
 2. Or set the port via environment variable:
    ```bash
-   PORT=3031 pnpm dev
+   PORT=3031 npm run dev
    ```
 
 ## Development Workflow
@@ -124,8 +124,8 @@ If port 3030 is already in use:
 ## Building for Production
 
 ```bash
-pnpm build
-pnpm start
+npm run build
+npm run start
 ```
 
 This builds the application and serves it using Nitro.
