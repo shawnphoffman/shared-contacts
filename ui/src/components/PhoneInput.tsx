@@ -111,7 +111,6 @@ export function PhoneInput({
 				setDisplayValue(formatSevenDigit(value) || value)
 			}
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [value, defaultCountry])
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

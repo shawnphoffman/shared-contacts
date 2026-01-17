@@ -15,10 +15,12 @@ interface MultiFieldInputProps {
 	renderInput?: (field: ContactField, index: number, onChange: (value: string) => void) => React.ReactNode
 }
 
-const DEFAULT_TYPE_OPTIONS = {
-	phone: ['CELL', 'WORK', 'HOME', 'FAX', 'OTHER'],
+type InputType = NonNullable<MultiFieldInputProps['inputType']>
+
+const DEFAULT_TYPE_OPTIONS: Record<InputType, Array<string>> = {
+	text: ['HOME', 'WORK', 'OTHER'],
+	tel: ['CELL', 'WORK', 'HOME', 'FAX', 'OTHER'],
 	email: ['INTERNET', 'WORK', 'HOME', 'OTHER'],
-	address: ['HOME', 'WORK', 'OTHER'],
 	url: ['HOME', 'WORK', 'OTHER'],
 }
 
@@ -46,7 +48,7 @@ export function MultiFieldInput({
 		onChange(newFields)
 	}
 
-	const options = typeOptions || DEFAULT_TYPE_OPTIONS[inputType as keyof typeof DEFAULT_TYPE_OPTIONS] || ['HOME', 'WORK', 'OTHER']
+	const options = typeOptions ?? DEFAULT_TYPE_OPTIONS[inputType]
 
 	return (
 		<Field>
