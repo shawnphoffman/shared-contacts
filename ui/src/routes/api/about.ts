@@ -41,13 +41,10 @@ export const Route = createFileRoute('/api/about')({
 						NODE_ENV: process.env.NODE_ENV || null,
 						DATABASE_URL: process.env.DATABASE_URL ? maskSensitiveUrl(process.env.DATABASE_URL) : null,
 						SYNC_SERVICE_URL: process.env.SYNC_SERVICE_URL || null,
-						RADICALE_STORAGE_PATH: process.env.RADICALE_STORAGE_PATH || null,
 						SYNC_INTERVAL: process.env.SYNC_INTERVAL || null,
 						FILE_WATCHER_DEBOUNCE_MS: process.env.FILE_WATCHER_DEBOUNCE_MS || null,
-						API_PORT: process.env.API_PORT || null,
 						DATABASE_SSL: process.env.DATABASE_SSL || null,
 						DATABASE_SSL_REJECT_UNAUTHORIZED: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED || null,
-						RADICALE_USERS_FILE: process.env.RADICALE_USERS_FILE || null,
 					}
 
 					return json({

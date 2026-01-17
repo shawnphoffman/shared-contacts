@@ -3,7 +3,7 @@ import cors from 'cors'
 import { getUsers, createUser, updateUserPassword, deleteUser, backfillSharedContactsForUser } from './htpasswd'
 
 const app = express()
-const PORT = process.env.API_PORT || 3001
+const PORT = 3001
 
 // Track when migrations are complete
 let migrationsComplete = false

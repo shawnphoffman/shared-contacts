@@ -1,5 +1,4 @@
 name: shared-contacts
-
 services:
   shared-contacts-postgres:
     image: postgres:15-alpine

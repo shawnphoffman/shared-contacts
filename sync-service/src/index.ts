@@ -6,7 +6,7 @@ import { runMigrations } from './migrations'
 
 async function main() {
 	console.log('Starting Shared Contacts Sync Service...')
-	console.log(`RADICALE_STORAGE_PATH: ${process.env.RADICALE_STORAGE_PATH}`)
+	console.log('RADICALE_STORAGE_PATH: /data/collections')
 	console.log(`SYNC_INTERVAL: ${process.env.SYNC_INTERVAL || '30000'}ms`)
 
 	try {

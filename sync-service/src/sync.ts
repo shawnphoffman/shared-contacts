@@ -15,7 +15,7 @@ import {
 import { parseVCard, generateVCard } from './vcard'
 import { getUsers } from './htpasswd'
 
-const RADICALE_STORAGE_PATH = process.env.RADICALE_STORAGE_PATH || '/data/collections'
+const RADICALE_STORAGE_PATH = '/data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
 const FILE_WATCHER_DEBOUNCE_MS = parseInt(process.env.FILE_WATCHER_DEBOUNCE_MS || '2000', 10) // Debounce file changes for 2 seconds
 
