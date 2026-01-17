@@ -6,6 +6,13 @@ const USERS_FILE = process.env.RADICALE_USERS_FILE || '/data/users'
 const RADICALE_STORAGE_PATH = process.env.RADICALE_STORAGE_PATH || '/data/collections'
 const SHARED_COLLECTION_NAME = 'shared-contacts'
 
+const getErrorCode = (error: unknown): string | undefined => {
+	if (error instanceof Error && 'code' in error) {
+		return (error as NodeJS.ErrnoException).code
+	}
+	return undefined
+}
+
 function getSharedAddressBookPathForUser(username: string): string {
 	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, SHARED_COLLECTION_NAME)
 }
@@ -22,8 +29,8 @@ async function ensureSharedProps(userPath: string): Promise<void> {
 	const propsPath = path.join(userPath, '.Radicale.props')
 	try {
 		await access(propsPath, constants.F_OK)
-	} catch (error: any) {
-		if (error.code !== 'ENOENT') {
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
 			throw error
 		}
 		const props = {
@@ -43,8 +50,8 @@ export async function backfillSharedContactsForUser(username: string): Promise<v
 	const masterPath = getSharedAddressBookPath()
 	try {
 		await access(masterPath, constants.F_OK)
-	} catch (error: any) {
-		if (error.code === 'ENOENT') {
+	} catch (error: unknown) {
+		if (getErrorCode(error) === 'ENOENT') {
 			return
 		}
 		throw error
@@ -60,8 +67,8 @@ export async function backfillSharedContactsForUser(username: string): Promise<v
 		try {
 			await access(destinationPath, constants.F_OK)
 			continue
-		} catch (error: any) {
-			if (error.code !== 'ENOENT') {
+		} catch (error: unknown) {
+			if (getErrorCode(error) !== 'ENOENT') {
 				throw error
 			}
 		}
@@ -94,8 +101,8 @@ export async function getUsers(): Promise<RadicaleUser[]> {
 		}
 
 		return users
-	} catch (error: any) {
-		if (error.code === 'ENOENT') {
+	} catch (error: unknown) {
+		if (getErrorCode(error) === 'ENOENT') {
 			return []
 		}
 		throw error
@@ -126,8 +133,8 @@ export async function createUser(username: string, password: string): Promise<vo
 	try {
 		await access(USERS_FILE, constants.F_OK)
 		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: any) {
-		if (error.code !== 'ENOENT') {
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
 			throw error
 		}
 	}
@@ -156,8 +163,8 @@ export async function updateUserPassword(username: string, password: string): Pr
 	try {
 		await access(USERS_FILE, constants.F_OK)
 		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: any) {
-		if (error.code !== 'ENOENT') {
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
 			throw error
 		}
 	}
@@ -191,8 +198,8 @@ export async function deleteUser(username: string): Promise<void> {
 	try {
 		await access(USERS_FILE, constants.F_OK)
 		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: any) {
-		if (error.code !== 'ENOENT') {
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
 			throw error
 		}
 	}

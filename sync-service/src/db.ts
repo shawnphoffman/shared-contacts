@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from 'pg'
+import { Pool } from 'pg'
 
 let pool: Pool | null = null
 
@@ -191,7 +191,7 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 export async function updateContact(id: string, contact: Partial<Contact>): Promise<Contact> {
 	const pool = getPool()
 	const updates: string[] = []
-	const values: any[] = []
+	const values: Array<unknown> = []
 	let paramIndex = 1
 
 	const fields: (keyof Contact)[] = [
@@ -308,7 +308,7 @@ export interface SyncMetadata {
 export async function updateSyncMetadata(id: string, metadata: SyncMetadata): Promise<void> {
 	const pool = getPool()
 	const updates: string[] = []
-	const values: any[] = []
+	const values: Array<unknown> = []
 	let paramIndex = 1
 
 	if (metadata.last_synced_from_radicale_at !== undefined) {

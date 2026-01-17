@@ -11,14 +11,20 @@ import {
 	deleteContact,
 	updateSyncMetadata,
 	getContactsNeedingRadicaleSync,
-	getContactSyncMetadata,
 } from './db'
-import { parseVCard, generateVCard, VCardData } from './vcard'
+import { parseVCard, generateVCard } from './vcard'
 import { getUsers } from './htpasswd'
 
 const RADICALE_STORAGE_PATH = process.env.RADICALE_STORAGE_PATH || '/data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
 const FILE_WATCHER_DEBOUNCE_MS = parseInt(process.env.FILE_WATCHER_DEBOUNCE_MS || '2000', 10) // Debounce file changes for 2 seconds
+
+const getErrorCode = (error: unknown): string | undefined => {
+	if (error instanceof Error && 'code' in error) {
+		return (error as NodeJS.ErrnoException).code
+	}
+	return undefined
+}
 
 /**
  * Get the path to the shared address book in Radicale for a specific user
@@ -86,10 +92,10 @@ async function getVCardFiles(): Promise<string[]> {
 function readVCardFile(filePath: string): string | null {
 	try {
 		return fs.readFileSync(filePath, 'utf-8')
-	} catch (error: any) {
+	} catch (error: unknown) {
 		// ENOENT (file not found) is expected in some cases (files deleted between listing and reading)
 		// Only log other errors to reduce noise
-		if (error.code !== 'ENOENT') {
+		if (getErrorCode(error) !== 'ENOENT') {
 			console.error(`Error reading vCard file ${filePath}:`, error)
 		}
 		return null
@@ -189,7 +195,7 @@ function getFileModificationTime(filePath: string): Date | null {
 	try {
 		const stats = fs.statSync(filePath)
 		return stats.mtime
-	} catch (error) {
+	} catch {
 		return null
 	}
 }
@@ -267,8 +273,6 @@ export async function syncDbToRadicale(): Promise<void> {
 		const addressBookPath = getSharedAddressBookPath()
 		ensureDirectoryExists(addressBookPath)
 
-		// Get existing vCard files
-		const existingFiles = await getVCardFiles()
 		const existingVCardIds = new Set<string>()
 
 		let synced = 0
@@ -680,7 +684,7 @@ export async function startWatchingRadicale(): Promise<void> {
 	const watchers: ReturnType<typeof watch>[] = []
 
 	const masterWatcher = watch(masterPath, {
-		ignored: /(^|[\/\\])\../, // ignore dotfiles
+		ignored: /(^|[\\/])\../, // ignore dotfiles
 		persistent: true,
 		ignoreInitial: true,
 	})
@@ -694,7 +698,7 @@ export async function startWatchingRadicale(): Promise<void> {
 			ensureDirectoryExists(userPath)
 
 			const userWatcher = watch(userPath, {
-				ignored: /(^|[\/\\])\../, // ignore dotfiles
+				ignored: /(^|[\\/])\../, // ignore dotfiles
 				persistent: true,
 				ignoreInitial: true,
 			})
@@ -711,7 +715,7 @@ export async function startWatchingRadicale(): Promise<void> {
 
 	// Debounce file changes to batch multiple changes together
 	let debounceTimer: NodeJS.Timeout | null = null
-	let pendingFiles = new Set<string>()
+	const pendingFiles = new Set<string>()
 
 	const triggerDebouncedSync = async () => {
 		if (pendingFiles.size === 0) return

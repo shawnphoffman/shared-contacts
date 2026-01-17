@@ -34,7 +34,7 @@ app.get('/api/radicale-users', async (_req: Request, res: Response) => {
 	try {
 		const users = await getUsers()
 		res.json(users)
-	} catch (error: any) {
+	} catch (error: unknown) {
 		console.error('Error fetching users:', error)
 		res.status(500).json({ error: 'Failed to fetch users' })
 	}
@@ -55,9 +55,9 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
 
 		await createUser(username, password)
 		res.status(201).json({ username })
-	} catch (error: any) {
+	} catch (error: unknown) {
 		console.error('Error creating user:', error)
-		if (error.message?.includes('already exists')) {
+		if (error instanceof Error && error.message.includes('already exists')) {
 			return res.status(409).json({ error: error.message })
 		}
 		res.status(500).json({ error: 'Failed to create user' })
@@ -71,7 +71,7 @@ app.post('/api/radicale-users/backfill/:username', async (req: Request, res: Res
 		console.log('backfilling user', username)
 		await backfillSharedContactsForUser(username)
 		res.json({ success: true })
-	} catch (error: any) {
+	} catch (error: unknown) {
 		console.error('Error backfilling shared contacts:', error)
 		res.status(500).json({ error: 'Failed to backfill shared contacts' })
 	}
@@ -89,9 +89,9 @@ app.put('/api/radicale-users/:username', async (req: Request, res: Response) => 
 
 		await updateUserPassword(username, password)
 		res.json({ username })
-	} catch (error: any) {
+	} catch (error: unknown) {
 		console.error('Error updating user:', error)
-		if (error.message?.includes('does not exist')) {
+		if (error instanceof Error && error.message.includes('does not exist')) {
 			return res.status(404).json({ error: error.message })
 		}
 		res.status(500).json({ error: 'Failed to update user' })
@@ -104,9 +104,9 @@ app.delete('/api/radicale-users/:username', async (req: Request, res: Response) 
 		const { username } = req.params
 		await deleteUser(username)
 		res.json({ success: true })
-	} catch (error: any) {
+	} catch (error: unknown) {
 		console.error('Error deleting user:', error)
-		if (error.message?.includes('does not exist')) {
+		if (error instanceof Error && error.message.includes('does not exist')) {
 			return res.status(404).json({ error: error.message })
 		}
 		res.status(500).json({ error: 'Failed to delete user' })

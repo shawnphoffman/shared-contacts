@@ -167,7 +167,6 @@ export async function runMigrations(): Promise<void> {
 
 		// Run pending migrations in order
 		for (const filename of pendingMigrations) {
-			const migrationName = filename.replace('.sql', '')
 			console.log(`Applying migration: ${filename}...`)
 
 			try {
