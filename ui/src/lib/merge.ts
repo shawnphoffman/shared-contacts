@@ -302,7 +302,8 @@ export function namesFuzzyMatch(name1: string | null, name2: string | null): boo
 			// Check name variations
 			const checkVariation = (n1: string, n2: string): boolean => {
 				if (n1 === n2) return true
-				const variations = NAME_VARIATIONS[n1]
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				const variations = NAME_VARIATIONS[n1] || []
 				if (variations.includes(n2)) return true
 				// Check reverse
 				for (const [key, values] of Object.entries(NAME_VARIATIONS)) {

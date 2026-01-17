@@ -416,6 +416,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 		const dbContacts = await getAllContacts()
 		const dbContactsByVcardId = new Map<string, Contact>()
 		const radicaleVCardIds = new Set<string>()
+		const processedVcardIds = new Set<string>()
 
 		for (const contact of dbContacts) {
 			if (contact.vcard_id) {
@@ -439,6 +440,13 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				console.warn(`Could not extract vCard ID from ${filePath}, skipping`)
 				continue
 			}
+
+			if (processedVcardIds.has(vcardId)) {
+				// Same vCard ID found in multiple locations; prefer the first one seen
+				skipped++
+				continue
+			}
+			processedVcardIds.add(vcardId)
 
 			radicaleVCardIds.add(vcardId)
 			const existingContact = dbContactsByVcardId.get(vcardId)
@@ -614,7 +622,8 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			}
 
 			if (existingContact) {
-				await updateContact(existingContact.id, contactData)
+				const updatedContact = await updateContact(existingContact.id, contactData)
+				dbContactsByVcardId.set(vcardId, updatedContact)
 				// Update sync metadata
 				await updateSyncMetadata(existingContact.id, {
 					last_synced_from_radicale_at: new Date(),
@@ -624,26 +633,48 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				})
 				updated++
 			} else {
-				const newContact = await createContact(contactData)
-				// Update sync metadata for new contact
-				await updateSyncMetadata(newContact.id, {
-					last_synced_from_radicale_at: new Date(),
-					vcard_hash: vcardHash,
-					radicale_file_mtime: fileMtime,
-					sync_source: 'radicale',
-				})
+				try {
+					const newContact = await createContact(contactData)
+					dbContactsByVcardId.set(vcardId, newContact)
+					// Update sync metadata for new contact
+					await updateSyncMetadata(newContact.id, {
+						last_synced_from_radicale_at: new Date(),
+						vcard_hash: vcardHash,
+						radicale_file_mtime: fileMtime,
+						sync_source: 'radicale',
+					})
 
-				// If contact was found in a user directory (not master), copy it to master directory
-				// so it's available to all users immediately
-				const masterPath = getSharedAddressBookPath()
-				const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
-				if (!fs.existsSync(masterFilePath)) {
-					ensureDirectoryExists(masterPath)
-					fs.writeFileSync(masterFilePath, vcardContent, 'utf-8')
-					console.log(`Copied new contact ${vcardId} from user directory to master directory`)
+					// If contact was found in a user directory (not master), copy it to master directory
+					// so it's available to all users immediately
+					const masterPath = getSharedAddressBookPath()
+					const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
+					if (!fs.existsSync(masterFilePath)) {
+						ensureDirectoryExists(masterPath)
+						fs.writeFileSync(masterFilePath, vcardContent, 'utf-8')
+						console.log(`Copied new contact ${vcardId} from user directory to master directory`)
+					}
+
+					created++
+				} catch (error) {
+					const errorCode = (error as { code?: string }).code
+					const constraint = (error as { constraint?: string }).constraint
+					if (errorCode === '23505' && constraint === 'contacts_vcard_id_key') {
+						const duplicateContact = await getContactByVcardId(vcardId)
+						if (duplicateContact) {
+							const updatedContact = await updateContact(duplicateContact.id, contactData)
+							dbContactsByVcardId.set(vcardId, updatedContact)
+							await updateSyncMetadata(duplicateContact.id, {
+								last_synced_from_radicale_at: new Date(),
+								vcard_hash: vcardHash,
+								radicale_file_mtime: fileMtime,
+								sync_source: 'radicale',
+							})
+							updated++
+							continue
+						}
+					}
+					throw error
 				}
-
-				created++
 			}
 		}
 
