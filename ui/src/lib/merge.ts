@@ -1,4 +1,4 @@
-import type { Contact, ContactField } from './db'
+import type { Contact } from './db'
 
 export interface DuplicateGroup {
 	contacts: Array<Contact>

@@ -11,7 +11,9 @@ function decodeHexBytea(value: string): Uint8Array | null {
 
 function normalizePhotoBlob(blob: Uint8Array | string | null | undefined): Uint8Array | null {
 	if (!blob) return null
-	if (NodeBuffer && NodeBuffer.isBuffer?.(blob)) return blob
+	if (NodeBuffer && NodeBuffer.isBuffer?.(blob)) {
+		return NodeBuffer.from(blob)
+	}
 	if (typeof blob === 'string') {
 		// Postgres can return bytea as hex string (\\x...)
 		if (blob.startsWith('\\x')) {
@@ -37,7 +39,11 @@ export const Route = createFileRoute('/api/contacts/$id/photo')({
 					return new Response('Not Found', { status: 404 })
 				}
 
-				return new Response(buffer, {
+				const arrayBuffer =
+					buffer.buffer instanceof ArrayBuffer
+						? buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+						: Uint8Array.from(buffer).buffer
+				return new Response(arrayBuffer, {
 					headers: {
 						'Content-Type': contact.photo_mime || 'image/jpeg',
 						'Cache-Control': 'private, max-age=3600',

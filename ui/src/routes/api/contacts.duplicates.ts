@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { getAllContacts } from '../../lib/db'
 import { detectDuplicates } from '../../lib/merge'
-import type { DuplicateGroup } from '../../lib/merge'
 
 export const Route = createFileRoute('/api/contacts/duplicates')({
 	server: {

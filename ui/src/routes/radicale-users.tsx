@@ -241,7 +241,6 @@ function RadicaleUsersPage() {
 					)}
 				</div>
 				{backfillMessage && (
-					// TODO
 					<Item variant="outline">{backfillMessage}</Item>
 				)}
 			</Item>
