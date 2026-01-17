@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
-	
+
 	flexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
-	useReactTable 
+	useReactTable
 } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -17,7 +17,7 @@ import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
-import type {ColumnDef, SortingState 
+import type {ColumnDef, SortingState
 } from '@tanstack/react-table';
 import type { Contact } from '../lib/db'
 
@@ -60,7 +60,7 @@ function ContactsIndexPage() {
 
 		if (fullName.includes(',')) {
 			const [last, rest] = fullName.split(',')
-			return { firstName: rest?.trim() ?? '', lastName: last.trim() }
+		return { firstName: rest.trim(), lastName: last.trim() }
 		}
 
 		const parts = fullName.split(/\s+/)
