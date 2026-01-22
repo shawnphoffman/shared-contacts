@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Button } from '../components/ui/button'
@@ -37,8 +37,11 @@ function ContactsIndexPage() {
 	const [searchQuery, setSearchQuery] = useState('')
 	const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 	const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+	const [addressBooks, setAddressBooks] = useState<Array<{ id: string; name: string }>>([])
+	const [selectedBookId, setSelectedBookId] = useState<string>('all')
+	const showBookCount = addressBooks.length > 1
 
-	const getNameParts = (contact: Contact) => {
+	const getNameParts = useCallback((contact: Contact) => {
 		const firstName = contact.first_name?.trim() ?? ''
 		const lastName = contact.last_name?.trim() ?? ''
 		if (firstName || lastName) {
@@ -61,7 +64,7 @@ function ContactsIndexPage() {
 		}
 
 		return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
-	}
+	}, [])
 
 	const {
 		data: contacts = [],
@@ -72,6 +75,26 @@ function ContactsIndexPage() {
 		queryKey: ['contacts'],
 		queryFn: fetchContacts,
 	})
+
+	useEffect(() => {
+		let isMounted = true
+		const loadAddressBooks = async () => {
+			try {
+				const response = await fetch('/api/address-books')
+				if (!response.ok) return
+				const books = await response.json()
+				if (isMounted) {
+					setAddressBooks(Array.isArray(books) ? books : [])
+				}
+			} catch (error) {
+				console.error('Failed to load address books', error)
+			}
+		}
+		loadAddressBooks()
+		return () => {
+			isMounted = false
+		}
+	}, [])
 
 	// Delete mutation available for future use
 	// const deleteMutation = useMutation({
@@ -88,226 +111,250 @@ function ContactsIndexPage() {
 	//   },
 	// })
 
-	const columns: Array<ColumnDef<Contact>> = [
-		{
-			id: 'select',
-			header: ({ table }) => (
-				<Checkbox
-					checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-					onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-					aria-label="Select all"
-				/>
-			),
-			cell: ({ row }) => (
-				<Checkbox
-					checked={row.getIsSelected()}
-					onCheckedChange={value => row.toggleSelected(!!value)}
-					onClick={e => e.stopPropagation()}
-					aria-label="Select row"
-				/>
-			),
-			enableSorting: false,
-			enableHiding: false,
-		},
-		{
-			id: 'first_name',
-			accessorFn: row => getNameParts(row).firstName.toLowerCase(),
-			header: ({ column }) => {
-				return (
-					<button
-						className="flex items-center gap-2 hover:text-foreground"
-						onClick={e => {
-							e.stopPropagation()
-							column.toggleSorting(column.getIsSorted() === 'asc')
-						}}
-					>
-						First Name
-						{column.getIsSorted() === 'asc' ? (
-							<ArrowUp className="h-4 w-4" />
-						) : column.getIsSorted() === 'desc' ? (
-							<ArrowDown className="h-4 w-4" />
-						) : (
-							<ArrowUpDown className="h-4 w-4 opacity-50" />
-						)}
-					</button>
-				)
+	const columns: Array<ColumnDef<Contact>> = useMemo(
+		() => [
+			{
+				id: 'select',
+				header: ({ table }) => (
+					<Checkbox
+						checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+						onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+						aria-label="Select all"
+					/>
+				),
+				cell: ({ row }) => (
+					<Checkbox
+						checked={row.getIsSelected()}
+						onCheckedChange={value => row.toggleSelected(!!value)}
+						onClick={e => e.stopPropagation()}
+						aria-label="Select row"
+					/>
+				),
+				enableSorting: false,
+				enableHiding: false,
 			},
-			cell: ({ row }) => {
-				const contact = row.original
-				const { firstName } = getNameParts(contact)
-				return (
-					<div>
-						<div className="font-medium">{firstName || 'Unnamed Contact'}</div>
-						{contact.nickname && <div className="text-sm text-gray-500">{contact.nickname}</div>}
-					</div>
-				)
+			{
+				id: 'first_name',
+				accessorFn: row => getNameParts(row).firstName.toLowerCase(),
+				header: ({ column }) => {
+					return (
+						<button
+							className="flex items-center gap-2 hover:text-foreground"
+							onClick={e => {
+								e.stopPropagation()
+								column.toggleSorting(column.getIsSorted() === 'asc')
+							}}
+						>
+							First Name
+							{column.getIsSorted() === 'asc' ? (
+								<ArrowUp className="h-4 w-4" />
+							) : column.getIsSorted() === 'desc' ? (
+								<ArrowDown className="h-4 w-4" />
+							) : (
+								<ArrowUpDown className="h-4 w-4 opacity-50" />
+							)}
+						</button>
+					)
+				},
+				cell: ({ row }) => {
+					const contact = row.original
+					const { firstName } = getNameParts(contact)
+					return (
+						<div>
+							<div className="font-medium">{firstName || 'Unnamed Contact'}</div>
+							{contact.nickname && <div className="text-sm text-gray-500">{contact.nickname}</div>}
+						</div>
+					)
+				},
 			},
-		},
-		{
-			id: 'last_name',
-			accessorFn: row => getNameParts(row).lastName.toLowerCase(),
-			header: ({ column }) => {
-				return (
-					<button
-						className="flex items-center gap-2 hover:text-foreground"
-						onClick={e => {
-							e.stopPropagation()
-							column.toggleSorting(column.getIsSorted() === 'asc')
-						}}
-					>
-						Last Name
-						{column.getIsSorted() === 'asc' ? (
-							<ArrowUp className="h-4 w-4" />
-						) : column.getIsSorted() === 'desc' ? (
-							<ArrowDown className="h-4 w-4" />
-						) : (
-							<ArrowUpDown className="h-4 w-4 opacity-50" />
-						)}
-					</button>
-				)
+			{
+				id: 'last_name',
+				accessorFn: row => getNameParts(row).lastName.toLowerCase(),
+				header: ({ column }) => {
+					return (
+						<button
+							className="flex items-center gap-2 hover:text-foreground"
+							onClick={e => {
+								e.stopPropagation()
+								column.toggleSorting(column.getIsSorted() === 'asc')
+							}}
+						>
+							Last Name
+							{column.getIsSorted() === 'asc' ? (
+								<ArrowUp className="h-4 w-4" />
+							) : column.getIsSorted() === 'desc' ? (
+								<ArrowDown className="h-4 w-4" />
+							) : (
+								<ArrowUpDown className="h-4 w-4 opacity-50" />
+							)}
+						</button>
+					)
+				},
+				cell: ({ row }) => {
+					const { lastName } = getNameParts(row.original)
+					return lastName ? <span>{lastName}</span> : <span className="text-gray-400">—</span>
+				},
 			},
-			cell: ({ row }) => {
-				const { lastName } = getNameParts(row.original)
-				return lastName ? <span>{lastName}</span> : <span className="text-gray-400">—</span>
+			{
+				accessorKey: 'email',
+				header: ({ column }) => {
+					return (
+						<button
+							className="flex items-center gap-2 hover:text-foreground"
+							onClick={e => {
+								e.stopPropagation()
+								column.toggleSorting(column.getIsSorted() === 'asc')
+							}}
+						>
+							Email
+							{column.getIsSorted() === 'asc' ? (
+								<ArrowUp className="h-4 w-4" />
+							) : column.getIsSorted() === 'desc' ? (
+								<ArrowDown className="h-4 w-4" />
+							) : (
+								<ArrowUpDown className="h-4 w-4 opacity-50" />
+							)}
+						</button>
+					)
+				},
+				cell: ({ row }) => {
+					const email = row.original.email
+					return email ? <span>{email}</span> : <span className="text-gray-400">—</span>
+				},
 			},
-		},
-		{
-			accessorKey: 'email',
-			header: ({ column }) => {
-				return (
-					<button
-						className="flex items-center gap-2 hover:text-foreground"
-						onClick={e => {
-							e.stopPropagation()
-							column.toggleSorting(column.getIsSorted() === 'asc')
-						}}
-					>
-						Email
-						{column.getIsSorted() === 'asc' ? (
-							<ArrowUp className="h-4 w-4" />
-						) : column.getIsSorted() === 'desc' ? (
-							<ArrowDown className="h-4 w-4" />
-						) : (
-							<ArrowUpDown className="h-4 w-4 opacity-50" />
-						)}
-					</button>
-				)
+			{
+				accessorKey: 'birthday',
+				header: ({ column }) => {
+					return (
+						<button
+							className="flex items-center gap-2 hover:text-foreground"
+							onClick={e => {
+								e.stopPropagation()
+								column.toggleSorting(column.getIsSorted() === 'asc')
+							}}
+						>
+							Birthday
+							{column.getIsSorted() === 'asc' ? (
+								<ArrowUp className="h-4 w-4" />
+							) : column.getIsSorted() === 'desc' ? (
+								<ArrowDown className="h-4 w-4" />
+							) : (
+								<ArrowUpDown className="h-4 w-4 opacity-50" />
+							)}
+						</button>
+					)
+				},
+				cell: ({ row }) => {
+					const birthday = row.original.birthday
+					if (!birthday) {
+						return <span className="text-gray-400">—</span>
+					}
+					const date = new Date(birthday)
+					return (
+						<span>
+							{date.toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'short',
+								day: 'numeric',
+							})}
+						</span>
+					)
+				},
 			},
-			cell: ({ row }) => {
-				const email = row.original.email
-				return email ? <span>{email}</span> : <span className="text-gray-400">—</span>
+			{
+				accessorKey: 'phone',
+				header: ({ column }) => {
+					return (
+						<button
+							className="flex items-center gap-2 hover:text-foreground"
+							onClick={e => {
+								e.stopPropagation()
+								column.toggleSorting(column.getIsSorted() === 'asc')
+							}}
+						>
+							Phone
+							{column.getIsSorted() === 'asc' ? (
+								<ArrowUp className="h-4 w-4" />
+							) : column.getIsSorted() === 'desc' ? (
+								<ArrowDown className="h-4 w-4" />
+							) : (
+								<ArrowUpDown className="h-4 w-4 opacity-50" />
+							)}
+						</button>
+					)
+				},
+				cell: ({ row }) => {
+					const phone = row.original.phone
+					if (!phone) {
+						return <span className="text-gray-400">—</span>
+					}
+					return <span>{formatPhoneNumber(phone)}</span>
+				},
 			},
-		},
-		{
-			accessorKey: 'birthday',
-			header: ({ column }) => {
-				return (
-					<button
-						className="flex items-center gap-2 hover:text-foreground"
-						onClick={e => {
-							e.stopPropagation()
-							column.toggleSorting(column.getIsSorted() === 'asc')
-						}}
-					>
-						Birthday
-						{column.getIsSorted() === 'asc' ? (
-							<ArrowUp className="h-4 w-4" />
-						) : column.getIsSorted() === 'desc' ? (
-							<ArrowDown className="h-4 w-4" />
-						) : (
-							<ArrowUpDown className="h-4 w-4 opacity-50" />
-						)}
-					</button>
-				)
+			{
+				accessorKey: 'organization',
+				header: ({ column }) => {
+					return (
+						<button
+							className="flex items-center gap-2 hover:text-foreground"
+							onClick={e => {
+								e.stopPropagation()
+								column.toggleSorting(column.getIsSorted() === 'asc')
+							}}
+						>
+							Organization
+							{column.getIsSorted() === 'asc' ? (
+								<ArrowUp className="h-4 w-4" />
+							) : column.getIsSorted() === 'desc' ? (
+								<ArrowDown className="h-4 w-4" />
+							) : (
+								<ArrowUpDown className="h-4 w-4 opacity-50" />
+							)}
+						</button>
+					)
+				},
+				cell: ({ row }) => {
+					const contact = row.original
+					return (
+						<div className="hidden lg:block">
+							{contact.organization && <div>{contact.organization}</div>}
+							{contact.job_title && <div className="text-sm text-gray-500">{contact.job_title}</div>}
+						</div>
+					)
+				},
+				meta: {
+					className: 'hidden lg:table-cell',
+				},
 			},
-			cell: ({ row }) => {
-				const birthday = row.original.birthday
-				if (!birthday) {
-					return <span className="text-gray-400">—</span>
-				}
-				const date = new Date(birthday)
-				return (
-					<span>
-						{date.toLocaleDateString('en-US', {
-							year: 'numeric',
-							month: 'short',
-							day: 'numeric',
-						})}
-					</span>
-				)
-			},
-		},
-		{
-			accessorKey: 'phone',
-			header: ({ column }) => {
-				return (
-					<button
-						className="flex items-center gap-2 hover:text-foreground"
-						onClick={e => {
-							e.stopPropagation()
-							column.toggleSorting(column.getIsSorted() === 'asc')
-						}}
-					>
-						Phone
-						{column.getIsSorted() === 'asc' ? (
-							<ArrowUp className="h-4 w-4" />
-						) : column.getIsSorted() === 'desc' ? (
-							<ArrowDown className="h-4 w-4" />
-						) : (
-							<ArrowUpDown className="h-4 w-4 opacity-50" />
-						)}
-					</button>
-				)
-			},
-			cell: ({ row }) => {
-				const phone = row.original.phone
-				if (!phone) {
-					return <span className="text-gray-400">—</span>
-				}
-				return <span>{formatPhoneNumber(phone)}</span>
-			},
-		},
-		{
-			accessorKey: 'organization',
-			header: ({ column }) => {
-				return (
-					<button
-						className="flex items-center gap-2 hover:text-foreground"
-						onClick={e => {
-							e.stopPropagation()
-							column.toggleSorting(column.getIsSorted() === 'asc')
-						}}
-					>
-						Organization
-						{column.getIsSorted() === 'asc' ? (
-							<ArrowUp className="h-4 w-4" />
-						) : column.getIsSorted() === 'desc' ? (
-							<ArrowDown className="h-4 w-4" />
-						) : (
-							<ArrowUpDown className="h-4 w-4 opacity-50" />
-						)}
-					</button>
-				)
-			},
-			cell: ({ row }) => {
-				const contact = row.original
-				return (
-					<div className="hidden lg:block">
-						{contact.organization && <div>{contact.organization}</div>}
-						{contact.job_title && <div className="text-sm text-gray-500">{contact.job_title}</div>}
-					</div>
-				)
-			},
-			meta: {
-				className: 'hidden lg:table-cell',
-			},
-		},
-	]
+			...(showBookCount
+				? [
+						{
+							id: 'address_books_count',
+							header: 'Books',
+							cell: ({ row }) => {
+								const count = row.original.address_books?.length ?? 0
+								return count > 0 ? <span>{count}</span> : <span className="text-gray-400">—</span>
+							},
+							enableSorting: false,
+							meta: {
+								className: 'hidden lg:table-cell',
+							},
+						} as ColumnDef<Contact>,
+					]
+				: []),
+		],
+		[getNameParts, showBookCount]
+	)
 
 	const [sorting, setSorting] = useState<SortingState>([])
 
+	const filteredContacts = useMemo(() => {
+		if (selectedBookId === 'all') return contacts
+		return contacts.filter(contact => contact.address_books?.some(book => book.id === selectedBookId))
+	}, [contacts, selectedBookId])
+
 	const table = useReactTable({
-		data: contacts,
+		data: filteredContacts,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
@@ -410,6 +457,21 @@ function ContactsIndexPage() {
 							className="pl-10"
 						/>
 					</div>
+					{addressBooks.length > 0 && (
+						<select
+							value={selectedBookId}
+							onChange={e => setSelectedBookId(e.target.value)}
+							className="h-9 px-2 rounded-md border border-input bg-background text-sm"
+							aria-label="Filter by address book"
+						>
+							<option value="all">All books</option>
+							{addressBooks.map(book => (
+								<option key={book.id} value={book.id}>
+									{book.name}
+								</option>
+							))}
+						</select>
+					)}
 					<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
 						<RefreshCw className="size-4" />
 					</Button>

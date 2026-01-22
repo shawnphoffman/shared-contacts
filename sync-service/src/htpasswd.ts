@@ -1,10 +1,10 @@
 import bcrypt from 'bcrypt'
 import path from 'path'
 import { readFile, writeFile, access, constants, readdir, copyFile, mkdir } from 'fs/promises'
+import { getAddressBooks, getAddressBooksForUser } from './db'
 
 const USERS_FILE = '/data/users'
 const RADICALE_STORAGE_PATH = '/data/collections'
-const SHARED_COLLECTION_NAME = 'shared-contacts'
 
 const getErrorCode = (error: unknown): string | undefined => {
 	if (error instanceof Error && 'code' in error) {
@@ -13,19 +13,19 @@ const getErrorCode = (error: unknown): string | undefined => {
 	return undefined
 }
 
-function getSharedAddressBookPathForUser(username: string): string {
-	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, SHARED_COLLECTION_NAME)
+function getAddressBookPathForUser(username: string, slug: string): string {
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, slug)
 }
 
-function getSharedAddressBookPath(): string {
-	return path.join(RADICALE_STORAGE_PATH, 'collection-root', SHARED_COLLECTION_NAME)
+function getAddressBookPath(slug: string): string {
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', slug)
 }
 
 async function ensureDirectoryExists(dirPath: string): Promise<void> {
 	await mkdir(dirPath, { recursive: true })
 }
 
-async function ensureSharedProps(userPath: string): Promise<void> {
+async function ensureAddressBookProps(userPath: string, name: string): Promise<void> {
 	const propsPath = path.join(userPath, '.Radicale.props')
 	try {
 		await access(propsPath, constants.F_OK)
@@ -35,44 +35,49 @@ async function ensureSharedProps(userPath: string): Promise<void> {
 		}
 		const props = {
 			tag: 'VADDRESSBOOK',
-			'D:displayname': 'Shared Contacts',
-			'C:addressbook-description': 'Shared contacts for all users',
+			'D:displayname': name,
+			'C:addressbook-description': `Contacts for ${name}`,
 		}
 		await writeFile(propsPath, JSON.stringify(props), 'utf-8')
 	}
 }
 
 export async function backfillSharedContactsForUser(username: string): Promise<void> {
-	const userPath = getSharedAddressBookPathForUser(username)
-	await ensureDirectoryExists(userPath)
-	await ensureSharedProps(userPath)
+	const books = await getAddressBooks()
+	const userBooks = books.length > 0 ? await getAddressBooksForUser(username) : [{ id: '', name: 'Shared Contacts', slug: 'shared-contacts', is_public: true }]
 
-	const masterPath = getSharedAddressBookPath()
-	try {
-		await access(masterPath, constants.F_OK)
-	} catch (error: unknown) {
-		if (getErrorCode(error) === 'ENOENT') {
-			return
-		}
-		throw error
-	}
+	for (const book of userBooks) {
+		const userPath = getAddressBookPathForUser(username, book.slug)
+		await ensureDirectoryExists(userPath)
+		await ensureAddressBookProps(userPath, book.name)
 
-	const masterFiles = await readdir(masterPath)
-	for (const file of masterFiles) {
-		if (!file.endsWith('.vcf') && !file.endsWith('.ics')) {
-			continue
-		}
-		const sourcePath = path.join(masterPath, file)
-		const destinationPath = path.join(userPath, file)
+		const masterPath = getAddressBookPath(book.slug)
 		try {
-			await access(destinationPath, constants.F_OK)
-			continue
+			await access(masterPath, constants.F_OK)
 		} catch (error: unknown) {
-			if (getErrorCode(error) !== 'ENOENT') {
-				throw error
+			if (getErrorCode(error) === 'ENOENT') {
+				continue
 			}
+			throw error
 		}
-		await copyFile(sourcePath, destinationPath)
+
+		const masterFiles = await readdir(masterPath)
+		for (const file of masterFiles) {
+			if (!file.endsWith('.vcf') && !file.endsWith('.ics')) {
+				continue
+			}
+			const sourcePath = path.join(masterPath, file)
+			const destinationPath = path.join(userPath, file)
+			try {
+				await access(destinationPath, constants.F_OK)
+				continue
+			} catch (error: unknown) {
+				if (getErrorCode(error) !== 'ENOENT') {
+					throw error
+				}
+			}
+			await copyFile(sourcePath, destinationPath)
+		}
 	}
 }
 

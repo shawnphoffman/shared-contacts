@@ -153,6 +153,7 @@ function ContactDetailPage() {
 	const sounds = contact.sounds?.filter(sound => sound.value.trim()) ?? []
 	const keys = contact.keys?.filter(key => key.value.trim()) ?? []
 	const customFields = contact.custom_fields?.filter(field => field.key.trim() && field.value.trim()) ?? []
+	const addressBooks = contact.address_books?.filter(book => book.name) ?? []
 
 	const hasAdvancedFields = Boolean(
 		contact.middle_name ||
@@ -205,6 +206,15 @@ function ContactDetailPage() {
 					</Button>
 				</div>
 			</div>
+			{addressBooks.length > 0 && (
+				<div className="flex flex-wrap gap-2 mb-6">
+					{addressBooks.map(book => (
+						<span key={book.id} className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
+							{book.name}
+						</span>
+					))}
+				</div>
+			)}
 
 			<Card>
 				<CardHeader>

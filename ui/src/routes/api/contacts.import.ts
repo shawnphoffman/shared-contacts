@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { createContact, findDuplicateContact, updateContact } from '../../lib/db'
+import { createContact, findDuplicateContact, getAddressBookBySlug, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
 import type { Contact } from '../../lib/db'
@@ -193,6 +193,7 @@ export const Route = createFileRoute('/api/contacts/import')({
 		handlers: {
 			POST: async ({ request }) => {
 				try {
+					const defaultBook = await getAddressBookBySlug('shared-contacts')
 					const formData = await request.formData()
 					const file = formData.get('file') as File | null
 
@@ -276,13 +277,16 @@ export const Route = createFileRoute('/api/contacts/import')({
 								results.updated++
 							} else {
 								// Create new contact
-								await createContact({
+								const created = await createContact({
 									...contactData,
 									vcard_id: vcardId,
 									vcard_data: vcardData,
 									sync_source: 'api',
 									last_synced_to_radicale_at: null, // Force sync to Radicale
 								})
+								if (defaultBook) {
+									await setContactAddressBooks(created.id, [defaultBook.id])
+								}
 								results.success++
 							}
 						} catch (error) {

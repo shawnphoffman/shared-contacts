@@ -39,6 +39,7 @@ function getMigrationFiles(): string[] {
 		'08_add_structured_address_fields.sql',
 		'09_add_contact_photo.sql',
 		'10_add_vcard_v3_fields.sql',
+		'11_address_books.sql',
 	]
 }
 

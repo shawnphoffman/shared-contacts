@@ -1,7 +1,7 @@
 # Radicale rights configuration
-# Any authenticated user can read/write any collection
+# Users can only access collections under their own principal path
 
-[all-authenticated]
+[owner-only]
 user: .+
-collection: .*
+collection: ^%(user)s(/.*)?$
 permissions: RWrw

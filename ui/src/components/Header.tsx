@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Info, Link as LinkIcon, NotebookTabs, Upload, Users } from 'lucide-react'
+import { BookOpen, Info, Link as LinkIcon, NotebookTabs, Upload, Users } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 
@@ -23,7 +23,7 @@ export default function Header() {
 				<h1 className="text-xl font-semibold flex items-center gap-2">
 					<Link to="/" className="text-foreground flex items-center gap-2">
 						<NotebookTabs className="w-5 h-5" />
-						<span className="hidden sm:inline">Shared Contacts</span>
+						<span className="hidden md:inline">Shared Contacts</span>
 					</Link>
 				</h1>
 				<nav className="flex items-center gap-4">
@@ -35,7 +35,17 @@ export default function Header() {
 						}}
 					>
 						<Upload className="w-4 h-4" />
-						<span className="hidden sm:inline">Import</span>
+						<span className="hidden md:inline">Import</span>
+					</Link>
+					<Link
+						to="/books"
+						className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+						activeProps={{
+							className: 'flex items-center gap-2 px-3 py-2 rounded-lg bg-accent text-accent-foreground',
+						}}
+					>
+						<BookOpen className="w-4 h-4" />
+						<span className="hidden md:inline">Books</span>
 					</Link>
 					<Link
 						to="/radicale-users"
@@ -45,7 +55,7 @@ export default function Header() {
 						}}
 					>
 						<Users className="w-4 h-4" />
-						<span className="hidden sm:inline">Users</span>
+						<span className="hidden md:inline">Users</span>
 					</Link>
 					<Link
 						to="/carddav-connection"
@@ -55,7 +65,7 @@ export default function Header() {
 						}}
 					>
 						<LinkIcon className="w-4 h-4" />
-						<span className="hidden sm:inline">CardDAV</span>
+						<span className="hidden md:inline">CardDAV</span>
 					</Link>
 					<Link
 						to="/about"

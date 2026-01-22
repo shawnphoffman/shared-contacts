@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { deleteContact, getContactById, updateContact } from '../../lib/db'
+import { deleteContact, getContactById, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { mergeContacts } from '../../lib/merge'
 import type { Contact } from '../../lib/db'
@@ -54,6 +54,14 @@ export const Route = createFileRoute('/api/contacts/merge')({
 						vcard_id: vcardId,
 						vcard_data: vcardData,
 					})
+
+					const mergedBookIds = new Set<string>()
+					for (const contact of contacts) {
+						contact.address_books?.forEach(book => mergedBookIds.add(book.id))
+					}
+					if (mergedBookIds.size > 0) {
+						await setContactAddressBooks(primaryContact.id, Array.from(mergedBookIds))
+					}
 
 					// Delete all other contacts
 					const deletedIds: Array<string> = []

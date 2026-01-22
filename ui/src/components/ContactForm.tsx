@@ -12,7 +12,8 @@ import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
 import type { CropArea } from '../lib/image'
-import type { Contact, ContactField } from '../lib/db'
+import type { AddressBook, Contact, ContactField } from '../lib/db'
+import { Checkbox } from './ui/checkbox'
 
 export type ContactPayload = Partial<Contact> & {
 	photo_data?: string
@@ -20,6 +21,7 @@ export type ContactPayload = Partial<Contact> & {
 	photo_width?: number | null
 	photo_height?: number | null
 	photo_remove?: boolean
+	address_book_ids?: Array<string>
 }
 
 interface ContactFormProps {
@@ -120,6 +122,33 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [validationErrors, setValidationErrors] = useState<Partial<Record<string, Record<number, string | null>>>>({})
 	const isInitialMount = useRef(true)
+	const [addressBooks, setAddressBooks] = useState<Array<AddressBook>>([])
+	const [selectedBookIds, setSelectedBookIds] = useState<Array<string>>([])
+
+	useEffect(() => {
+		let isMounted = true
+		const loadAddressBooks = async () => {
+			try {
+				const response = await fetch('/api/address-books')
+				if (!response.ok) return
+				const books = (await response.json()) as Array<AddressBook>
+				if (!isMounted) return
+				setAddressBooks(books)
+				setSelectedBookIds(prev => {
+					if (prev.length > 0) return prev
+					const existing = contact?.address_books?.map(book => book.id) || []
+					if (existing.length > 0) return existing
+					return books.filter(book => book.is_public).map(book => book.id)
+				})
+			} catch (error) {
+				console.error('Failed to load address books', error)
+			}
+		}
+		loadAddressBooks()
+		return () => {
+			isMounted = false
+		}
+	}, [contact?.id])
 
 	// Calculate full_name from first_name and last_name only when user edits them
 	useEffect(() => {
@@ -356,6 +385,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 				// Structured address fields for easier querying and display
 				...structuredAddressFields,
 				...photoPayload,
+				address_book_ids: selectedBookIds,
 			})
 		} finally {
 			setIsSubmitting(false)
@@ -433,6 +463,36 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 					</FieldContent>
 				</Field>
 			</div>
+
+			{addressBooks.length > 0 && (
+				<Field>
+					<FieldLabel>Address Books</FieldLabel>
+					<FieldContent>
+						<div className="flex flex-col gap-2">
+							{addressBooks.map(book => {
+								const checked = selectedBookIds.includes(book.id)
+								return (
+									<label key={book.id} className="flex items-center gap-2">
+										<Checkbox
+											checked={checked}
+											onCheckedChange={value => {
+												setSelectedBookIds(prev => {
+													if (value) {
+														return prev.includes(book.id) ? prev : [...prev, book.id]
+													}
+													return prev.filter(id => id !== book.id)
+												})
+											}}
+										/>
+										<span>{book.name}</span>
+										{book.is_public && <span className="text-xs text-muted-foreground">(public)</span>}
+									</label>
+								)
+							})}
+						</div>
+					</FieldContent>
+				</Field>
+			)}
 
 			<div className="grid grid-cols-2 gap-4">
 				<Field>

@@ -14,12 +14,14 @@ import { Route as NewRouteImport } from './routes/new'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as DuplicatesRouteImport } from './routes/duplicates'
 import { Route as CarddavConnectionRouteImport } from './routes/carddav-connection'
+import { Route as BooksRouteImport } from './routes/books'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
+import { Route as ApiAddressBooksRouteImport } from './routes/api/address-books'
 import { Route as ApiAboutRouteImport } from './routes/api/about'
 import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
 import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
@@ -27,6 +29,8 @@ import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.imp
 import { Route as ApiContactsDuplicatesRouteImport } from './routes/api/contacts.duplicates'
 import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
+import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/address-books.memberships'
+import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-books.$id'
 import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
 
@@ -53,6 +57,11 @@ const DuplicatesRoute = DuplicatesRouteImport.update({
 const CarddavConnectionRoute = CarddavConnectionRouteImport.update({
   id: '/carddav-connection',
   path: '/carddav-connection',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksRoute = BooksRouteImport.update({
+  id: '/books',
+  path: '/books',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -83,6 +92,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
 const ApiContactsRoute = ApiContactsRouteImport.update({
   id: '/api/contacts',
   path: '/api/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAddressBooksRoute = ApiAddressBooksRouteImport.update({
+  id: '/api/address-books',
+  path: '/api/address-books',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAboutRoute = ApiAboutRouteImport.update({
@@ -121,6 +135,17 @@ const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiContactsRoute,
 } as any)
+const ApiAddressBooksMembershipsRoute =
+  ApiAddressBooksMembershipsRouteImport.update({
+    id: '/memberships',
+    path: '/memberships',
+    getParentRoute: () => ApiAddressBooksRoute,
+  } as any)
+const ApiAddressBooksIdRoute = ApiAddressBooksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAddressBooksRoute,
+} as any)
 const ApiRadicaleUsersUsernameBackfillRoute =
   ApiRadicaleUsersUsernameBackfillRouteImport.update({
     id: '/backfill',
@@ -137,15 +162,19 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
   '/about': typeof AboutRoute
+  '/books': typeof BooksRoute
   '/carddav-connection': typeof CarddavConnectionRoute
   '/duplicates': typeof DuplicatesRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
   '/api/about': typeof ApiAboutRoute
+  '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/address-books/$id': typeof ApiAddressBooksIdRoute
+  '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
@@ -159,15 +188,19 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
   '/about': typeof AboutRoute
+  '/books': typeof BooksRoute
   '/carddav-connection': typeof CarddavConnectionRoute
   '/duplicates': typeof DuplicatesRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
   '/api/about': typeof ApiAboutRoute
+  '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/address-books/$id': typeof ApiAddressBooksIdRoute
+  '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
@@ -182,15 +215,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
   '/about': typeof AboutRoute
+  '/books': typeof BooksRoute
   '/carddav-connection': typeof CarddavConnectionRoute
   '/duplicates': typeof DuplicatesRoute
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
   '/api/about': typeof ApiAboutRoute
+  '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/address-books/$id': typeof ApiAddressBooksIdRoute
+  '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
@@ -206,15 +243,19 @@ export interface FileRouteTypes {
     | '/'
     | '/$id'
     | '/about'
+    | '/books'
     | '/carddav-connection'
     | '/duplicates'
     | '/import'
     | '/new'
     | '/radicale-users'
     | '/api/about'
+    | '/api/address-books'
     | '/api/contacts'
     | '/api/health'
     | '/api/radicale-users'
+    | '/api/address-books/$id'
+    | '/api/address-books/memberships'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
@@ -228,15 +269,19 @@ export interface FileRouteTypes {
     | '/'
     | '/$id'
     | '/about'
+    | '/books'
     | '/carddav-connection'
     | '/duplicates'
     | '/import'
     | '/new'
     | '/radicale-users'
     | '/api/about'
+    | '/api/address-books'
     | '/api/contacts'
     | '/api/health'
     | '/api/radicale-users'
+    | '/api/address-books/$id'
+    | '/api/address-books/memberships'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
@@ -250,15 +295,19 @@ export interface FileRouteTypes {
     | '/'
     | '/$id'
     | '/about'
+    | '/books'
     | '/carddav-connection'
     | '/duplicates'
     | '/import'
     | '/new'
     | '/radicale-users'
     | '/api/about'
+    | '/api/address-books'
     | '/api/contacts'
     | '/api/health'
     | '/api/radicale-users'
+    | '/api/address-books/$id'
+    | '/api/address-books/memberships'
     | '/api/contacts/$id'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
@@ -273,12 +322,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IdRoute: typeof IdRoute
   AboutRoute: typeof AboutRoute
+  BooksRoute: typeof BooksRoute
   CarddavConnectionRoute: typeof CarddavConnectionRoute
   DuplicatesRoute: typeof DuplicatesRoute
   ImportRoute: typeof ImportRoute
   NewRoute: typeof NewRoute
   RadicaleUsersRoute: typeof RadicaleUsersRoute
   ApiAboutRoute: typeof ApiAboutRoute
+  ApiAddressBooksRoute: typeof ApiAddressBooksRouteWithChildren
   ApiContactsRoute: typeof ApiContactsRouteWithChildren
   ApiHealthRoute: typeof ApiHealthRoute
   ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
@@ -321,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CarddavConnectionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/books': {
+      id: '/books'
+      path: '/books'
+      fullPath: '/books'
+      preLoaderRoute: typeof BooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -361,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/api/contacts'
       fullPath: '/api/contacts'
       preLoaderRoute: typeof ApiContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/address-books': {
+      id: '/api/address-books'
+      path: '/api/address-books'
+      fullPath: '/api/address-books'
+      preLoaderRoute: typeof ApiAddressBooksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/about': {
@@ -412,6 +477,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactsIdRouteImport
       parentRoute: typeof ApiContactsRoute
     }
+    '/api/address-books/memberships': {
+      id: '/api/address-books/memberships'
+      path: '/memberships'
+      fullPath: '/api/address-books/memberships'
+      preLoaderRoute: typeof ApiAddressBooksMembershipsRouteImport
+      parentRoute: typeof ApiAddressBooksRoute
+    }
+    '/api/address-books/$id': {
+      id: '/api/address-books/$id'
+      path: '/$id'
+      fullPath: '/api/address-books/$id'
+      preLoaderRoute: typeof ApiAddressBooksIdRouteImport
+      parentRoute: typeof ApiAddressBooksRoute
+    }
     '/api/radicale-users/$username/backfill': {
       id: '/api/radicale-users/$username/backfill'
       path: '/backfill'
@@ -428,6 +507,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ApiAddressBooksRouteChildren {
+  ApiAddressBooksIdRoute: typeof ApiAddressBooksIdRoute
+  ApiAddressBooksMembershipsRoute: typeof ApiAddressBooksMembershipsRoute
+}
+
+const ApiAddressBooksRouteChildren: ApiAddressBooksRouteChildren = {
+  ApiAddressBooksIdRoute: ApiAddressBooksIdRoute,
+  ApiAddressBooksMembershipsRoute: ApiAddressBooksMembershipsRoute,
+}
+
+const ApiAddressBooksRouteWithChildren = ApiAddressBooksRoute._addFileChildren(
+  ApiAddressBooksRouteChildren,
+)
 
 interface ApiContactsIdRouteChildren {
   ApiContactsIdPhotoRoute: typeof ApiContactsIdPhotoRoute
@@ -491,12 +584,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdRoute: IdRoute,
   AboutRoute: AboutRoute,
+  BooksRoute: BooksRoute,
   CarddavConnectionRoute: CarddavConnectionRoute,
   DuplicatesRoute: DuplicatesRoute,
   ImportRoute: ImportRoute,
   NewRoute: NewRoute,
   RadicaleUsersRoute: RadicaleUsersRoute,
   ApiAboutRoute: ApiAboutRoute,
+  ApiAddressBooksRoute: ApiAddressBooksRouteWithChildren,
   ApiContactsRoute: ApiContactsRouteWithChildren,
   ApiHealthRoute: ApiHealthRoute,
   ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,

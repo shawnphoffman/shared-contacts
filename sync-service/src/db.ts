@@ -23,6 +23,15 @@ export interface ContactField {
 	type?: string
 }
 
+export interface AddressBook {
+	id: string
+	name: string
+	slug: string
+	is_public: boolean
+	created_at: Date
+	updated_at: Date
+}
+
 export interface Contact {
 	id: string
 	vcard_id: string | null
@@ -77,6 +86,109 @@ export interface Contact {
 	vcard_hash: string | null
 	sync_source: string | null // 'db', 'radicale', 'api', or NULL
 	radicale_file_mtime: Date | null
+	address_books?: Array<AddressBook> | null
+}
+
+async function tableExists(tableName: string): Promise<boolean> {
+	const pool = getPool()
+	const result = await pool.query(
+		`
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = $1
+  `,
+		[tableName]
+	)
+	return result.rows.length > 0
+}
+
+export async function getAddressBooks(): Promise<AddressBook[]> {
+	if (!(await tableExists('address_books'))) return []
+	const pool = getPool()
+	const result = await pool.query('SELECT * FROM address_books ORDER BY name')
+	return result.rows
+}
+
+export async function getAddressBookBySlug(slug: string): Promise<AddressBook | null> {
+	if (!(await tableExists('address_books'))) return null
+	const pool = getPool()
+	const result = await pool.query('SELECT * FROM address_books WHERE slug = $1', [slug])
+	return result.rows[0] || null
+}
+
+export async function getDefaultAddressBook(): Promise<AddressBook | null> {
+	return getAddressBookBySlug('shared-contacts')
+}
+
+export async function getContactAddressBookIds(contactId: string): Promise<string[]> {
+	if (!(await tableExists('contact_address_books'))) return []
+	const pool = getPool()
+	const result = await pool.query('SELECT address_book_id FROM contact_address_books WHERE contact_id = $1', [contactId])
+	return result.rows.map(row => row.address_book_id)
+}
+
+export async function getContactAddressBookEntries(): Promise<Array<{ contact_id: string; address_book_id: string }>> {
+	if (!(await tableExists('contact_address_books'))) return []
+	const pool = getPool()
+	const result = await pool.query('SELECT contact_id, address_book_id FROM contact_address_books')
+	return result.rows
+}
+
+export async function setContactAddressBooks(contactId: string, addressBookIds: Array<string>): Promise<void> {
+	if (!(await tableExists('contact_address_books'))) return
+	const pool = getPool()
+	await pool.query('DELETE FROM contact_address_books WHERE contact_id = $1', [contactId])
+	if (addressBookIds.length === 0) return
+	await pool.query(
+		`
+    INSERT INTO contact_address_books (contact_id, address_book_id)
+    SELECT $1, UNNEST($2::uuid[])
+    ON CONFLICT DO NOTHING
+  `,
+		[contactId, addressBookIds]
+	)
+}
+
+export async function getAddressBooksForUser(username: string): Promise<AddressBook[]> {
+	if (!(await tableExists('address_books'))) return []
+	const pool = getPool()
+	if (!(await tableExists('user_address_books'))) {
+		const result = await pool.query('SELECT * FROM address_books WHERE is_public = TRUE ORDER BY name')
+		return result.rows
+	}
+	const result = await pool.query(
+		`
+    SELECT DISTINCT ab.*
+    FROM address_books ab
+    LEFT JOIN user_address_books uab ON uab.address_book_id = ab.id AND uab.username = $1
+    WHERE ab.is_public = TRUE OR uab.username IS NOT NULL
+    ORDER BY ab.name
+  `,
+		[username]
+	)
+	return result.rows
+}
+
+export async function getExplicitAddressBookIdsForUser(username: string): Promise<string[]> {
+	if (!(await tableExists('user_address_books'))) return []
+	const pool = getPool()
+	const result = await pool.query('SELECT address_book_id FROM user_address_books WHERE username = $1', [username])
+	return result.rows.map(row => row.address_book_id)
+}
+
+export async function setUserAddressBooks(username: string, addressBookIds: Array<string>): Promise<void> {
+	if (!(await tableExists('user_address_books'))) return
+	const pool = getPool()
+	await pool.query('DELETE FROM user_address_books WHERE username = $1', [username])
+	if (addressBookIds.length === 0) return
+	await pool.query(
+		`
+    INSERT INTO user_address_books (username, address_book_id)
+    SELECT $1, UNNEST($2::uuid[])
+    ON CONFLICT DO NOTHING
+  `,
+		[username, addressBookIds]
+	)
 }
 
 export async function getAllContacts(): Promise<Contact[]> {

@@ -35,6 +35,15 @@ export interface ContactField {
 	type?: string
 }
 
+export interface AddressBook {
+	id: string
+	name: string
+	slug: string
+	is_public: boolean
+	created_at: Date
+	updated_at: Date
+}
+
 export interface Contact {
 	id: string
 	vcard_id: string | null
@@ -96,13 +105,183 @@ export interface Contact {
 	vcard_hash: string | null
 	sync_source: string | null // 'db', 'radicale', 'api', or NULL
 	radicale_file_mtime: Date | null
+	address_books?: Array<AddressBook> | null
+}
+
+async function tableExists(tableName: string): Promise<boolean> {
+	const dbPool = getPool()
+	const result = await dbPool.query(
+		`
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = $1
+  `,
+		[tableName]
+	)
+	return result.rows.length > 0
+}
+
+async function attachAddressBooks(contacts: Array<Contact>): Promise<Array<Contact>> {
+	if (contacts.length === 0) return contacts
+	const hasAddressBooks = await tableExists('address_books')
+	const hasContactAddressBooks = await tableExists('contact_address_books')
+	if (!hasAddressBooks || !hasContactAddressBooks) {
+		return contacts
+	}
+
+	const contactIds = contacts.map(contact => contact.id)
+	const dbPool = getPool()
+	const result = await dbPool.query(
+		`
+    SELECT cab.contact_id,
+           ab.id,
+           ab.name,
+           ab.slug,
+           ab.is_public,
+           ab.created_at,
+           ab.updated_at
+    FROM contact_address_books cab
+    JOIN address_books ab ON ab.id = cab.address_book_id
+    WHERE cab.contact_id = ANY($1)
+    ORDER BY ab.name
+  `,
+		[contactIds]
+	)
+
+	const byContact = new Map<string, Array<AddressBook>>()
+	for (const row of result.rows) {
+		const existing = byContact.get(row.contact_id) || []
+		existing.push({
+			id: row.id,
+			name: row.name,
+			slug: row.slug,
+			is_public: row.is_public,
+			created_at: row.created_at,
+			updated_at: row.updated_at,
+		})
+		byContact.set(row.contact_id, existing)
+	}
+
+	return contacts.map(contact => ({
+		...contact,
+		address_books: byContact.get(contact.id) || [],
+	}))
+}
+
+export async function getAddressBooks(): Promise<Array<AddressBook>> {
+	const dbPool = getPool()
+	const hasAddressBooks = await tableExists('address_books')
+	if (!hasAddressBooks) return []
+	const result = await dbPool.query('SELECT * FROM address_books ORDER BY name')
+	return result.rows
+}
+
+export async function getAddressBookBySlug(slug: string): Promise<AddressBook | null> {
+	const dbPool = getPool()
+	const hasAddressBooks = await tableExists('address_books')
+	if (!hasAddressBooks) return null
+	const result = await dbPool.query('SELECT * FROM address_books WHERE slug = $1', [slug])
+	return result.rows[0] || null
+}
+
+export async function createAddressBook(addressBook: Pick<AddressBook, 'name' | 'slug' | 'is_public'>): Promise<AddressBook> {
+	const dbPool = getPool()
+	const result = await dbPool.query(
+		`
+    INSERT INTO address_books (name, slug, is_public)
+    VALUES ($1, $2, $3)
+    RETURNING *
+  `,
+		[addressBook.name, addressBook.slug, addressBook.is_public]
+	)
+	return result.rows[0]
+}
+
+export async function updateAddressBook(
+	id: string,
+	updates: Partial<Pick<AddressBook, 'name' | 'slug' | 'is_public'>>
+): Promise<AddressBook> {
+	const dbPool = getPool()
+	const fields = ['name', 'slug', 'is_public'] as const
+	const setClauses: Array<string> = []
+	const values: Array<unknown> = []
+	let paramIndex = 1
+
+	for (const field of fields) {
+		if (updates[field] !== undefined) {
+			setClauses.push(`${field} = $${paramIndex}`)
+			values.push(updates[field])
+			paramIndex++
+		}
+	}
+
+	if (setClauses.length === 0) {
+		throw new Error('No address book fields to update')
+	}
+
+	values.push(id)
+	const result = await dbPool.query(
+		`UPDATE address_books SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+		values
+	)
+	return result.rows[0]
+}
+
+export async function getContactAddressBookIds(contactId: string): Promise<Array<string>> {
+	const hasContactAddressBooks = await tableExists('contact_address_books')
+	if (!hasContactAddressBooks) return []
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT address_book_id FROM contact_address_books WHERE contact_id = $1', [contactId])
+	return result.rows.map(row => row.address_book_id)
+}
+
+export async function setContactAddressBooks(contactId: string, addressBookIds: Array<string> | null | undefined): Promise<void> {
+	const hasContactAddressBooks = await tableExists('contact_address_books')
+	if (!hasContactAddressBooks) return
+	const dbPool = getPool()
+	await dbPool.query('DELETE FROM contact_address_books WHERE contact_id = $1', [contactId])
+	if (!addressBookIds || addressBookIds.length === 0) {
+		return
+	}
+	await dbPool.query(
+		`
+    INSERT INTO contact_address_books (contact_id, address_book_id)
+    SELECT $1, UNNEST($2::uuid[])
+    ON CONFLICT DO NOTHING
+  `,
+		[contactId, addressBookIds]
+	)
+}
+
+export async function getUserAddressBookIds(username: string): Promise<Array<string>> {
+	const hasUserAddressBooks = await tableExists('user_address_books')
+	if (!hasUserAddressBooks) return []
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT address_book_id FROM user_address_books WHERE username = $1', [username])
+	return result.rows.map(row => row.address_book_id)
+}
+
+export async function setUserAddressBooks(username: string, addressBookIds: Array<string>): Promise<void> {
+	const hasUserAddressBooks = await tableExists('user_address_books')
+	if (!hasUserAddressBooks) return
+	const dbPool = getPool()
+	await dbPool.query('DELETE FROM user_address_books WHERE username = $1', [username])
+	if (addressBookIds.length === 0) return
+	await dbPool.query(
+		`
+    INSERT INTO user_address_books (username, address_book_id)
+    SELECT $1, UNNEST($2::uuid[])
+    ON CONFLICT DO NOTHING
+  `,
+		[username, addressBookIds]
+	)
 }
 
 export async function getAllContacts(): Promise<Array<Contact>> {
 	const dbPool = getPool()
 	const result = await dbPool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC')
 	// Parse JSONB fields
-	return result.rows.map(row => {
+	const contacts = result.rows.map(row => {
 		if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
 		if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
 		if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
@@ -116,6 +295,7 @@ export async function getAllContacts(): Promise<Array<Contact>> {
 		if (row.custom_fields) row.custom_fields = typeof row.custom_fields === 'string' ? JSON.parse(row.custom_fields) : row.custom_fields
 		return row
 	})
+	return attachAddressBooks(contacts)
 }
 
 export async function getContactById(id: string): Promise<Contact | null> {
@@ -135,13 +315,16 @@ export async function getContactById(id: string): Promise<Contact | null> {
 	if (row.sounds) row.sounds = typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
 	if (row.keys) row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
 	if (row.custom_fields) row.custom_fields = typeof row.custom_fields === 'string' ? JSON.parse(row.custom_fields) : row.custom_fields
-	return row
+	const [contactWithBooks] = await attachAddressBooks([row])
+	return contactWithBooks
 }
 
 export async function getContactByVcardId(vcardId: string): Promise<Contact | null> {
 	const dbPool = getPool()
 	const result = await dbPool.query('SELECT * FROM contacts WHERE vcard_id = $1', [vcardId])
-	return result.rows[0] || null
+	if (!result.rows[0]) return null
+	const [contactWithBooks] = await attachAddressBooks([result.rows[0]])
+	return contactWithBooks
 }
 
 /**

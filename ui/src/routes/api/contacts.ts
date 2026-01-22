@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { createContact, getAllContacts } from '../../lib/db'
+import { createContact, getAddressBookBySlug, getAllContacts, getContactById, setContactAddressBooks } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
 import type { Contact } from '../../lib/db'
@@ -19,6 +19,14 @@ type PhotoPayload = {
 function sanitizeContact(contact: Contact): Omit<Contact, 'photo_blob'> {
 	const { photo_blob, ...rest } = contact
 	return rest
+}
+
+async function resolveAddressBookIds(rawIds?: Array<string>): Promise<Array<string>> {
+	if (Array.isArray(rawIds) && rawIds.length > 0) {
+		return rawIds
+	}
+	const defaultBook = await getAddressBookBySlug('shared-contacts')
+	return defaultBook ? [defaultBook.id] : []
 }
 
 function decodePhotoPayload(payload: PhotoPayload): {
@@ -95,6 +103,7 @@ export const Route = createFileRoute('/api/contacts')({
 					const body = await request.json()
 					const photoPayload = body as PhotoPayload
 					const photoFields = decodePhotoPayload(photoPayload)
+					const addressBookIds = await resolveAddressBookIds(body.address_book_ids)
 
 					const normalizedPhones = Array.isArray(body.phones)
 						? body.phones.map((phone: { value?: string }) => ({
@@ -169,7 +178,11 @@ export const Route = createFileRoute('/api/contacts')({
 						last_synced_to_radicale_at: null, // Force sync to Radicale
 					})
 
-					return json(sanitizeContact(contact), { status: 201 })
+					if (addressBookIds.length > 0) {
+						await setContactAddressBooks(contact.id, addressBookIds)
+					}
+					const contactWithBooks = await getContactById(contact.id)
+					return json(sanitizeContact(contactWithBooks || contact), { status: 201 })
 				} catch (error) {
 					console.error('Error creating contact:', error)
 					return json({ error: 'Failed to create contact' }, { status: 500 })
