@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.6.4](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.3...v0.6.4) (2026-01-17)
+## [0.7.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.4...v0.7.0) (2026-01-22)
 
-### Bug Fixes
+### Features
 
-* enhance contact synchronization logic to handle duplicate vCard IDs and improve error handling during contact creation ([ea08fc0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/ea08fc0d9846596cfa628df1f30c6ac8c3a33d8b))
+* implement address book management with CRUD operations and integrate into contact forms and user management ([9de1cf9](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/9de1cf94efa9be9afa7feb3133d1bf96ccf6ed90))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.7.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.4...v0.7.0)
+
+- ✨ Feature: implement address book management with CRUD operations and integrate into contact forms and user management [`9de1cf9`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/9de1cf94efa9be9afa7feb3133d1bf96ccf6ed90)
+
 #### [v0.6.4](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.3...v0.6.4)
 
+> 16 January 2026
+
 - 🐛 Fix: enhance contact synchronization logic to handle duplicate vCard IDs and improve error handling during contact creation [`ea08fc0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/ea08fc0d9846596cfa628df1f30c6ac8c3a33d8b)
+- 🔧 Chore: release v0.6.4 [`0744982`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/0744982954eda7cf1d25c899961e44f70b05bae9)
 
 #### [v0.6.3](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.2...v0.6.3)
 
