@@ -6,18 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.8.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.8.0...v0.8.1) (2026-01-25)
+## [0.9.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.8.1...v0.9.0) (2026-01-25)
 
-### Bug Fixes
+### Features
 
-* tweak heading to trigger version ([e7c6a27](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/e7c6a27901b8d840a9cd1234e231b7e334c1c927))
+* update rights configuration for root access and enhance CardDAV connection instructions in UI ([07c70ac](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/07c70acd3c8fd31b7091804e11f63ae70f8d0c03))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.9.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.8.1...v0.9.0)
+
+- ✨ Feature: update rights configuration for root access and enhance CardDAV connection instructions in UI [`07c70ac`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/07c70acd3c8fd31b7091804e11f63ae70f8d0c03)
+
 #### [v0.8.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.8.0...v0.8.1)
 
+> 25 January 2026
+
+- 🔧 Chore: release v0.8.1 [`0a3cd0c`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/0a3cd0ca8328defd41859578e12937b99b112c2c)
 - 🐛 Fix: tweak heading to trigger version [`e7c6a27`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/e7c6a27901b8d840a9cd1234e231b7e334c1c927)
 
 #### [v0.8.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.7.0...v0.8.0)
