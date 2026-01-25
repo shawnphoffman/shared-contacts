@@ -6,19 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.7.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.6.4...v0.7.0) (2026-01-22)
+## [0.8.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.7.0...v0.8.0) (2026-01-25)
 
 ### Features
 
-* implement address book management with CRUD operations and integrate into contact forms and user management ([9de1cf9](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/9de1cf94efa9be9afa7feb3133d1bf96ccf6ed90))
+* add bulk address book management functionality with dialog for adding/removing contacts ([f3c17c8](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/f3c17c8c8e06957dee3b58c57de66910e30b6bdb))
+* enhance address book functionality with read-only subscription support and bulk management features ([25909e2](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/25909e2afe4489b25fb01af5d395accb475b8138))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.8.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.7.0...v0.8.0)
+
+- ✨ Feature: enhance address book functionality with read-only subscription support and bulk management features [`25909e2`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/25909e2afe4489b25fb01af5d395accb475b8138)
+- ✨ Feature: add bulk address book management functionality with dialog for adding/removing contacts [`f3c17c8`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/f3c17c8c8e06957dee3b58c57de66910e30b6bdb)
+- ♻️ Refactor: adjust layout and spacing in ContactForm and ContactDetailPage for improved UI consistency [`cc5572a`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/cc5572a61678374934263600e885371ca830f731)
+
 #### [v0.7.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.4...v0.7.0)
 
+> 21 January 2026
+
 - ✨ Feature: implement address book management with CRUD operations and integrate into contact forms and user management [`9de1cf9`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/9de1cf94efa9be9afa7feb3133d1bf96ccf6ed90)
+- 🔧 Chore: release v0.7.0 [`9202f07`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/9202f074a2c40334c64338ffd5595c5268f29879)
 
 #### [v0.6.4](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.6.3...v0.6.4)
 
