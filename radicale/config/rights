@@ -1,7 +1,13 @@
 # Radicale rights configuration
-# Users can only access collections under their own principal path
+# Full users: RW access to their own collections.
+# Read-only subscription users (ro-*): R only to their own collection.
 
 [owner-only]
-user: .+
+user: ^(?!ro-).+
 collection: ^%(user)s(/.*)?$
 permissions: RWrw
+
+[readonly-subscription]
+user: ^ro-.+
+collection: ^%(user)s(/.*)?$
+permissions: Rr

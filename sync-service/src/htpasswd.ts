@@ -13,12 +13,12 @@ const getErrorCode = (error: unknown): string | undefined => {
 	return undefined
 }
 
-function getAddressBookPathForUser(username: string, slug: string): string {
-	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, slug)
+function getAddressBookPathForUser(username: string, bookId: string): string {
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, bookId)
 }
 
-function getAddressBookPath(slug: string): string {
-	return path.join(RADICALE_STORAGE_PATH, 'collection-root', slug)
+function getAddressBookPath(bookId: string): string {
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', bookId)
 }
 
 async function ensureDirectoryExists(dirPath: string): Promise<void> {
@@ -47,11 +47,11 @@ export async function backfillSharedContactsForUser(username: string): Promise<v
 	const userBooks = books.length > 0 ? await getAddressBooksForUser(username) : [{ id: '', name: 'Shared Contacts', slug: 'shared-contacts', is_public: true }]
 
 	for (const book of userBooks) {
-		const userPath = getAddressBookPathForUser(username, book.slug)
+		const userPath = getAddressBookPathForUser(username, book.id)
 		await ensureDirectoryExists(userPath)
 		await ensureAddressBookProps(userPath, book.name)
 
-		const masterPath = getAddressBookPath(book.slug)
+		const masterPath = getAddressBookPath(book.id)
 		try {
 			await access(masterPath, constants.F_OK)
 		} catch (error: unknown) {
@@ -188,6 +188,39 @@ export async function updateUserPassword(username: string, password: string): Pr
 	})
 
 	await writeFile(USERS_FILE, updatedLines.join('\n') + '\n', 'utf-8')
+}
+
+/**
+ * Set or update a user in htpasswd with a pre-computed bcrypt hash (e.g. for read-only subscription users).
+ * Does not run backfill.
+ */
+export async function setUserHash(username: string, hash: string): Promise<void> {
+	let content = ''
+	try {
+		await access(USERS_FILE, constants.F_OK)
+		content = await readFile(USERS_FILE, 'utf-8')
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
+			throw error
+		}
+	}
+	const lines = content.split('\n')
+	let found = false
+	const newLines = lines.map(line => {
+		const trimmed = line.trim()
+		if (trimmed && !trimmed.startsWith('#')) {
+			const [lineUsername] = trimmed.split(':')
+			if (lineUsername === username) {
+				found = true
+				return `${username}:${hash}`
+			}
+		}
+		return line
+	})
+	if (!found) {
+		newLines.push(`${username}:${hash}`)
+	}
+	await writeFile(USERS_FILE, newLines.join('\n').replace(/\n*$/, '\n'), 'utf-8')
 }
 
 /**

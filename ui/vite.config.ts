@@ -6,6 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
 const config = defineConfig({
+	// bcrypt and node-pre-gyp are Node-only; exclude from pre-bundle to avoid optimizer errors (mock-aws-s3, .html, etc.)
+	optimizeDeps: {
+		exclude: ['bcrypt', '@mapbox/node-pre-gyp'],
+	},
 	server: {
 		port: 3030,
 		host: '0.0.0.0',

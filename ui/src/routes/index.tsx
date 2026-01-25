@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
 import type { ColumnDef, SortingState } from '@tanstack/react-table'
@@ -37,6 +38,10 @@ function ContactsIndexPage() {
 	const [searchQuery, setSearchQuery] = useState('')
 	const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 	const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+	const [isBulkBooksDialogOpen, setIsBulkBooksDialogOpen] = useState(false)
+	const [bulkAddToBookIds, setBulkAddToBookIds] = useState<Set<string>>(new Set())
+	const [bulkRemoveFromBookIds, setBulkRemoveFromBookIds] = useState<Set<string>>(new Set())
+	const [isBulkBooksSubmitting, setIsBulkBooksSubmitting] = useState(false)
 	const [addressBooks, setAddressBooks] = useState<Array<{ id: string; name: string }>>([])
 	const [selectedBookId, setSelectedBookId] = useState<string>('all')
 	const showBookCount = addressBooks.length > 1
@@ -147,11 +152,11 @@ function ContactsIndexPage() {
 						>
 							First Name
 							{column.getIsSorted() === 'asc' ? (
-								<ArrowUp className="h-4 w-4" />
+								<ArrowUp className="size-4" />
 							) : column.getIsSorted() === 'desc' ? (
-								<ArrowDown className="h-4 w-4" />
+								<ArrowDown className="size-4" />
 							) : (
-								<ArrowUpDown className="h-4 w-4 opacity-50" />
+								<ArrowUpDown className="size-4 opacity-50" />
 							)}
 						</button>
 					)
@@ -181,11 +186,11 @@ function ContactsIndexPage() {
 						>
 							Last Name
 							{column.getIsSorted() === 'asc' ? (
-								<ArrowUp className="h-4 w-4" />
+								<ArrowUp className="size-4" />
 							) : column.getIsSorted() === 'desc' ? (
-								<ArrowDown className="h-4 w-4" />
+								<ArrowDown className="size-4" />
 							) : (
-								<ArrowUpDown className="h-4 w-4 opacity-50" />
+								<ArrowUpDown className="size-4 opacity-50" />
 							)}
 						</button>
 					)
@@ -208,11 +213,11 @@ function ContactsIndexPage() {
 						>
 							Email
 							{column.getIsSorted() === 'asc' ? (
-								<ArrowUp className="h-4 w-4" />
+								<ArrowUp className="size-4" />
 							) : column.getIsSorted() === 'desc' ? (
-								<ArrowDown className="h-4 w-4" />
+								<ArrowDown className="size-4" />
 							) : (
-								<ArrowUpDown className="h-4 w-4 opacity-50" />
+								<ArrowUpDown className="size-4 opacity-50" />
 							)}
 						</button>
 					)
@@ -235,11 +240,11 @@ function ContactsIndexPage() {
 						>
 							Birthday
 							{column.getIsSorted() === 'asc' ? (
-								<ArrowUp className="h-4 w-4" />
+								<ArrowUp className="size-4" />
 							) : column.getIsSorted() === 'desc' ? (
-								<ArrowDown className="h-4 w-4" />
+								<ArrowDown className="size-4" />
 							) : (
-								<ArrowUpDown className="h-4 w-4 opacity-50" />
+								<ArrowUpDown className="size-4 opacity-50" />
 							)}
 						</button>
 					)
@@ -274,11 +279,11 @@ function ContactsIndexPage() {
 						>
 							Phone
 							{column.getIsSorted() === 'asc' ? (
-								<ArrowUp className="h-4 w-4" />
+								<ArrowUp className="size-4" />
 							) : column.getIsSorted() === 'desc' ? (
-								<ArrowDown className="h-4 w-4" />
+								<ArrowDown className="size-4" />
 							) : (
-								<ArrowUpDown className="h-4 w-4 opacity-50" />
+								<ArrowUpDown className="size-4 opacity-50" />
 							)}
 						</button>
 					)
@@ -304,11 +309,11 @@ function ContactsIndexPage() {
 						>
 							Organization
 							{column.getIsSorted() === 'asc' ? (
-								<ArrowUp className="h-4 w-4" />
+								<ArrowUp className="size-4" />
 							) : column.getIsSorted() === 'desc' ? (
-								<ArrowDown className="h-4 w-4" />
+								<ArrowDown className="size-4" />
 							) : (
-								<ArrowUpDown className="h-4 w-4 opacity-50" />
+								<ArrowUpDown className="size-4 opacity-50" />
 							)}
 						</button>
 					)
@@ -337,7 +342,7 @@ function ContactsIndexPage() {
 							},
 							enableSorting: false,
 							meta: {
-								className: 'hidden lg:table-cell',
+								className: 'hidden sm:table-cell',
 							},
 						} as ColumnDef<Contact>,
 					]
@@ -384,6 +389,38 @@ function ContactsIndexPage() {
 	})
 
 	const selectedContactIds = Object.keys(rowSelection).filter(id => rowSelection[id])
+
+	const handleBulkBooksSubmit = async () => {
+		if (selectedContactIds.length === 0 || (bulkAddToBookIds.size === 0 && bulkRemoveFromBookIds.size === 0) || isBulkBooksSubmitting) {
+			return
+		}
+		setIsBulkBooksSubmitting(true)
+		try {
+			const response = await fetch('/api/contacts/bulk-books', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					contact_ids: selectedContactIds,
+					add_to_book_ids: Array.from(bulkAddToBookIds),
+					remove_from_book_ids: Array.from(bulkRemoveFromBookIds),
+				}),
+			})
+			if (!response.ok) {
+				const err = await response.json()
+				throw new Error(err.error || 'Failed to update')
+			}
+			setIsBulkBooksDialogOpen(false)
+			setBulkAddToBookIds(new Set())
+			setBulkRemoveFromBookIds(new Set())
+			setRowSelection({})
+			await refetch()
+		} catch (e) {
+			console.error(e)
+			alert(e instanceof Error ? e.message : 'Failed to update address books')
+		} finally {
+			setIsBulkBooksSubmitting(false)
+		}
+	}
 
 	const handleBulkDelete = async () => {
 		if (selectedContactIds.length === 0 || isBulkDeleting) {
@@ -481,6 +518,19 @@ function ContactsIndexPage() {
 				{selectedContactIds.length >= 1 && (
 					<div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-end">
 						<div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2">
+							{addressBooks.length > 0 && (
+								<Button
+									variant="outline"
+									onClick={() => {
+										setBulkAddToBookIds(new Set())
+										setBulkRemoveFromBookIds(new Set())
+										setIsBulkBooksDialogOpen(true)
+									}}
+								>
+									<BookOpen className="w-4 h-4 mr-1" />
+									Manage Books
+								</Button>
+							)}
 							<Button variant="destructive" onClick={handleBulkDelete} disabled={isBulkDeleting}>
 								<Trash2 className="w-4 h-4 mr-1" />
 								{isBulkDeleting ? 'Deleting...' : `Delete ${selectedContactIds.length}`}
@@ -543,6 +593,73 @@ function ContactsIndexPage() {
 					</Table>
 				</div>
 			)}
+
+			<Dialog open={isBulkBooksDialogOpen} onOpenChange={setIsBulkBooksDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Manage address books</DialogTitle>
+						<DialogDescription>
+							Add or remove {selectedContactIds.length} selected contact{selectedContactIds.length === 1 ? '' : 's'} to or from address
+							books.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-6 py-2">
+						<div>
+							<div className="text-sm font-medium mb-2">Add to</div>
+							<div className="flex flex-col gap-2">
+								{addressBooks.map(book => (
+									<label key={book.id} className="flex items-center gap-2">
+										<Checkbox
+											checked={bulkAddToBookIds.has(book.id)}
+											onCheckedChange={checked =>
+												setBulkAddToBookIds(prev => {
+													const next = new Set(prev)
+													if (checked) next.add(book.id)
+													else next.delete(book.id)
+													return next
+												})
+											}
+										/>
+										<span>{book.name}</span>
+									</label>
+								))}
+							</div>
+						</div>
+						<div>
+							<div className="text-sm font-medium mb-2">Remove from</div>
+							<div className="flex flex-col gap-2">
+								{addressBooks.map(book => (
+									<label key={book.id} className="flex items-center gap-2">
+										<Checkbox
+											checked={bulkRemoveFromBookIds.has(book.id)}
+											onCheckedChange={checked =>
+												setBulkRemoveFromBookIds(prev => {
+													const next = new Set(prev)
+													if (checked) next.add(book.id)
+													else next.delete(book.id)
+													return next
+												})
+											}
+										/>
+										<span>{book.name}</span>
+									</label>
+								))}
+							</div>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setIsBulkBooksDialogOpen(false)}>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleBulkBooksSubmit}
+							disabled={isBulkBooksSubmitting || (bulkAddToBookIds.size === 0 && bulkRemoveFromBookIds.size === 0)}
+						>
+							{isBulkBooksSubmitting ? 'Updating...' : 'Update'}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

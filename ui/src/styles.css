@@ -60,8 +60,11 @@ code {
 	--card-foreground: oklch(0.985 0 0);
 	--popover: oklch(0.141 0.005 285.823);
 	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.985 0 0);
-	--primary-foreground: oklch(0.21 0.006 285.885);
+	/* --primary: oklch(0.985 0 0);
+	--primary-foreground: oklch(0.21 0.006 285.885); */
+	/* --primary: oklch(0.648 0.2 131.684); */
+	--primary: oklch(79.2% 0.209 151.711);
+	--primary-foreground: oklch(0.274 0.006 286.033);
 	--secondary: oklch(0.274 0.006 286.033);
 	--secondary-foreground: oklch(0.985 0 0);
 	--muted: oklch(0.274 0.006 286.033);

@@ -3,6 +3,8 @@ import { closePool } from './db'
 import { syncDbToRadicale, syncRadicaleToDb, startWatchingRadicale, startPeriodicSync } from './sync'
 import { startApiServer, setMigrationsComplete } from './api'
 import { runMigrations } from './migrations'
+import { runPathMigrationIfNeeded } from './path-migration'
+import { syncReadonlyUsersToHtpasswd } from './readonly-auth'
 
 async function main() {
 	console.log('Starting Shared Contacts Sync Service...')
@@ -15,6 +17,12 @@ async function main() {
 
 		// Run database migrations to ensure schema is up to date
 		await runMigrations()
+
+		// One-time path migration: rename collection-root/{slug} -> collection-root/{id}
+		await runPathMigrationIfNeeded()
+
+		// Sync read-only subscription users from DB to htpasswd
+		await syncReadonlyUsersToHtpasswd()
 
 		// Mark migrations as complete (enables /ready endpoint)
 		setMigrationsComplete()
@@ -31,6 +39,16 @@ async function main() {
 
 		// Start periodic sync from DB to Radicale
 		startPeriodicSync()
+
+		// Periodically sync read-only users to htpasswd (in case UI enabled/disabled or changed password)
+		const readonlyAuthInterval = parseInt(process.env.READONLY_AUTH_SYNC_INTERVAL || '30000', 10)
+		setInterval(async () => {
+			try {
+				await syncReadonlyUsersToHtpasswd()
+			} catch (err) {
+				console.error('Read-only auth sync error:', err)
+			}
+		}, readonlyAuthInterval)
 
 		console.log('Sync service started successfully')
 

@@ -1,19 +1,25 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BookOpen, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../components/ui/button'
+import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import { Switch } from '../components/ui/switch'
 
 interface AddressBook {
 	id: string
 	name: string
 	slug: string
 	is_public: boolean
+}
+
+interface AddressBookWithReadonly extends AddressBook {
+	readonly_enabled?: boolean
+	readonly_username?: string
 }
 
 async function fetchAddressBooks(): Promise<Array<AddressBook>> {
@@ -39,9 +45,183 @@ async function createAddressBook(payload: { name: string; slug?: string; is_publ
 	return response.json()
 }
 
+async function updateAddressBook(
+	id: string,
+	payload: { name?: string; is_public?: boolean; readonly_enabled?: boolean; readonly_password?: string }
+): Promise<AddressBookWithReadonly> {
+	const response = await fetch(`/api/address-books/${id}`, {
+		method: 'PUT',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(payload),
+	})
+	if (!response.ok) {
+		const error = await response.json()
+		throw new Error(error.error || 'Failed to update address book')
+	}
+	return response.json()
+}
+
+async function fetchAddressBook(id: string): Promise<AddressBookWithReadonly> {
+	const response = await fetch(`/api/address-books/${id}`)
+	if (!response.ok) {
+		throw new Error('Failed to fetch address book')
+	}
+	return response.json()
+}
+
 export const Route = createFileRoute('/books')({
 	component: BooksPage,
 })
+
+function BookCard({ book }: { book: AddressBook }) {
+	const queryClient = useQueryClient()
+	const [nameDraft, setNameDraft] = useState(book.name)
+	const [readonlyPassword, setReadonlyPassword] = useState('')
+	const [nameError, setNameError] = useState<string | null>(null)
+	const [readonlyError, setReadonlyError] = useState<string | null>(null)
+
+	const { data: details, isLoading: detailsLoading } = useQuery({
+		queryKey: ['address-book', book.id],
+		queryFn: () => fetchAddressBook(book.id),
+	})
+
+	const updateMutation = useMutation({
+		mutationFn: (payload: { name?: string; is_public?: boolean; readonly_enabled?: boolean; readonly_password?: string }) =>
+			updateAddressBook(book.id, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['address-books'] })
+			queryClient.invalidateQueries({ queryKey: ['address-book', book.id] })
+			setNameError(null)
+			setReadonlyError(null)
+			setReadonlyPassword('')
+		},
+		onError: (err: Error, variables: { name?: string; is_public?: boolean; readonly_enabled?: boolean; readonly_password?: string }) => {
+			const isReadonlyUpdate = variables.readonly_enabled !== undefined || variables.readonly_password !== undefined
+			if (isReadonlyUpdate) setReadonlyError(err.message)
+			else setNameError(err.message)
+		},
+	})
+
+	const readonlyEnabled = details?.readonly_enabled ?? false
+
+	useEffect(() => {
+		if (details?.name) setNameDraft(details.name)
+	}, [details?.name])
+
+	const handleNameBlur = () => {
+		const trimmed = nameDraft.trim()
+		if (!trimmed) {
+			setNameDraft(book.name)
+			return
+		}
+		if (trimmed === book.name) return
+		updateMutation.mutate({ name: trimmed })
+	}
+
+	const handleReadonlyToggle = (checked: boolean) => {
+		setReadonlyError(null)
+		updateMutation.mutate({
+			readonly_enabled: checked,
+			...(checked && readonlyPassword.trim() ? { readonly_password: readonlyPassword } : {}),
+		})
+	}
+
+	const handleChangePassword = () => {
+		if (!readonlyPassword.trim()) return
+		updateMutation.mutate({ readonly_enabled: true, readonly_password: readonlyPassword })
+	}
+
+	if (detailsLoading || !details) {
+		return (
+			<Card className="overflow-hidden border bg-card shadow-sm">
+				<CardHeader className="">
+					<div className="h-7 w-48 animate-pulse rounded bg-muted" />
+				</CardHeader>
+				<CardContent>
+					<div className="h-4 w-32 animate-pulse rounded bg-muted" />
+				</CardContent>
+			</Card>
+		)
+	}
+
+	return (
+		<Card className="overflow-hidden border bg-card shadow-sm">
+			<CardHeader className="space-y-4 gap-0">
+				<div className="space-y-4">
+					<Input
+						value={nameDraft}
+						onChange={e => {
+							setNameDraft(e.target.value)
+							setNameError(null)
+						}}
+						onBlur={handleNameBlur}
+						className="h-11 text-lg font-semibold bg-muted/40 border-muted focus-visible:bg-background focus-visible:ring-2"
+						placeholder="Book name"
+					/>
+					<div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+						<div>
+							<p className="font-medium text-foreground">Public book</p>
+							<p className="text-sm text-muted-foreground">Visible to all users in the system</p>
+						</div>
+						<Switch checked={details.is_public} onCheckedChange={checked => updateMutation.mutate({ is_public: Boolean(checked) })} />
+					</div>
+				</div>
+				{nameError && <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{nameError}</p>}
+			</CardHeader>
+			<CardContent className="space-y-5 border-t pt-5">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+					<div className="min-w-0 flex-1">
+						<h3 className="font-medium text-foreground">Read-only subscription</h3>
+						<p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+							Share a subscribe-only link so others can view (but not edit) these contacts. You can set a password so only people you share
+							it with can use the link.
+						</p>
+					</div>
+					<div className="flex shrink-0 items-center gap-3">
+						<span className="text-sm text-muted-foreground">{readonlyEnabled ? 'On' : 'Off'}</span>
+						<Switch id={`readonly-toggle-${book.id}`} checked={readonlyEnabled} onCheckedChange={handleReadonlyToggle} />
+					</div>
+				</div>
+
+				{readonlyEnabled && (
+					<div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+						<Field>
+							<FieldLabel htmlFor={`readonly-password-${book.id}`} className="text-foreground">
+								Read-only Password
+							</FieldLabel>
+							<FieldContent className="">
+								<Input
+									id={`readonly-password-${book.id}`}
+									type="password"
+									value={readonlyPassword}
+									onChange={e => {
+										setReadonlyPassword(e.target.value)
+										setReadonlyError(null)
+									}}
+									placeholder="Set a password to secure the link"
+									autoComplete="new-password"
+									className="max-w-xs"
+								/>
+								{readonlyPassword.trim() && (
+									<Button variant="secondary" size="sm" onClick={handleChangePassword} disabled={updateMutation.isPending}>
+										{updateMutation.isPending ? 'Saving…' : 'Save password'}
+									</Button>
+								)}
+								{!readonlyPassword && (
+									<span className="text-sm text-muted-foreground">Optional — leave empty to use a random password until you set one.</span>
+								)}
+							</FieldContent>
+						</Field>
+					</div>
+				)}
+
+				{readonlyError && <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{readonlyError}</p>}
+			</CardContent>
+		</Card>
+	)
+}
 
 function BooksPage() {
 	const queryClient = useQueryClient()
@@ -69,53 +249,46 @@ function BooksPage() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center">Loading address books...</div>
+			<div className="container mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
+				<div className="h-16 w-64 animate-pulse rounded bg-muted" />
+				<div className="space-y-6">
+					<div className="h-48 animate-pulse rounded-lg bg-muted" />
+					<div className="h-48 animate-pulse rounded-lg bg-muted" />
+				</div>
 			</div>
 		)
 	}
 
 	return (
-		<div className="container mx-auto p-6 gap-6 flex flex-col max-w-3xl">
-			<div className="flex justify-between items-center">
-				<div className="flex items-center gap-3">
-					<BookOpen className="w-8 h-8" />
-					<h1 className="text-3xl font-bold">Books</h1>
+		<div className="container mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Address books</h1>
+					<p className="mt-1 text-sm text-muted-foreground">Manage books and read-only subscription links.</p>
 				</div>
-				<Button onClick={() => setIsCreateDialogOpen(true)}>
-					<Plus className="w-4 h-4 mr-1" />
-					New Book
+				<Button onClick={() => setIsCreateDialogOpen(true)} className="shrink-0">
+					<Plus className="mr-2 h-4 w-4" />
+					New book
 				</Button>
 			</div>
 
 			{books.length === 0 ? (
-				<div className="text-center py-12 border rounded-lg">
-					<p className="text-gray-500 mb-4">No address books yet.</p>
-					<Button onClick={() => setIsCreateDialogOpen(true)}>
-						<Plus className="w-4 h-4 mr-1" />
-						Create First Book
-					</Button>
-				</div>
+				<Card className="border-dashed">
+					<CardContent className="flex flex-col items-center justify-center py-16 text-center">
+						<BookOpen className="mb-4 h-12 w-12 text-muted-foreground" />
+						<p className="text-muted-foreground mb-1">No address books yet</p>
+						<p className="mb-6 text-sm text-muted-foreground">Create one to organize contacts and share read-only links.</p>
+						<Button onClick={() => setIsCreateDialogOpen(true)}>
+							<Plus className="mr-2 h-4 w-4" />
+							Create first book
+						</Button>
+					</CardContent>
+				</Card>
 			) : (
-				<div className="rounded-md border">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Slug</TableHead>
-								<TableHead>Visibility</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{books.map(book => (
-								<TableRow key={book.id}>
-									<TableCell className="font-medium">{book.name}</TableCell>
-									<TableCell>{book.slug}</TableCell>
-									<TableCell>{book.is_public ? 'Public' : 'Private'}</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+				<div className="space-y-6">
+					{books.map(book => (
+						<BookCard key={book.id} book={book} />
+					))}
 				</div>
 			)}
 
@@ -155,7 +328,7 @@ function BooksPage() {
 							/>
 							<span>Public book</span>
 						</label>
-						{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+						{error && <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950 p-2 rounded">{error}</div>}
 					</div>
 					<DialogFooter>
 						<Button

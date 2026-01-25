@@ -176,6 +176,27 @@ export async function getAddressBooks(): Promise<Array<AddressBook>> {
 	return result.rows
 }
 
+export type AddressBookWithReadonly = AddressBook & { readonly_enabled: boolean }
+
+export async function getAddressBooksWithReadonly(): Promise<Array<AddressBookWithReadonly>> {
+	const dbPool = getPool()
+	const hasAddressBooks = await tableExists('address_books')
+	if (!hasAddressBooks) return []
+	const hasReadonly = await tableExists('address_book_readonly')
+	if (!hasReadonly) {
+		const result = await dbPool.query('SELECT *, false AS readonly_enabled FROM address_books ORDER BY name')
+		return result.rows
+	}
+	const result = await dbPool.query(
+		`SELECT b.id, b.name, b.slug, b.is_public, b.created_at, b.updated_at,
+    (abor.address_book_id IS NOT NULL) AS readonly_enabled
+    FROM address_books b
+    LEFT JOIN address_book_readonly abor ON abor.address_book_id = b.id
+    ORDER BY b.name`
+	)
+	return result.rows
+}
+
 export async function getAddressBookBySlug(slug: string): Promise<AddressBook | null> {
 	const dbPool = getPool()
 	const hasAddressBooks = await tableExists('address_books')
@@ -225,6 +246,40 @@ export async function updateAddressBook(
 		values
 	)
 	return result.rows[0]
+}
+
+export async function getAddressBook(id: string): Promise<AddressBook | null> {
+	const dbPool = getPool()
+	const hasAddressBooks = await tableExists('address_books')
+	if (!hasAddressBooks) return null
+	const result = await dbPool.query('SELECT * FROM address_books WHERE id = $1', [id])
+	return result.rows[0] || null
+}
+
+export async function getAddressBookReadonly(addressBookId: string): Promise<{ address_book_id: string; password_hash: string } | null> {
+	const dbPool = getPool()
+	if (!(await tableExists('address_book_readonly'))) return null
+	const result = await dbPool.query('SELECT address_book_id, password_hash FROM address_book_readonly WHERE address_book_id = $1', [
+		addressBookId,
+	])
+	return result.rows[0] || null
+}
+
+export async function setAddressBookReadonly(addressBookId: string, passwordHash: string | null): Promise<void> {
+	const dbPool = getPool()
+	if (!(await tableExists('address_book_readonly'))) return
+	if (!passwordHash) {
+		await dbPool.query('DELETE FROM address_book_readonly WHERE address_book_id = $1', [addressBookId])
+		return
+	}
+	await dbPool.query(
+		`
+    INSERT INTO address_book_readonly (address_book_id, password_hash)
+    VALUES ($1, $2)
+    ON CONFLICT (address_book_id) DO UPDATE SET password_hash = EXCLUDED.password_hash, updated_at = NOW()
+  `,
+		[addressBookId, passwordHash]
+	)
 }
 
 export async function getContactAddressBookIds(contactId: string): Promise<Array<string>> {

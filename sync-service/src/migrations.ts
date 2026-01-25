@@ -40,6 +40,8 @@ function getMigrationFiles(): string[] {
 		'09_add_contact_photo.sql',
 		'10_add_vcard_v3_fields.sql',
 		'11_address_books.sql',
+		'12_address_book_path_migration_sentinel.sql',
+		'13_address_book_readonly.sql',
 	]
 }
 

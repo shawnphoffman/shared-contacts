@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Check, Copy, Lock, Server, User } from 'lucide-react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Button } from '../components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
@@ -16,10 +16,26 @@ interface RadicaleUser {
 	username: string
 }
 
+interface AddressBook {
+	id: string
+	name: string
+	slug: string
+	is_public: boolean
+	readonly_enabled?: boolean
+}
+
 async function fetchUsers(): Promise<Array<RadicaleUser>> {
 	const response = await fetch('/api/radicale-users')
 	if (!response.ok) {
 		throw new Error('Failed to fetch users')
+	}
+	return response.json()
+}
+
+async function fetchAddressBooks(): Promise<Array<AddressBook>> {
+	const response = await fetch('/api/address-books?readonly=1')
+	if (!response.ok) {
+		throw new Error('Failed to fetch address books')
 	}
 	return response.json()
 }
@@ -66,10 +82,9 @@ function getProxyUIBaseUrl(): string {
 	return 'https://contacts.example.com'
 }
 
-function getCardDAVUrl(username: string, baseUrl: string): string {
-	// The shared contacts collection is accessible to all authenticated users
-	// The collection path is /shared-contacts (flat structure under collection-root)
-	return `${baseUrl}/${encodeURIComponent(username)}/shared-contacts/`
+/** CardDAV subscription URL for a user and address book (uses stable book id in path). */
+function getCardDAVUrl(username: string, bookId: string, baseUrl: string): string {
+	return `${baseUrl}/${encodeURIComponent(username)}/${encodeURIComponent(bookId)}/`
 }
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -103,10 +118,15 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 }
 
 function CardDAVConnectionPage() {
-	const { data: users = [], isLoading } = useQuery({
+	const { data: users = [], isLoading: usersLoading } = useQuery({
 		queryKey: ['radicale-users'],
 		queryFn: fetchUsers,
 	})
+	const { data: addressBooks = [], isLoading: booksLoading } = useQuery({
+		queryKey: ['address-books'],
+		queryFn: fetchAddressBooks,
+	})
+	const isLoading = usersLoading || booksLoading
 
 	const directBaseUrl = getDirectCardDAVBaseUrl()
 	const directUiBaseUrl = getDirectUIBaseUrl()
@@ -137,7 +157,7 @@ function CardDAVConnectionPage() {
 	}
 
 	return (
-		<div className="container mx-auto p-6 space-y-6 max-w-5xl">
+		<div className="container mx-auto p-6 space-y-6 max-w-7xl">
 			<div>
 				<h1 className="text-3xl font-bold mb-2">CardDAV Connection</h1>
 				<div className="text-muted-foreground">Configure your CardDAV client to sync contacts with this server.</div>
@@ -154,7 +174,6 @@ function CardDAVConnectionPage() {
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div>
-
 						<div className="mt-3 space-y-3 text-sm text-muted-foreground dark:text-gray-400">
 							<div>
 								<div className="font-medium text-foreground dark:text-gray-100">Direct (no reverse proxy)</div>
@@ -162,9 +181,7 @@ function CardDAVConnectionPage() {
 									<span className="sm:hidden block text-sm uppercase text-muted-foreground">UI</span>
 									<div className="flex items-center gap-2 ">
 										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">UI</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">
-											{directUiBaseUrl}
-										</code>
+										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{directUiBaseUrl}</code>
 										<CopyButton text={directUiBaseUrl} label="Direct UI URL" />
 									</div>
 									<span className="sm:hidden block text-sm uppercase text-muted-foreground">CardDAV</span>
@@ -194,8 +211,7 @@ function CardDAVConnectionPage() {
 									</div>
 								</div>
 								<div className="mt-1">
-									Example domains: UI at <code>https://contacts.example.com</code> and CardDAV at{' '}
-									<code>https://carddav.example.com</code>.
+									Example domains: UI at <code>https://contacts.example.com</code> and CardDAV at <code>https://carddav.example.com</code>.
 								</div>
 							</div>
 						</div>
@@ -230,11 +246,11 @@ function CardDAVConnectionPage() {
 			</Card>
 
 			{/* User Connection Details */}
-			{users.length > 0 ? (
+			{users.length > 0 && addressBooks.length > 0 ? (
 				<Card>
 					<CardHeader>
-						<CardTitle>Connection Details by User</CardTitle>
-						<CardDescription>Subscription URLs for each user account</CardDescription>
+						<CardTitle>Connection Details by User and Book</CardTitle>
+						<CardDescription>Subscription URLs use stable book IDs; assign books to users on the Users page.</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className="rounded-md border">
@@ -247,36 +263,67 @@ function CardDAVConnectionPage() {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{users.map(user => {
-										const directSubscriptionUrl = getCardDAVUrl(user.username, directBaseUrl)
-										const proxySubscriptionUrl = getCardDAVUrl(user.username, proxyBaseUrl)
+									{addressBooks.map(book => {
+										const usersForBook = users.filter(user => {
+											if (user.username.startsWith('ro-')) {
+												const bookIdFromRo = user.username.slice(3)
+												return book.id === bookIdFromRo && book.readonly_enabled === true
+											}
+											return true
+										})
+										if (usersForBook.length === 0) return null
 										return (
-											<TableRow key={user.username}>
-												<TableCell className="font-medium">{user.username}</TableCell>
-												<TableCell>
-													<div className="space-y-2">
-														<div>
-															<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
-															<code className="text-sm break-all">{directSubscriptionUrl}</code>
-														</div>
-														<div>
-															<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
-															<code className="text-sm break-all">{proxySubscriptionUrl}</code>
-														</div>
-													</div>
-												</TableCell>
-												<TableCell>
-													<div className="flex flex-col gap-2">
-														<CopyButton text={directSubscriptionUrl} label="Direct Subscription URL" />
-														<CopyButton text={proxySubscriptionUrl} label="Proxy Subscription URL" />
-													</div>
-												</TableCell>
-											</TableRow>
+											<Fragment key={book.id}>
+												<TableRow className="bg-muted/50 hover:bg-muted/50">
+													<TableCell colSpan={3} className="font-medium py-2.5 text-foreground">
+														{book.name}
+													</TableCell>
+												</TableRow>
+												{usersForBook.map(user => {
+													const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
+													const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
+													return (
+														<TableRow key={`${user.username}-${book.id}`}>
+															<TableCell className="font-medium max-w-48 truncate">{user.username}</TableCell>
+															<TableCell>
+																<div className="space-y-2">
+																	<div>
+																		<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
+																		<code className="text-xs break-all">{directUrl}</code>
+																	</div>
+																	<div>
+																		<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
+																		<code className="text-xs break-all">{proxyUrl}</code>
+																	</div>
+																</div>
+															</TableCell>
+															<TableCell>
+																<div className="flex flex-col gap-2">
+																	<CopyButton text={directUrl} label="Direct Subscription URL" />
+																	<CopyButton text={proxyUrl} label="Proxy Subscription URL" />
+																</div>
+															</TableCell>
+														</TableRow>
+													)
+												})}
+											</Fragment>
 										)
 									})}
 								</TableBody>
 							</Table>
 						</div>
+					</CardContent>
+				</Card>
+			) : users.length > 0 && addressBooks.length === 0 ? (
+				<Card>
+					<CardHeader>
+						<CardTitle>No Address Books</CardTitle>
+						<CardDescription>Create an address book to see subscription URLs</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Button asChild>
+							<Link to="/books">Go to Books</Link>
+						</Button>
 					</CardContent>
 				</Card>
 			) : (
@@ -315,7 +362,7 @@ function CardDAVConnectionPage() {
 					<CardTitle>Client Configuration Instructions</CardTitle>
 					<CardDescription>Step-by-step guides for popular CardDAV clients</CardDescription>
 				</CardHeader>
-				<CardContent className="space-y-6">
+				<CardContent className="space-y-4">
 					<div className="text-sm text-muted-foreground dark:text-gray-400">
 						Choose either the proxy URL or the direct URL depending on your deployment. Do not add a <code>/carddav</code> prefix.
 					</div>
@@ -454,10 +501,12 @@ function CardDAVConnectionPage() {
 						<strong>Authentication fails:</strong> Double-check your username and password.
 					</div>
 					<div>
-						<strong>HTTPS required:</strong> Some clients require HTTPS. If using HTTP, ensure your client allows insecure connections, or set up a reverse proxy with SSL/TLS.
+						<strong>HTTPS required:</strong> Some clients require HTTPS. If using HTTP, ensure your client allows insecure connections, or
+						set up a reverse proxy with SSL/TLS.
 					</div>
 					<div>
-						<strong>No contacts appear:</strong> Make sure contacts exist in the web UI. The sync service automatically synchronizes contacts between the database and CardDAV.
+						<strong>No contacts appear:</strong> Make sure contacts exist in the web UI. The sync service automatically synchronizes
+						contacts between the database and CardDAV.
 					</div>
 				</CardContent>
 			</Card>

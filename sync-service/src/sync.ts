@@ -7,9 +7,11 @@ import {
 	Contact,
 	createContact,
 	deleteContact,
+	getAddressBookById,
 	getAddressBookBySlug,
 	getAddressBooks,
 	getAddressBooksForUser,
+	getAllAddressBookReadonly,
 	getAllContacts,
 	getContactAddressBookEntries,
 	getContactAddressBookIds,
@@ -35,18 +37,19 @@ const getErrorCode = (error: unknown): string | undefined => {
 }
 
 /**
- * Get the path to an address book in Radicale for a specific user
- * Radicale's web interface only shows collections that are children of the user's principal collection
+ * Get the path to an address book in Radicale for a specific user.
+ * Uses address book id (stable, unpredictable) not slug.
  */
-function getAddressBookPathForUser(username: string, slug: string): string {
-	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, slug)
+function getAddressBookPathForUser(username: string, bookId: string): string {
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, bookId)
 }
 
 /**
- * Get the master address book path (for file watching and conflict detection)
+ * Get the master address book path (for file watching and conflict detection).
+ * Uses address book id (stable, unpredictable) not slug.
  */
-function getAddressBookPath(slug: string): string {
-	return path.join(RADICALE_STORAGE_PATH, 'collection-root', slug)
+function getAddressBookPath(bookId: string): string {
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', bookId)
 }
 
 /**
@@ -96,13 +99,17 @@ function ensureAddressBookProps(collectionPath: string, book: AddressBook): void
 	}
 }
 
-function extractBookSlugFromPath(filePath: string): string | null {
+/**
+ * Extract the address book path segment from a file path.
+ * After migration this is the book id; before/during it can be slug.
+ * master: [bookId, filename], user: [username, bookId, filename]
+ */
+function extractBookPathSegmentFromPath(filePath: string): string | null {
 	const parts = filePath.split(path.sep).filter(Boolean)
 	const rootIndex = parts.lastIndexOf('collection-root')
 	if (rootIndex === -1) return null
 	const relative = parts.slice(rootIndex + 1)
 	if (relative.length < 2) return null
-	// master: [slug, filename], user: [username, slug, filename]
 	return relative.length >= 3 ? relative[1] : relative[0]
 }
 
@@ -116,7 +123,7 @@ async function getVCardFiles(): Promise<Array<string>> {
 
 	// Check master directories first
 	for (const book of books) {
-		const masterPath = getAddressBookPath(book.slug)
+		const masterPath = getAddressBookPath(book.id)
 		if (fs.existsSync(masterPath)) {
 			const masterFiles = fs.readdirSync(masterPath)
 			masterFiles
@@ -131,7 +138,7 @@ async function getVCardFiles(): Promise<Array<string>> {
 		for (const user of users) {
 			const userBooks = hasAddressBooks ? await getAddressBooksForUser(user.username) : books
 			for (const book of userBooks) {
-				const userPath = getAddressBookPathForUser(user.username, book.slug)
+				const userPath = getAddressBookPathForUser(user.username, book.id)
 				if (fs.existsSync(userPath)) {
 					const userFiles = fs.readdirSync(userPath)
 					userFiles
@@ -168,7 +175,7 @@ function readVCardFile(filePath: string): string | null {
  * Writes to both the master location and each user's directory
  */
 async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: string, usernames: Array<string>): Promise<void> {
-	const masterPath = getAddressBookPath(book.slug)
+	const masterPath = getAddressBookPath(book.id)
 	ensureDirectoryExists(masterPath)
 	ensureAddressBookProps(masterPath, book)
 	const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
@@ -176,13 +183,13 @@ async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: str
 
 	try {
 		for (const username of usernames) {
-			const userPath = getAddressBookPathForUser(username, book.slug)
+		const userPath = getAddressBookPathForUser(username, book.id)
 			ensureDirectoryExists(userPath)
 			ensureAddressBookProps(userPath, book)
 			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
 			fs.writeFileSync(userFilePath, vcardData, 'utf-8')
-		}
-	} catch (error) {
+	}
+} catch (error) {
 		console.error('Error writing to user directories:', error)
 	}
 }
@@ -192,7 +199,7 @@ async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: str
  * Deletes from both the master location and each user's directory
  */
 async function deleteVCardFile(book: AddressBook, vcardId: string, usernames: Array<string>): Promise<void> {
-	const masterPath = getAddressBookPath(book.slug)
+	const masterPath = getAddressBookPath(book.id)
 	const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
 	if (fs.existsSync(masterFilePath)) {
 		fs.unlinkSync(masterFilePath)
@@ -200,13 +207,13 @@ async function deleteVCardFile(book: AddressBook, vcardId: string, usernames: Ar
 
 	try {
 		for (const username of usernames) {
-			const userPath = getAddressBookPathForUser(username, book.slug)
+		const userPath = getAddressBookPathForUser(username, book.id)
 			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
 			if (fs.existsSync(userFilePath)) {
 				fs.unlinkSync(userFilePath)
 			}
-		}
-	} catch (error) {
+	}
+} catch (error) {
 		console.error('Error deleting from user directories:', error)
 	}
 }
@@ -388,7 +395,7 @@ export async function syncDbToRadicale(): Promise<void> {
 				)
 
 			const newHash = calculateVCardHash(vcardData)
-			const primaryMasterPath = getAddressBookPath(primaryBook.slug)
+			const primaryMasterPath = getAddressBookPath(primaryBook.id)
 			ensureDirectoryExists(primaryMasterPath)
 			const primaryFilePath = path.join(primaryMasterPath, `${contact.vcard_id}.vcf`)
 			const radicaleFileExists = fs.existsSync(primaryFilePath)
@@ -446,7 +453,7 @@ export async function syncDbToRadicale(): Promise<void> {
 		}
 
 		for (const book of books) {
-			const masterPath = getAddressBookPath(book.slug)
+			const masterPath = getAddressBookPath(book.id)
 			if (!fs.existsSync(masterPath)) continue
 			const masterFiles = fs.readdirSync(masterPath)
 			const masterVCardFiles = masterFiles.filter(file => (file.endsWith('.vcf') || file.endsWith('.ics')) && file !== '.Radicale.props')
@@ -460,8 +467,33 @@ export async function syncDbToRadicale(): Promise<void> {
 				if (!vcardContent) continue
 				const vcardId = extractVCardId(filePath, vcardContent)
 				if (vcardId && !existingVCardIds.has(vcardId)) {
-					console.log(`Deleting orphaned vCard file from ${book.slug}: ${vcardId}`)
+					console.log(`Deleting orphaned vCard file from ${book.id}: ${vcardId}`)
 					await deleteVCardFile(book, vcardId, usernames)
+				}
+			}
+		}
+
+		// Copy master to read-only subscription dirs (ro-{book_id}/{book_id}) for books with readonly enabled
+		const readonlyRows = await getAllAddressBookReadonly()
+		for (const row of readonlyRows) {
+			const book = bookById.get(row.address_book_id)
+			if (!book) continue
+			const masterPath = getAddressBookPath(book.id)
+			if (!fs.existsSync(masterPath)) continue
+			const roUsername = `ro-${book.id}`
+			const roPath = path.join(RADICALE_STORAGE_PATH, 'collection-root', roUsername, book.id)
+			ensureDirectoryExists(roPath)
+			ensureAddressBookProps(roPath, book)
+			const masterFiles = fs.readdirSync(masterPath)
+			for (const file of masterFiles) {
+				if (!file.endsWith('.vcf') && !file.endsWith('.ics')) continue
+				if (file === '.Radicale.props') continue
+				const src = path.join(masterPath, file)
+				const dest = path.join(roPath, file)
+				try {
+					fs.copyFileSync(src, dest)
+				} catch (err) {
+					console.warn(`Failed to copy ${file} to read-only dir for ${book.name}:`, err)
 				}
 			}
 		}
@@ -489,6 +521,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 		const vcardFiles = await getVCardFiles()
 		const { books, defaultBook, hasAddressBooks } = await getAddressBooksForSync()
 		const bookBySlug = new Map(books.map(book => [book.slug, book]))
+		const bookById = new Map(books.map(book => [book.id, book]))
 
 		const dbContacts = await getAllContacts()
 		const dbContactsByVcardId = new Map<string, Contact>()
@@ -555,9 +588,11 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				continue
 			}
 
-			const bookSlug = extractBookSlugFromPath(filePath)
+			const pathSegment = extractBookPathSegmentFromPath(filePath)
 			const book =
-				(bookSlug && bookBySlug.get(bookSlug)) || (bookSlug === 'shared-contacts' ? defaultBook : null)
+				(pathSegment && bookById.get(pathSegment)) ||
+				(pathSegment && bookBySlug.get(pathSegment)) ||
+				(pathSegment === 'shared-contacts' ? defaultBook : null)
 			if (!book) {
 				console.warn(`Unknown address book for ${filePath}, skipping`)
 				continue
@@ -770,13 +805,13 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 						sync_source: 'radicale',
 					})
 
-					const masterPath = getAddressBookPath(book.slug)
+					const masterPath = getAddressBookPath(book.id)
 					const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
 					if (!fs.existsSync(masterFilePath)) {
 						ensureDirectoryExists(masterPath)
 						ensureAddressBookProps(masterPath, book)
 						fs.writeFileSync(masterFilePath, vcardContent, 'utf-8')
-						console.log(`Copied new contact ${vcardId} into ${book.slug} master directory`)
+						console.log(`Copied new contact ${vcardId} into ${book.id} master directory`)
 					}
 
 					created++
@@ -860,7 +895,7 @@ export async function startWatchingRadicale(): Promise<void> {
 	const watchedPaths = new Set<string>()
 
 	for (const book of books) {
-		const masterPath = getAddressBookPath(book.slug)
+		const masterPath = getAddressBookPath(book.id)
 		ensureDirectoryExists(masterPath)
 		if (!watchedPaths.has(masterPath)) {
 			const masterWatcher = watch(masterPath, {
@@ -881,7 +916,7 @@ export async function startWatchingRadicale(): Promise<void> {
 		for (const user of users) {
 			const userBooks = hasAddressBooks ? await getAddressBooksForUser(user.username) : books
 			for (const book of userBooks) {
-				const userPath = getAddressBookPathForUser(user.username, book.slug)
+				const userPath = getAddressBookPathForUser(user.username, book.id)
 				ensureDirectoryExists(userPath)
 				if (watchedPaths.has(userPath)) continue
 				const userWatcher = watch(userPath, {
@@ -957,10 +992,11 @@ export async function startWatchingRadicale(): Promise<void> {
 			if (vcardId) {
 				const contact = await getContactByVcardId(vcardId)
 				if (contact) {
-					const bookSlug = extractBookSlugFromPath(filePath)
+					const pathSegment = extractBookPathSegmentFromPath(filePath)
 					const book =
-						(bookSlug && (await getAddressBookBySlug(bookSlug))) ||
-						(bookSlug === 'shared-contacts' ? await getDefaultAddressBook() : null)
+						(pathSegment && (await getAddressBookById(pathSegment))) ||
+						(pathSegment && (await getAddressBookBySlug(pathSegment))) ||
+						(pathSegment === 'shared-contacts' ? await getDefaultAddressBook() : null)
 
 					if (book && hasAddressBooks) {
 						const currentBookIds = new Set(await getContactAddressBookIds(contact.id))

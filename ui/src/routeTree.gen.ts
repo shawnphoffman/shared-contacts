@@ -28,6 +28,7 @@ import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merg
 import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
 import { Route as ApiContactsDuplicatesRouteImport } from './routes/api/contacts.duplicates'
 import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
+import { Route as ApiContactsBulkBooksRouteImport } from './routes/api/contacts.bulk-books'
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
 import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/address-books.memberships'
 import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-books.$id'
@@ -130,6 +131,11 @@ const ApiContactsDeduplicateRoute = ApiContactsDeduplicateRouteImport.update({
   path: '/deduplicate',
   getParentRoute: () => ApiContactsRoute,
 } as any)
+const ApiContactsBulkBooksRoute = ApiContactsBulkBooksRouteImport.update({
+  id: '/bulk-books',
+  path: '/bulk-books',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
 const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
+  '/api/contacts/bulk-books': typeof ApiContactsBulkBooksRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
+  '/api/contacts/bulk-books': typeof ApiContactsBulkBooksRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
+  '/api/contacts/bulk-books': typeof ApiContactsBulkBooksRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
     | '/api/contacts/$id'
+    | '/api/contacts/bulk-books'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
     | '/api/contacts/import'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
     | '/api/contacts/$id'
+    | '/api/contacts/bulk-books'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
     | '/api/contacts/import'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
     | '/api/contacts/$id'
+    | '/api/contacts/bulk-books'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
     | '/api/contacts/import'
@@ -470,6 +482,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactsDeduplicateRouteImport
       parentRoute: typeof ApiContactsRoute
     }
+    '/api/contacts/bulk-books': {
+      id: '/api/contacts/bulk-books'
+      path: '/bulk-books'
+      fullPath: '/api/contacts/bulk-books'
+      preLoaderRoute: typeof ApiContactsBulkBooksRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
     '/api/contacts/$id': {
       id: '/api/contacts/$id'
       path: '/$id'
@@ -536,6 +555,7 @@ const ApiContactsIdRouteWithChildren = ApiContactsIdRoute._addFileChildren(
 
 interface ApiContactsRouteChildren {
   ApiContactsIdRoute: typeof ApiContactsIdRouteWithChildren
+  ApiContactsBulkBooksRoute: typeof ApiContactsBulkBooksRoute
   ApiContactsDeduplicateRoute: typeof ApiContactsDeduplicateRoute
   ApiContactsDuplicatesRoute: typeof ApiContactsDuplicatesRoute
   ApiContactsImportRoute: typeof ApiContactsImportRoute
@@ -544,6 +564,7 @@ interface ApiContactsRouteChildren {
 
 const ApiContactsRouteChildren: ApiContactsRouteChildren = {
   ApiContactsIdRoute: ApiContactsIdRouteWithChildren,
+  ApiContactsBulkBooksRoute: ApiContactsBulkBooksRoute,
   ApiContactsDeduplicateRoute: ApiContactsDeduplicateRoute,
   ApiContactsDuplicatesRoute: ApiContactsDuplicatesRoute,
   ApiContactsImportRoute: ApiContactsImportRoute,

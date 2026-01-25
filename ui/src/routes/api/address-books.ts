@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { createAddressBook, getAddressBooks } from '../../lib/db'
+import { createAddressBook, getAddressBooks, getAddressBooksWithReadonly } from '../../lib/db'
 
 function slugify(value: string): string {
 	return value
@@ -13,9 +13,11 @@ function slugify(value: string): string {
 export const Route = createFileRoute('/api/address-books')({
 	server: {
 		handlers: {
-			GET: async () => {
+			GET: async ({ request }) => {
 				try {
-					const books = await getAddressBooks()
+					const url = new URL(request.url)
+					const withReadonly = url.searchParams.get('readonly') === '1'
+					const books = withReadonly ? await getAddressBooksWithReadonly() : await getAddressBooks()
 					return json(books)
 				} catch (error) {
 					console.error('Error fetching address books:', error)

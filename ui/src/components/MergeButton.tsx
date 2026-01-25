@@ -61,7 +61,7 @@ export function MergeButton({ contactIds, onMergeSuccess }: MergeButtonProps) {
 			) : (
 				<>
 					<Merge className="w-4 h-4 mr-1" />
-					Merge {contactIds.length} Contacts
+					Merge {contactIds.length}
 				</>
 			)}
 		</Button>

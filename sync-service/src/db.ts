@@ -116,8 +116,22 @@ export async function getAddressBookBySlug(slug: string): Promise<AddressBook | 
 	return result.rows[0] || null
 }
 
+export async function getAddressBookById(id: string): Promise<AddressBook | null> {
+	if (!(await tableExists('address_books'))) return null
+	const pool = getPool()
+	const result = await pool.query('SELECT * FROM address_books WHERE id = $1', [id])
+	return result.rows[0] || null
+}
+
 export async function getDefaultAddressBook(): Promise<AddressBook | null> {
 	return getAddressBookBySlug('shared-contacts')
+}
+
+export async function getAllAddressBookReadonly(): Promise<Array<{ address_book_id: string; password_hash: string }>> {
+	if (!(await tableExists('address_book_readonly'))) return []
+	const pool = getPool()
+	const result = await pool.query('SELECT address_book_id, password_hash FROM address_book_readonly')
+	return result.rows
 }
 
 export async function getContactAddressBookIds(contactId: string): Promise<string[]> {
