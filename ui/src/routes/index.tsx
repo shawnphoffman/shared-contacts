@@ -446,7 +446,7 @@ function ContactsIndexPage() {
 			</div>
 
 			<div className="space-y-4">
-				<div className="flex-row flex gap-2 items-center">
+				<div className="flex flex-col sm:flex-row gap-2 sm:items-center">
 					<div className="relative flex-1">
 						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
 						<Input
@@ -457,24 +457,26 @@ function ContactsIndexPage() {
 							className="pl-10"
 						/>
 					</div>
-					{addressBooks.length > 0 && (
-						<select
-							value={selectedBookId}
-							onChange={e => setSelectedBookId(e.target.value)}
-							className="h-9 px-2 rounded-md border border-input bg-background text-sm"
-							aria-label="Filter by address book"
-						>
-							<option value="all">All books</option>
-							{addressBooks.map(book => (
-								<option key={book.id} value={book.id}>
-									{book.name}
-								</option>
-							))}
-						</select>
-					)}
-					<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-						<RefreshCw className="size-4" />
-					</Button>
+					<div className="flex flex-row gap-2">
+						{addressBooks.length > 0 && (
+							<select
+								value={selectedBookId}
+								onChange={e => setSelectedBookId(e.target.value)}
+								className="h-9 px-2 rounded-md border border-input bg-background text-sm flex-1"
+								aria-label="Filter by address book"
+							>
+								<option value="all">All books</option>
+								{addressBooks.map(book => (
+									<option key={book.id} value={book.id}>
+										{book.name}
+									</option>
+								))}
+							</select>
+						)}
+						<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+							<RefreshCw className="size-4" />
+						</Button>
+					</div>
 				</div>
 				{selectedContactIds.length >= 1 && (
 					<div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-end">
