@@ -1,6 +1,12 @@
 # Radicale rights configuration
 # Full users: RW access to their own collections.
 # Read-only subscription users (ro-*): R only to their own collection.
+# Root: allow authenticated (non–read-only) users to access / for discovery and web UI.
+
+[root]
+user: ^(?!ro-).+
+collection: ^$
+permissions: Rr
 
 [owner-only]
 user: ^(?!ro-).+

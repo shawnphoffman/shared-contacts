@@ -366,6 +366,9 @@ function CardDAVConnectionPage() {
 					<div className="text-sm text-muted-foreground dark:text-gray-400">
 						Choose either the proxy URL or the direct URL depending on your deployment. Do not add a <code>/carddav</code> prefix.
 					</div>
+					<div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+						<strong>macOS Contacts (Server Settings):</strong> Set <strong>Server Path</strong> to the full path from the table above (e.g. <code>/shawn/1f2339a0-20b7-402f-bd79-0b068785894c/</code>). Do <strong>not</strong> use <code>/principals/user/</code> or you will get 403 Forbidden.
+					</div>
 					<Accordion type="single" collapsible className="w-full">
 						<AccordionItem value="ios">
 							<AccordionTrigger>iOS Contacts</AccordionTrigger>
@@ -464,20 +467,19 @@ function CardDAVConnectionPage() {
 									<li>Click "+" → "Other Contacts Account"</li>
 									<li>Select "CardDAV" as account type</li>
 									<li>
-										Enter:
+										In <strong>Account Information</strong>: User name and Password (your CardDAV credentials).
+									</li>
+									<li>
+										In <strong>Server Settings</strong>:
 										<ul className="list-disc list-inside ml-4 mt-1">
 											<li>
-												<strong>Server URL (proxy):</strong> {proxyBaseUrl}
+												<strong>Server Address:</strong> host only, e.g. {proxyBaseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
 											</li>
 											<li>
-												<strong>Server URL (direct):</strong> {directBaseUrl}
+												<strong>Server Path:</strong> use the <em>full path</em> from the subscription URL above (e.g. <code>/username/book-id/</code>). Do <strong>not</strong> use <code>/principals/user/</code> — this server does not use principal paths.
 											</li>
-											<li>
-												<strong>User name:</strong> Your CardDAV username
-											</li>
-											<li>
-												<strong>Password:</strong> Your CardDAV password
-											</li>
+											<li>Port: 443 for HTTPS, 5232 for direct</li>
+											<li>Use SSL: on for HTTPS</li>
 										</ul>
 									</li>
 									<li>Click "Sign In"</li>

@@ -502,7 +502,7 @@ function ContactsIndexPage() {
 								className="h-9 px-2 rounded-md border border-input bg-background text-sm flex-1"
 								aria-label="Filter by address book"
 							>
-								<option value="all">All books</option>
+								<option value="all">All Books</option>
 								{addressBooks.map(book => (
 									<option key={book.id} value={book.id}>
 										{book.name}
