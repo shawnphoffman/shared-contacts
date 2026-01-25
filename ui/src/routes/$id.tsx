@@ -118,7 +118,7 @@ function ContactDetailPage() {
 	if (isEditing) {
 		return (
 			<div className="container mx-auto p-6 max-w-2xl">
-				<h1 className="text-3xl font-bold mb-6">Edit Contact</h1>
+				<h1 className="text-3xl font-bold">Edit Contact</h1>
 				<ContactForm
 					contact={contact}
 					onSubmit={async data => {
@@ -179,10 +179,10 @@ function ContactDetailPage() {
 	)
 
 	return (
-		<div className="container mx-auto p-6 max-w-2xl">
-			<div className="flex justify-between items-center mb-6">
+		<div className="container mx-auto p-6 max-w-2xl flex flex-col gap-4">
+			<div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
 				<div className="flex items-center gap-4">
-					<div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500">
+					<div className="h-20 w-20 shrink-0 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500 aspect-square">
 						{showPhoto && (
 							<img
 								src={getContactPhotoUrl(contact)}
@@ -195,19 +195,19 @@ function ContactDetailPage() {
 					</div>
 					<h1 className="text-3xl font-bold">{displayName}</h1>
 				</div>
-				<div className="flex gap-2">
-					<Button variant="outline" onClick={() => setIsEditing(true)}>
-						<Edit className="w-4 h-4 mr-1" />
+				<div className="flex-row flex gap-2">
+					<Button variant="outline" onClick={() => setIsEditing(true)} className="flex-1">
+						<Edit className="size-4" />
 						Edit
 					</Button>
-					<Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-						<Trash2 className="w-4 h-4 mr-1" />
+					<Button variant="destructive" onClick={() => setShowDeleteDialog(true)} className="flex-1">
+						<Trash2 className="size-4" />
 						Delete
 					</Button>
 				</div>
 			</div>
 			{addressBooks.length > 0 && (
-				<div className="flex flex-wrap gap-2 mb-6">
+				<div className="flex flex-wrap gap-2">
 					{addressBooks.map(book => (
 						<span key={book.id} className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
 							{book.name}

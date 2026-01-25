@@ -11,9 +11,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
+import { Checkbox } from './ui/checkbox'
 import type { CropArea } from '../lib/image'
 import type { AddressBook, Contact, ContactField } from '../lib/db'
-import { Checkbox } from './ui/checkbox'
 
 export type ContactPayload = Partial<Contact> & {
 	photo_data?: string
@@ -416,7 +416,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 	const shouldShowAdvancedField = (hasValue: boolean) => showAdvanced || hasValue
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-4">
+		<form onSubmit={handleSubmit} className="space-y-6">
 			<div className="flex items-center gap-4">
 				<div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
 					{photoPreviewUrl ? (
