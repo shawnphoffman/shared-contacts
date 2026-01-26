@@ -19,10 +19,9 @@ npm run build
 npm run start
 ```
 
-## Lint + Format + Test
+## Lint + Format
 
 ```bash
 npm run lint
 npm run format
-npm test
 ```
