@@ -6,19 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.14.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.13.2...v0.14.0) (2026-01-26)
+## [0.15.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.14.0...v0.15.0) (2026-01-26)
 
 ### Features
 
-* implement cleanup of old nested directories for users without access to certain books, enhancing user access management ([6151ae3](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/6151ae36e39f19ca397b1837958af95de2e1322a))
+* add optional public URLs for CardDAV connection in environment configuration and update connection logic in UI ([8da8a34](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/8da8a3469e9aae943b5edd7887cc908418b79fbf))
+* add password visibility toggle and auto-generate slug functionality in BooksPage ([9f9d1e7](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/9f9d1e791aa7cbf55e0241ab93b1845ecaa3bd04))
+* enhance password input UI with improved layout and visibility toggle in BookCard component ([bbb0c05](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/bbb0c0581ba29ce12ed9a181ca9b6fe21377c954))
+
+### Bug Fixes
+
+* clarify CardDAV connection instructions and improve UI for displaying URLs in CardDAVConnectionPage ([740f982](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/740f982d7dbf9966d49030c12ed42c891fc92423))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.15.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.14.0...v0.15.0)
+
+- 🐛 Fix: clarify CardDAV connection instructions and improve UI for displaying URLs in CardDAVConnectionPage [`740f982`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/740f982d7dbf9966d49030c12ed42c891fc92423)
+- ✨ Feature: add password visibility toggle and auto-generate slug functionality in BooksPage [`9f9d1e7`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/9f9d1e791aa7cbf55e0241ab93b1845ecaa3bd04)
+- ✨ Feature: enhance password input UI with improved layout and visibility toggle in BookCard component [`bbb0c05`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/bbb0c0581ba29ce12ed9a181ca9b6fe21377c954)
+- ✨ Feature: add optional public URLs for CardDAV connection in environment configuration and update connection logic in UI [`8da8a34`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/8da8a3469e9aae943b5edd7887cc908418b79fbf)
+- ♻️ Refactor: streamline JSX structure in RadicaleUsersPage and enhance dialog title with selected user context [`9f1d0ac`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/9f1d0ace1a1233f0ccd07ba24201feb127bfb9e5)
+
 #### [v0.14.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.2...v0.14.0)
 
+> 26 January 2026
+
 - ✨ Feature: implement cleanup of old nested directories for users without access to certain books, enhancing user access management [`6151ae3`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6151ae36e39f19ca397b1837958af95de2e1322a)
+- 🔧 Chore: release v0.14.0 [`4e4d00d`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/4e4d00d9535271f17c4cf3589b32f068640c807d)
 
 #### [v0.13.2](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.1...v0.13.2)
 
