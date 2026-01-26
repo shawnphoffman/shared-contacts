@@ -204,7 +204,7 @@ function CardDAVConnectionPage() {
 										<CopyButton text={directBaseUrl} label="Direct CardDAV URL" />
 									</div>
 								</div>
-								<div className="mt-1">Hit the Radicale port directly (default 5232).</div>
+								<div className="mt-1">If exposed, hit the Radicale port directly (default 5232).</div>
 							</div>
 							<Separator />
 							<div>
@@ -223,9 +223,9 @@ function CardDAVConnectionPage() {
 										<CopyButton text={proxyBaseUrl} label="Proxy CardDAV URL" />
 									</div>
 								</div>
-								<div className="mt-1">
+								{/* <div className="mt-1">
 									Example domains: UI at <code>https://contacts.example.com</code> and CardDAV at <code>https://carddav.example.com</code>.
-								</div>
+								</div> */}
 							</div>
 						</div>
 					</div>
@@ -264,7 +264,10 @@ function CardDAVConnectionPage() {
 					<CardHeader>
 						<CardTitle>Connection Details by User and Book</CardTitle>
 						<CardDescription>
-							Assign books to users on the Users page. Each address book gets its own CardDAV account using composite usernames (<code>username-bookid</code>). This avoids Apple Contacts limitations where only one book per account is shown. Use the composite username and Server Path <code>/username-bookid/</code> (e.g., <code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>) when adding accounts in CardDAV clients.
+							Assign books to users on the Users page. Each address book gets its own CardDAV account using composite usernames (
+							<code>username-bookid</code>). This avoids Apple Contacts limitations where only one book per account is shown. Use the
+							composite username and Server Path <code>/username-bookid/</code> (e.g.,{' '}
+							<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>) when adding accounts in CardDAV clients.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -304,30 +307,46 @@ function CardDAVConnectionPage() {
 													const compositeUsername = `${user.username}-${book.id}`
 													const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
 													const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
+													const urlsAreSame = directUrl === proxyUrl
 													return (
 														<TableRow key={`${user.username}-${book.id}`}>
 															<TableCell className="font-medium max-w-48 truncate">
 																<div className="space-y-1">
 																	<div className="text-xs text-muted-foreground">{user.username}</div>
-																	<div className="font-mono text-xs">{compositeUsername}</div>
+																	<div className="font-mono text-xs truncate">{compositeUsername}</div>
 																</div>
 															</TableCell>
 															<TableCell>
 																<div className="space-y-2">
-																	<div>
-																		<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
-																		<code className="text-xs break-all">{directUrl}</code>
-																	</div>
-																	<div>
-																		<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
-																		<code className="text-xs break-all">{proxyUrl}</code>
-																	</div>
+																	{urlsAreSame ? (
+																		<div>
+																			<div className="text-[11px] uppercase text-muted-foreground">URL</div>
+																			<code className="text-xs break-all">{directUrl}</code>
+																		</div>
+																	) : (
+																		<>
+																			<div>
+																				<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
+																				<code className="text-xs break-all">{directUrl}</code>
+																			</div>
+																			<div>
+																				<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
+																				<code className="text-xs break-all">{proxyUrl}</code>
+																			</div>
+																		</>
+																	)}
 																</div>
 															</TableCell>
 															<TableCell>
 																<div className="flex flex-col gap-2">
-																	<CopyButton text={directUrl} label="Direct Subscription URL" />
-																	<CopyButton text={proxyUrl} label="Proxy Subscription URL" />
+																	{urlsAreSame ? (
+																		<CopyButton text={directUrl} label="Subscription URL" />
+																	) : (
+																		<>
+																			<CopyButton text={directUrl} label="Direct Subscription URL" />
+																			<CopyButton text={proxyUrl} label="Proxy Subscription URL" />
+																		</>
+																	)}
 																</div>
 															</TableCell>
 														</TableRow>
@@ -392,17 +411,6 @@ function CardDAVConnectionPage() {
 				<CardContent className="space-y-4">
 					<div className="text-sm text-muted-foreground dark:text-gray-400">
 						Choose either the proxy URL or the direct URL depending on your deployment. Do not add a <code>/carddav</code> prefix.
-					</div>
-					<div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 space-y-2">
-						<div>
-							<strong>macOS Contacts Limitation:</strong> Apple Contacts on macOS has a known bug where it only shows <strong>one address book per CardDAV account</strong>, even when the server exposes multiple collections. It typically shows an "All" group and only syncs contacts from the first collection.
-						</div>
-						<div>
-							<strong>Solution:</strong> Each address book uses a composite username (<code>username-bookid</code>). When adding a CardDAV account in Contacts, use the <strong>composite username</strong> from the table above (e.g., <code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>) and Server Path <code>/username-bookid/</code> (e.g., <code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book appears as a separate account, avoiding Apple Contacts limitations.
-						</div>
-						<div className="text-xs italic">
-							Note: iOS Contacts handles multiple collections better, but macOS Contacts requires this workaround. This is an Apple limitation, not a server issue.
-						</div>
 					</div>
 					<Accordion type="single" collapsible className="w-full">
 						<AccordionItem value="ios">
@@ -496,6 +504,24 @@ function CardDAVConnectionPage() {
 						<AccordionItem value="macos">
 							<AccordionTrigger>macOS Contacts</AccordionTrigger>
 							<AccordionContent>
+								<div className="mb-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+									<div>
+										<strong>macOS Contacts Limitation:</strong> Apple Contacts on macOS has a known bug where it only shows{' '}
+										<strong>one address book per CardDAV account</strong>, even when the server exposes multiple collections. It typically shows
+										an "All" group and only syncs contacts from the first collection.
+									</div>
+									<div>
+										<strong>Solution:</strong> Each address book uses a composite username (<code>username-bookid</code>). When adding a CardDAV
+										account in Contacts, use the <strong>composite username</strong> from the table above (e.g.,{' '}
+										<code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>) and Server Path <code>/username-bookid/</code> (e.g.,{' '}
+										<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book appears as a separate account, avoiding Apple
+										Contacts limitations.
+									</div>
+									<div className="text-xs italic">
+										Note: iOS Contacts handles multiple collections better, but macOS Contacts requires this workaround. This is an Apple
+										limitation, not a server issue.
+									</div>
+								</div>
 								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
 									<li>Open Contacts app</li>
 									<li>Go to Contacts → Settings → Accounts</li>
@@ -511,10 +537,14 @@ function CardDAVConnectionPage() {
 												<strong>Server Address:</strong> host only, e.g. {proxyBaseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
 											</li>
 											<li>
-												<strong>Username:</strong> Use the <strong>composite username</strong> from the table above (e.g., <code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>).
+												<strong>Username:</strong> Use the <strong>composite username</strong> from the table above (e.g.,{' '}
+												<code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>).
 											</li>
 											<li>
-												<strong>Server Path:</strong> Use <code>/username-bookid/</code> matching the composite username (e.g., <code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book uses its own composite username, so each appears as a separate account. Do <strong>not</strong> use <code>/principals/user/</code> — this server does not use principal paths.
+												<strong>Server Path:</strong> Use <code>/username-bookid/</code> matching the composite username (e.g.,{' '}
+												<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book uses its own composite username, so
+												each appears as a separate account. Do <strong>not</strong> use <code>/principals/user/</code> — this server does
+												not use principal paths.
 											</li>
 											<li>Port: 443 for HTTPS, 5232 for direct</li>
 											<li>Use SSL: on for HTTPS</li>
