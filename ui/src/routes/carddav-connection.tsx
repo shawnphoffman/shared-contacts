@@ -57,27 +57,27 @@ function getDirectUIBaseUrl(): string {
 }
 
 function getProxyCardDAVBaseUrl(): string {
+	// Check for configured URL first
+	if (import.meta.env.PUBLIC_CARDDAV_URL) {
+		return import.meta.env.PUBLIC_CARDDAV_URL
+	}
+	// Fall back to current location
 	if (typeof window !== 'undefined') {
-		const { hostname } = window.location
-		if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
-			return 'https://carddav.example.com'
-		}
-		const carddavHost = hostname.startsWith('contacts.') ? hostname.replace(/^contacts\./, 'carddav.') : `carddav.${hostname}`
-		return `https://${carddavHost}`
+		const { protocol, hostname } = window.location
+		return `${protocol}//${hostname}:5232`
 	}
 	return 'https://carddav.example.com'
 }
 
 function getProxyUIBaseUrl(): string {
+	// Check for configured URL first
+	if (import.meta.env.PUBLIC_UI_URL) {
+		return import.meta.env.PUBLIC_UI_URL
+	}
+	// Fall back to current location
 	if (typeof window !== 'undefined') {
-		const { hostname, protocol } = window.location
-		if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
-			return 'https://contacts.example.com'
-		}
-		if (hostname.startsWith('carddav.')) {
-			return `${protocol}//${hostname.replace(/^carddav\./, 'contacts.')}`
-		}
-		return `${protocol}//${hostname}`
+		const { protocol, hostname } = window.location
+		return `${protocol}//${hostname}:3030`
 	}
 	return 'https://contacts.example.com'
 }

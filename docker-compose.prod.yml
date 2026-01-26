@@ -32,6 +32,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-ChangeMePlease!!!}@shared-contacts-postgres:5432/sharedcontacts
       SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
+      # Optional: Public URLs for CardDAV connection page (used for convenience only)
+      # If not set, URLs will be derived from the current location
+      # PUBLIC_UI_URL: https://contacts.example.com
+      # PUBLIC_CARDDAV_URL: https://carddav.example.com
     volumes:
       - radicale_data:/data
     # ports:
@@ -60,25 +64,25 @@ services:
     #   - traefik.http.middlewares.redir-https.redirectscheme.scheme=https
     #   # CONTACTS
     #   - traefik.http.routers.contacts.service=contacts
-    #   - traefik.http.routers.contacts.rule=Host(`contacts.yourdomain`)
+    #   - traefik.http.routers.contacts.rule=Host(`contacts.example.com`)
     #   - traefik.http.routers.contacts.entrypoints=websecure
     #   - traefik.http.routers.contacts.tls=true
     #   - traefik.http.routers.contacts.tls.certresolver=cloudflare
     #   - traefik.http.services.contacts.loadbalancer.server.port=3030
     #   # - HTTP > HTTPS
     #   - traefik.http.routers.contacts-http.entrypoints=web
-    #   - traefik.http.routers.contacts-http.rule=Host(`contacts.yourdomain`)
+    #   - traefik.http.routers.contacts-http.rule=Host(`contacts.example.com`)
     #   - traefik.http.routers.contacts-http.middlewares=redir-https
     #   # CARDDAV
     #   - traefik.http.routers.radicale.service=radicale
-    #   - traefik.http.routers.radicale.rule=Host(`carddav.yourdomain`)
+    #   - traefik.http.routers.radicale.rule=Host(`carddav.example.com`)
     #   - traefik.http.routers.radicale.entrypoints=websecure
     #   - traefik.http.routers.radicale.tls=true
     #   - traefik.http.routers.radicale.tls.certresolver=cloudflare
     #   - traefik.http.services.radicale.loadbalancer.server.port=5232
     #   # - HTTP > HTTPS
     #   - traefik.http.routers.radicale-http.entrypoints=web
-    #   - traefik.http.routers.radicale-http.rule=Host(`carddav.yourdomain`)
+    #   - traefik.http.routers.radicale-http.rule=Host(`carddav.example.com`)
     #   - traefik.http.routers.radicale-http.middlewares=redir-https
 
 networks:
