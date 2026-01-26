@@ -6,15 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.13.2](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.13.1...v0.13.2) (2026-01-26)
+## [0.14.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.13.2...v0.14.0) (2026-01-26)
+
+### Features
+
+* implement cleanup of old nested directories for users without access to certain books, enhancing user access management ([6151ae3](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/6151ae36e39f19ca397b1837958af95de2e1322a))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.14.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.2...v0.14.0)
+
+- ✨ Feature: implement cleanup of old nested directories for users without access to certain books, enhancing user access management [`6151ae3`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/6151ae36e39f19ca397b1837958af95de2e1322a)
+
 #### [v0.13.2](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.1...v0.13.2)
 
+> 26 January 2026
+
 - 🔧 Chore: update package-lock.json to version 0.110.0 for multiple dependencies, including oxc-minify and oxc-transform, and upgrade various packages such as pg and prettier [`9044540`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/904454032a7f04ebcf2707fd6f1dc02382ac75e0)
+- 🔧 Chore: release v0.13.2 [`de89950`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/de89950f4d0e138b994a3663a171d9a1ded5b0f4)
 
 #### [v0.13.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.0...v0.13.1)
 
