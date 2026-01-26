@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Plus } from 'lucide-react'
+import { BookOpen, Eye, EyeOff, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
@@ -79,6 +79,7 @@ function BookCard({ book }: { book: AddressBook }) {
 	const queryClient = useQueryClient()
 	const [nameDraft, setNameDraft] = useState(book.name)
 	const [readonlyPassword, setReadonlyPassword] = useState('')
+	const [showPassword, setShowPassword] = useState(false)
 	const [nameError, setNameError] = useState<string | null>(null)
 	const [readonlyError, setReadonlyError] = useState<string | null>(null)
 
@@ -192,18 +193,28 @@ function BookCard({ book }: { book: AddressBook }) {
 								Read-only Password
 							</FieldLabel>
 							<FieldContent className="">
-								<Input
-									id={`readonly-password-${book.id}`}
-									type="password"
-									value={readonlyPassword}
-									onChange={e => {
-										setReadonlyPassword(e.target.value)
-										setReadonlyError(null)
-									}}
-									placeholder="Set a password to secure the link"
-									autoComplete="new-password"
-									className="max-w-xs"
-								/>
+								<div className="relative max-w-xs">
+									<Input
+										id={`readonly-password-${book.id}`}
+										type={showPassword ? 'text' : 'password'}
+										value={readonlyPassword}
+										onChange={e => {
+											setReadonlyPassword(e.target.value)
+											setReadonlyError(null)
+										}}
+										placeholder="Set a password to secure the link"
+										autoComplete="new-password"
+										className="pr-10"
+									/>
+									<button
+										type="button"
+										onClick={() => setShowPassword(!showPassword)}
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+										aria-label={showPassword ? 'Hide password' : 'Show password'}
+									>
+										{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+									</button>
+								</div>
 								{readonlyPassword.trim() && (
 									<Button variant="secondary" size="sm" onClick={handleChangePassword} disabled={updateMutation.isPending}>
 										{updateMutation.isPending ? 'Saving…' : 'Save password'}
@@ -223,11 +234,20 @@ function BookCard({ book }: { book: AddressBook }) {
 	)
 }
 
+function generateSlug(name: string): string {
+	return name
+		.toLowerCase()
+		.trim()
+		.replace(/[^a-z0-9]+/g, '-') // Replace unsafe characters with hyphens
+		.replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+}
+
 function BooksPage() {
 	const queryClient = useQueryClient()
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 	const [formData, setFormData] = useState({ name: '', slug: '', is_public: true })
 	const [error, setError] = useState<string | null>(null)
+	const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
 
 	const { data: books = [], isLoading } = useQuery({
 		queryKey: ['address-books'],
@@ -241,11 +261,20 @@ function BooksPage() {
 			setIsCreateDialogOpen(false)
 			setFormData({ name: '', slug: '', is_public: true })
 			setError(null)
+			setSlugManuallyEdited(false)
 		},
 		onError: (err: Error) => {
 			setError(err.message)
 		},
 	})
+
+	// Auto-generate slug from name when name changes (if slug hasn't been manually edited)
+	useEffect(() => {
+		if (!slugManuallyEdited && formData.name) {
+			const generatedSlug = generateSlug(formData.name)
+			setFormData(prev => ({ ...prev, slug: generatedSlug }))
+		}
+	}, [formData.name, slugManuallyEdited])
 
 	if (isLoading) {
 		return (
@@ -305,7 +334,13 @@ function BooksPage() {
 								<Input
 									id="book-name"
 									value={formData.name}
-									onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+									onChange={e => {
+										setFormData(prev => ({ ...prev, name: e.target.value }))
+										// Reset manual edit flag when name changes, so slug regenerates
+										if (slugManuallyEdited && formData.slug === generateSlug(formData.name)) {
+											setSlugManuallyEdited(false)
+										}
+									}}
 									placeholder="Shared Contacts"
 								/>
 							</FieldContent>
@@ -316,7 +351,10 @@ function BooksPage() {
 								<Input
 									id="book-slug"
 									value={formData.slug}
-									onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+									onChange={e => {
+										setFormData(prev => ({ ...prev, slug: e.target.value }))
+										setSlugManuallyEdited(true)
+									}}
 									placeholder="shared-contacts"
 								/>
 							</FieldContent>
@@ -337,6 +375,7 @@ function BooksPage() {
 								setIsCreateDialogOpen(false)
 								setFormData({ name: '', slug: '', is_public: true })
 								setError(null)
+								setSlugManuallyEdited(false)
 							}}
 						>
 							Cancel
