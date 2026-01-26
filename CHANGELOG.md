@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.9.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.8.1...v0.9.0) (2026-01-25)
+## [0.9.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.9.0...v0.9.1) (2026-01-26)
 
-### Features
+### Bug Fixes
 
-* update rights configuration for root access and enhance CardDAV connection instructions in UI ([07c70ac](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/07c70acd3c8fd31b7091804e11f63ae70f8d0c03))
+* improve error handling and formatting in sync service; update CardDAV connection instructions for clarity ([c9cf78e](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/c9cf78ea078d5869495abde9665badc222b97cbb))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.9.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.9.0...v0.9.1)
+
+- 🐛 Fix: improve error handling and formatting in sync service; update CardDAV connection instructions for clarity [`c9cf78e`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/c9cf78ea078d5869495abde9665badc222b97cbb)
+
 #### [v0.9.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.8.1...v0.9.0)
 
+> 25 January 2026
+
 - ✨ Feature: update rights configuration for root access and enhance CardDAV connection instructions in UI [`07c70ac`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/07c70acd3c8fd31b7091804e11f63ae70f8d0c03)
+- 🔧 Chore: release v0.9.0 [`08c64bf`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/08c64bf89ddd222a9a154d6694543b839c3f8d18)
 
 #### [v0.8.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.8.0...v0.8.1)
 
