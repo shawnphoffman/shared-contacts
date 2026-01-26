@@ -195,7 +195,7 @@ export async function setUserAddressBooks(username: string, addressBookIds: Arra
 	const pool = getPool()
 	
 	// Get previous assignments before updating
-	const previousIds = await getUserAddressBookIds(username)
+	const previousIds = await getExplicitAddressBookIdsForUser(username)
 	
 	await pool.query('DELETE FROM user_address_books WHERE username = $1', [username])
 	if (addressBookIds.length === 0) {
