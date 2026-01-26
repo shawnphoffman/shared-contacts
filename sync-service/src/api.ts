@@ -30,9 +30,18 @@ app.get('/ready', (_req: Request, res: Response) => {
 })
 
 // Get all Radicale users
-app.get('/api/radicale-users', async (_req: Request, res: Response) => {
+app.get('/api/radicale-users', async (req: Request, res: Response) => {
 	try {
-		const users = await getUsers()
+		const includeComposite = req.query.include_composite === 'true'
+		const allUsers = await getUsers()
+		
+		// Filter out composite users unless explicitly requested
+		// Composite users are auto-managed and shouldn't appear in the UI
+		const { isCompositeUsername } = await import('./htpasswd')
+		const users = includeComposite
+			? allUsers
+			: allUsers.filter(user => !isCompositeUsername(user.username))
+		
 		res.json(users)
 	} catch (error: unknown) {
 		console.error('Error fetching users:', error)

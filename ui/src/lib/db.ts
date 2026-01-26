@@ -108,7 +108,7 @@ export interface Contact {
 	address_books?: Array<AddressBook> | null
 }
 
-async function tableExists(tableName: string): Promise<boolean> {
+export async function tableExists(tableName: string): Promise<boolean> {
 	const dbPool = getPool()
 	const result = await dbPool.query(
 		`

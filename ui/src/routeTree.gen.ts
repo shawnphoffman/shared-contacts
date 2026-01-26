@@ -18,6 +18,7 @@ import { Route as BooksRouteImport } from './routes/books'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiUserBookAssignmentsRouteImport } from './routes/api/user-book-assignments'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
@@ -78,6 +79,11 @@ const IdRoute = IdRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUserBookAssignmentsRoute = ApiUserBookAssignmentsRouteImport.update({
+  id: '/api/user-book-assignments',
+  path: '/api/user-book-assignments',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
   '/api/contacts/$id': typeof ApiContactsIdRouteWithChildren
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/api/contacts'
     | '/api/health'
     | '/api/radicale-users'
+    | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
     | '/api/contacts/$id'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/api/contacts'
     | '/api/health'
     | '/api/radicale-users'
+    | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
     | '/api/contacts/$id'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/api/contacts'
     | '/api/health'
     | '/api/radicale-users'
+    | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
     | '/api/contacts/$id'
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   ApiContactsRoute: typeof ApiContactsRouteWithChildren
   ApiHealthRoute: typeof ApiHealthRoute
   ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
+  ApiUserBookAssignmentsRoute: typeof ApiUserBookAssignmentsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -410,6 +423,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/user-book-assignments': {
+      id: '/api/user-book-assignments'
+      path: '/api/user-book-assignments'
+      fullPath: '/api/user-book-assignments'
+      preLoaderRoute: typeof ApiUserBookAssignmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/radicale-users': {
@@ -616,6 +636,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiContactsRoute: ApiContactsRouteWithChildren,
   ApiHealthRoute: ApiHealthRoute,
   ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
+  ApiUserBookAssignmentsRoute: ApiUserBookAssignmentsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

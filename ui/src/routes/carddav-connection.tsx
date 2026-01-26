@@ -118,6 +118,14 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 	)
 }
 
+async function fetchUserBookAssignments(): Promise<{ assignments: Record<string, Array<string>>; public_book_ids: Array<string> }> {
+	const response = await fetch('/api/user-book-assignments')
+	if (!response.ok) {
+		throw new Error('Failed to fetch user-book assignments')
+	}
+	return response.json()
+}
+
 function CardDAVConnectionPage() {
 	const { data: users = [], isLoading: usersLoading } = useQuery({
 		queryKey: ['radicale-users'],
@@ -127,7 +135,11 @@ function CardDAVConnectionPage() {
 		queryKey: ['address-books'],
 		queryFn: fetchAddressBooks,
 	})
-	const isLoading = usersLoading || booksLoading
+	const { data: assignmentsData, isLoading: assignmentsLoading } = useQuery({
+		queryKey: ['user-book-assignments'],
+		queryFn: fetchUserBookAssignments,
+	})
+	const isLoading = usersLoading || booksLoading || assignmentsLoading
 
 	const directBaseUrl = getDirectCardDAVBaseUrl()
 	const directUiBaseUrl = getDirectUIBaseUrl()
@@ -267,12 +279,19 @@ function CardDAVConnectionPage() {
 								</TableHeader>
 								<TableBody>
 									{addressBooks.map(book => {
+										// Filter users: only show base users assigned to this book
+										// (Composite users are filtered out by the API, so users list only contains base users)
 										const usersForBook = users.filter(user => {
+											// Handle read-only subscription users
 											if (user.username.startsWith('ro-')) {
 												const bookIdFromRo = user.username.slice(3)
 												return book.id === bookIdFromRo && book.readonly_enabled === true
 											}
-											return true
+											// Check if base user is assigned to this book
+											const assignments = assignmentsData?.assignments || {}
+											const publicBookIds = assignmentsData?.public_book_ids || []
+											const userBookIds = assignments[user.username] || []
+											return userBookIds.includes(book.id) || (book.is_public && publicBookIds.includes(book.id))
 										})
 										if (usersForBook.length === 0) return null
 										return (
