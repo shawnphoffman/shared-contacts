@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { getUserAddressBookIds, getAddressBooks, getPool, tableExists } from '../../lib/db'
+import { getAddressBooks, getPool, getUserAddressBookIds, tableExists } from '../../lib/db'
 
 export const Route = createFileRoute('/api/user-book-assignments')({
 	server: {

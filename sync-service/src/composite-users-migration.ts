@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { getPool } from './db'
-import { getAddressBooks, getExplicitAddressBookIdsForUser } from './db'
+import { getAddressBooks } from './db'
 import { getUsers, getCompositeUsername, isCompositeUsername, createCompositeUser } from './htpasswd'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
@@ -74,12 +74,11 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 
 	for (const user of baseUsers) {
 		try {
-			// Get user's assigned address books
-			const assignedBookIds = await getExplicitAddressBookIdsForUser(user.username)
-			
-			// Also include public books
-			const publicBooks = books.filter(book => book.is_public)
-			const allBookIds = new Set([...assignedBookIds, ...publicBooks.map(b => b.id)])
+			// Get all books the user can access (explicitly assigned + public)
+			// Use getAddressBooksForUser to match what sync uses
+			const { getAddressBooksForUser } = await import('./db')
+			const accessibleBooks = await getAddressBooksForUser(user.username)
+			const allBookIds = new Set(accessibleBooks.map(b => b.id))
 
 			for (const bookId of allBookIds) {
 				const compositeUsername = getCompositeUsername(user.username, bookId)

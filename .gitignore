@@ -44,3 +44,4 @@ app.config.timestamp_*.js
 *.timestamp.*
 
 /ignore
+/test-logs

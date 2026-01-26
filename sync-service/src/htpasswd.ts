@@ -399,7 +399,7 @@ export async function syncCompositeUsers(
  * ran before assignments were made, or if assignments were made manually).
  */
 export async function ensureAllCompositeUsersExist(): Promise<void> {
-	const { getAddressBooks, getExplicitAddressBookIdsForUser } = await import('./db')
+	const { getAddressBooks } = await import('./db')
 	const books = await getAddressBooks()
 	if (books.length === 0) return
 
@@ -411,9 +411,11 @@ export async function ensureAllCompositeUsersExist(): Promise<void> {
 	let ensuredCount = 0
 	for (const user of baseUsers) {
 		try {
-			const assignedBookIds = await getExplicitAddressBookIdsForUser(user.username)
-			const publicBooks = books.filter(book => book.is_public)
-			const allBookIds = new Set([...assignedBookIds, ...publicBooks.map(b => b.id)])
+			// Get all books the user can access (explicitly assigned + public)
+			// Use getAddressBooksForUser to match what sync uses
+			const { getAddressBooksForUser } = await import('./db')
+			const accessibleBooks = await getAddressBooksForUser(user.username)
+			const allBookIds = new Set(accessibleBooks.map(b => b.id))
 
 			for (const bookId of allBookIds) {
 				const compositeUsername = getCompositeUsername(user.username, bookId)

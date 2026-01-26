@@ -23,7 +23,7 @@ import {
 	updateSyncMetadata,
 } from './db'
 import { parseVCard, generateVCard } from './vcard'
-import { getUsers, ensurePrincipalPropsForUser, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from './htpasswd'
+import { getUsers, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from './htpasswd'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
@@ -234,6 +234,8 @@ async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: str
 
 	try {
 		for (const username of usernames) {
+			// For composite usernames, book.id is already in the username, so pass empty string
+			// getAddressBookPathForUser will detect composite and use it directly
 			const userPath = getAddressBookPathForUser(username, book.id)
 			ensureDirectoryExists(userPath)
 			ensureAddressBookProps(userPath, book)
@@ -258,6 +260,7 @@ async function deleteVCardFile(book: AddressBook, vcardId: string, usernames: Ar
 
 	try {
 		for (const username of usernames) {
+			// For composite usernames, book.id is already in the username
 			const userPath = getAddressBookPathForUser(username, book.id)
 			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
 			if (fs.existsSync(userFilePath)) {
@@ -732,7 +735,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 		let skipped = 0
 		let conflicts = 0
 
-		for (const { book, vcardId, filePath, fileMtime, vcardContent } of latestFiles.values()) {
+		for (const { book, vcardId, fileMtime, vcardContent } of latestFiles.values()) {
 			const vcardData = parseVCard(vcardContent)
 			const vcardHash = calculateVCardHash(vcardContent)
 			radicaleVCardIdsByBookId.get(book.id)?.add(vcardId)

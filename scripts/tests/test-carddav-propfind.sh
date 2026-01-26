@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Run PROPFIND against the CardDAV server to verify principal has displayname and child collections.
-# Usage: CARDDAV_USER=shawn CARDDAV_PASSWORD=yourpass [CARDDAV_HOST=carddav.lan.goober.house] ./scripts/test-carddav-propfind.sh
+# Usage: CARDDAV_HOST=carddav.example.com CARDDAV_USER=username CARDDAV_PASSWORD=yourpass ./scripts/tests/test-carddav-propfind.sh
 
 set -e
-HOST="${CARDDAV_HOST:-carddav.lan.goober.house}"
+HOST="${CARDDAV_HOST:?Set CARDDAV_HOST (e.g., carddav.example.com)}"
 USER="${CARDDAV_USER:?Set CARDDAV_USER}"
 PASS="${CARDDAV_PASSWORD:?Set CARDDAV_PASSWORD}"
 URL="https://${HOST}/${USER}/"

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Detailed PROPFIND to check all CardDAV properties Apple Contacts might need
-# Usage: CARDDAV_USER=shawn CARDDAV_PASSWORD=yourpass [CARDDAV_HOST=carddav.lan.goober.house] ./scripts/test-carddav-detailed.sh
+# Usage: CARDDAV_HOST=carddav.example.com CARDDAV_USER=username CARDDAV_PASSWORD=yourpass ./scripts/tests/test-carddav-detailed.sh
 
 set -e
-HOST="${CARDDAV_HOST:-carddav.lan.goober.house}"
+HOST="${CARDDAV_HOST:?Set CARDDAV_HOST (e.g., carddav.example.com)}"
 USER="${CARDDAV_USER:?Set CARDDAV_USER}"
 PASS="${CARDDAV_PASSWORD:?Set CARDDAV_PASSWORD}"
 URL="https://${HOST}/${USER}/"
@@ -40,7 +40,7 @@ echo "$RESP" | xmllint --format - 2>/dev/null || echo "$RESP"
 echo ""
 echo "=== Summary ==="
 echo ""
-echo "Principal (/shawn/):"
+echo "Principal (/${USER}/):"
 echo "$RESP" | xmllint --xpath '//response[1]' - 2>/dev/null | xmllint --format - 2>/dev/null || echo "Could not parse principal"
 
 echo ""

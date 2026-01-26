@@ -288,10 +288,9 @@ function CardDAVConnectionPage() {
 												return book.id === bookIdFromRo && book.readonly_enabled === true
 											}
 											// Check if base user is assigned to this book
-											const assignments = assignmentsData?.assignments || {}
-											const publicBookIds = assignmentsData?.public_book_ids || []
-											const userBookIds = assignments[user.username] || []
-											return userBookIds.includes(book.id) || (book.is_public && publicBookIds.includes(book.id))
+											const assignments = assignmentsData?.assignments ?? {}
+											const userBookIds = assignments[user.username] ?? []
+											return userBookIds.includes(book.id) || book.is_public
 										})
 										if (usersForBook.length === 0) return null
 										return (
