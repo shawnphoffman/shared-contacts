@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.10.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.9.1...v0.10.0) (2026-01-26)
+## [0.11.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.10.0...v0.11.0) (2026-01-26)
 
 ### Features
 
-* implement principal properties management for users to ensure display names in CardDAV collections ([173de60](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/173de60d159138345ef77013c7678c620ef18079))
+* implement composite usernames for CardDAV accounts, allowing multiple address books per user; update sync logic and UI instructions accordingly ([afd1467](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/afd14679d6dc5a7a47fc629b070541a0efb58247))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.11.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.10.0...v0.11.0)
+
+- ✨ Feature: implement composite usernames for CardDAV accounts, allowing multiple address books per user; update sync logic and UI instructions accordingly [`afd1467`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/afd14679d6dc5a7a47fc629b070541a0efb58247)
+
 #### [v0.10.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.9.1...v0.10.0)
 
+> 25 January 2026
+
 - ✨ Feature: implement principal properties management for users to ensure display names in CardDAV collections [`173de60`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/173de60d159138345ef77013c7678c620ef18079)
+- 🔧 Chore: release v0.10.0 [`da9238b`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/da9238b40c976d6469da20903ff4199754493c9d)
 
 #### [v0.9.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.9.0...v0.9.1)
 
