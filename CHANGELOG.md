@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.9.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.9.0...v0.9.1) (2026-01-26)
+## [0.10.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.9.1...v0.10.0) (2026-01-26)
 
-### Bug Fixes
+### Features
 
-* improve error handling and formatting in sync service; update CardDAV connection instructions for clarity ([c9cf78e](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/c9cf78ea078d5869495abde9665badc222b97cbb))
+* implement principal properties management for users to ensure display names in CardDAV collections ([173de60](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/173de60d159138345ef77013c7678c620ef18079))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.10.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.9.1...v0.10.0)
+
+- ✨ Feature: implement principal properties management for users to ensure display names in CardDAV collections [`173de60`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/173de60d159138345ef77013c7678c620ef18079)
+
 #### [v0.9.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.9.0...v0.9.1)
 
+> 25 January 2026
+
 - 🐛 Fix: improve error handling and formatting in sync service; update CardDAV connection instructions for clarity [`c9cf78e`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/c9cf78ea078d5869495abde9665badc222b97cbb)
+- 🔧 Chore: release v0.9.1 [`0b78d7d`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/0b78d7d3f0ab18133e76b983f60e00913bc7e814)
 
 #### [v0.9.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.8.1...v0.9.0)
 
