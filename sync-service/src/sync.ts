@@ -183,13 +183,13 @@ async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: str
 
 	try {
 		for (const username of usernames) {
-		const userPath = getAddressBookPathForUser(username, book.id)
+			const userPath = getAddressBookPathForUser(username, book.id)
 			ensureDirectoryExists(userPath)
 			ensureAddressBookProps(userPath, book)
 			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
 			fs.writeFileSync(userFilePath, vcardData, 'utf-8')
-	}
-} catch (error) {
+		}
+	} catch (error) {
 		console.error('Error writing to user directories:', error)
 	}
 }
@@ -207,13 +207,13 @@ async function deleteVCardFile(book: AddressBook, vcardId: string, usernames: Ar
 
 	try {
 		for (const username of usernames) {
-		const userPath = getAddressBookPathForUser(username, book.id)
+			const userPath = getAddressBookPathForUser(username, book.id)
 			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
 			if (fs.existsSync(userFilePath)) {
 				fs.unlinkSync(userFilePath)
 			}
-	}
-} catch (error) {
+		}
+	} catch (error) {
 		console.error('Error deleting from user directories:', error)
 	}
 }
@@ -330,6 +330,8 @@ export async function syncDbToRadicale(): Promise<void> {
 			usersByBookId.set(book.id, new Set<string>())
 		}
 		for (const user of users) {
+			// ro-* users are read-only subscription accounts; they get their copy in the readonly loop below, not here
+			if (user.username.startsWith('ro-')) continue
 			const userBooks = hasAddressBooks ? await getAddressBooksForUser(user.username) : books
 			for (const book of userBooks) {
 				if (!usersByBookId.has(book.id)) {
@@ -545,6 +547,8 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			usersByBookId.set(book.id, new Set<string>())
 		}
 		for (const user of users) {
+			// ro-* users are read-only; we do not sync from their dirs into the DB
+			if (user.username.startsWith('ro-')) continue
 			const userBooks = hasAddressBooks ? await getAddressBooksForUser(user.username) : books
 			for (const book of userBooks) {
 				if (!usersByBookId.has(book.id)) {

@@ -250,7 +250,9 @@ function CardDAVConnectionPage() {
 				<Card>
 					<CardHeader>
 						<CardTitle>Connection Details by User and Book</CardTitle>
-						<CardDescription>Subscription URLs use stable book IDs; assign books to users on the Users page.</CardDescription>
+						<CardDescription>
+							To see all your books in one account (e.g. Apple Contacts), set Server Path to <code>/username/</code> (e.g. <code>/shawn/</code>). The client will discover every book listed below. Per-book URLs are for single-book or read-only subscriptions.
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className="rounded-md border">
@@ -367,7 +369,7 @@ function CardDAVConnectionPage() {
 						Choose either the proxy URL or the direct URL depending on your deployment. Do not add a <code>/carddav</code> prefix.
 					</div>
 					<div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-						<strong>macOS Contacts (Server Settings):</strong> Set <strong>Server Path</strong> to the full path from the table above (e.g. <code>/shawn/1f2339a0-20b7-402f-bd79-0b068785894c/</code>). Do <strong>not</strong> use <code>/principals/user/</code> or you will get 403 Forbidden.
+						<strong>macOS Contacts (Server Settings):</strong> Use <strong>Server Path</strong> <code>/username/</code> (e.g. <code>/shawn/</code>) to get <em>all</em> your address books in one account. Do <strong>not</strong> use <code>/principals/user/</code> or you will get 403. To sync only one book, use that book’s full path from the table above.
 					</div>
 					<Accordion type="single" collapsible className="w-full">
 						<AccordionItem value="ios">
