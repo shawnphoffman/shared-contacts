@@ -6,19 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.13.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.12.0...v0.13.0) (2026-01-26)
-
-### Features
-
-* add user-book-assignments API endpoint and integrate it into CardDAV connection page; enhance user filtering logic ([32a5a00](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/32a5a00cbeacea46e7d8bf85ae238d9d31b4e492))
+## [0.13.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.13.0...v0.13.1) (2026-01-26)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.13.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.0...v0.13.1)
+
+- 🔧 Chore: remove test scripts from package.json (for now) and update README to reflect changes in testing instructions [`3eb5750`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/3eb57509b105c57f5db8e82cf6de271ec71fae5a)
+- 🔧 Chore: update .gitignore and dockerignore to include test-logs; remove unused CardDAV test scripts [`04e73b8`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/04e73b8abe4b71b83398521dc024cb1e6bf56076)
+
 #### [v0.13.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.12.0...v0.13.0)
 
+> 25 January 2026
+
 - ✨ Feature: add user-book-assignments API endpoint and integrate it into CardDAV connection page; enhance user filtering logic [`32a5a00`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/32a5a00cbeacea46e7d8bf85ae238d9d31b4e492)
+- 🔧 Chore: release v0.13.0 [`a47c9bd`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/a47c9bdfde93655aa0b49fd86d016616f52eb014)
 
 #### [v0.12.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.11.1...v0.12.0)
 
