@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import path from 'path'
-import { readFile, writeFile, access, constants, readdir, copyFile, mkdir } from 'fs/promises'
+import { readFile, writeFile, access, constants, readdir, copyFile, mkdir, rm, stat } from 'fs/promises'
 import { getAddressBooks, getAddressBooksForUser } from './db'
 
 const USERS_FILE = '/data/users'
@@ -459,6 +459,83 @@ export async function ensureAllCompositeUsersExist(): Promise<void> {
 
 	if (ensuredCount > 0) {
 		console.log(`Ensured ${ensuredCount} composite users exist`)
+	}
+
+	// Clean up old nested directories for books users no longer have access to
+	await cleanupOldNestedDirectories()
+}
+
+/**
+ * Clean up old nested collection directories (collection-root/{username}/{bookId}/)
+ * that exist but the user no longer has access to. These directories were created
+ * before composite users and can cause books to show up for users who shouldn't see them.
+ */
+async function cleanupOldNestedDirectories(): Promise<void> {
+	const { getAddressBooks } = await import('./db')
+	const books = await getAddressBooks()
+	if (books.length === 0) return
+
+	const allUsers = await getUsers()
+	const baseUsers = allUsers.filter(
+		user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username)
+	)
+
+	let cleanedCount = 0
+	for (const user of baseUsers) {
+		try {
+			// Get all books the user should have access to
+			const { getAddressBooksForUser } = await import('./db')
+			const accessibleBooks = await getAddressBooksForUser(user.username)
+			const accessibleBookIds = new Set(accessibleBooks.map(b => b.id))
+
+			// Check for nested directories under the user's principal path
+			const principalPath = getPrincipalPath(user.username)
+			try {
+				const entries = await readdir(principalPath)
+				for (const entry of entries) {
+					// Skip .Radicale.props
+					if (entry === '.Radicale.props') continue
+					
+					const entryPath = path.join(principalPath, entry)
+					try {
+						const stats = await stat(entryPath)
+						// Only process directories
+						if (!stats.isDirectory()) continue
+						
+						// Check if this looks like a book ID directory
+						// Book IDs are UUIDs, so check if entry matches UUID format
+						const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+						if (uuidPattern.test(entry)) {
+							// This is a book ID directory - check if user should have access
+							if (!accessibleBookIds.has(entry)) {
+								// User shouldn't have access, remove the directory
+								try {
+									await rm(entryPath, { recursive: true, force: true })
+									cleanedCount++
+									console.log(`Removed old nested directory: ${entryPath} (user ${user.username} no longer has access)`)
+								} catch (error) {
+									console.warn(`Failed to remove nested directory ${entryPath}:`, error)
+								}
+							}
+						}
+					} catch {
+						// Entry doesn't exist or isn't accessible, skip
+						continue
+					}
+				}
+			} catch (error: unknown) {
+				if (getErrorCode(error) !== 'ENOENT') {
+					console.warn(`Failed to read principal directory for ${user.username}:`, error)
+				}
+				// Principal directory doesn't exist, which is fine
+			}
+		} catch (error) {
+			console.error(`Failed to cleanup nested directories for ${user.username}:`, error)
+		}
+	}
+
+	if (cleanedCount > 0) {
+		console.log(`Cleaned up ${cleanedCount} old nested directories`)
 	}
 }
 
