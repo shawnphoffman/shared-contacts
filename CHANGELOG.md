@@ -6,16 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.13.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.13.0...v0.13.1) (2026-01-26)
+## [0.13.2](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.13.1...v0.13.2) (2026-01-26)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.13.2](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.1...v0.13.2)
+
+- 🔧 Chore: update package-lock.json to version 0.110.0 for multiple dependencies, including oxc-minify and oxc-transform, and upgrade various packages such as pg and prettier [`9044540`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/904454032a7f04ebcf2707fd6f1dc02382ac75e0)
+
 #### [v0.13.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.0...v0.13.1)
+
+> 26 January 2026
 
 - 🔧 Chore: remove test scripts from package.json (for now) and update README to reflect changes in testing instructions [`3eb5750`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/3eb57509b105c57f5db8e82cf6de271ec71fae5a)
 - 🔧 Chore: update .gitignore and dockerignore to include test-logs; remove unused CardDAV test scripts [`04e73b8`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/04e73b8abe4b71b83398521dc024cb1e6bf56076)
+- 🔧 Chore: release v0.13.1 [`807b78a`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/807b78ae5029764c615d7fc213b6ca046a825a09)
 
 #### [v0.13.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.12.0...v0.13.0)
 
