@@ -313,9 +313,7 @@ function RadicaleUsersPage() {
 						</Button>
 					)}
 				</div>
-				{backfillMessage && (
-					<Item variant="outline">{backfillMessage}</Item>
-				)}
+				{backfillMessage && <Item variant="outline">{backfillMessage}</Item>}
 			</Item>
 
 			{users.length === 0 ? (
@@ -428,7 +426,7 @@ function RadicaleUsersPage() {
 			<Dialog open={isBooksDialogOpen} onOpenChange={setIsBooksDialogOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Assign Address Books</DialogTitle>
+						<DialogTitle>Assign Address Books to {selectedUser}</DialogTitle>
 						<DialogDescription>
 							Select which private address books <strong>{selectedUser}</strong> can access. Public books are always visible.
 						</DialogDescription>
@@ -475,10 +473,7 @@ function RadicaleUsersPage() {
 							Cancel
 						</Button>
 						<Button
-							onClick={() =>
-								selectedUser &&
-								membershipUpdateMutation.mutate({ username: selectedUser, addressBookIds: selectedBookIds })
-							}
+							onClick={() => selectedUser && membershipUpdateMutation.mutate({ username: selectedUser, addressBookIds: selectedBookIds })}
 							disabled={membershipUpdateMutation.isPending || !selectedUser}
 						>
 							{membershipUpdateMutation.isPending ? 'Saving...' : 'Save'}
@@ -486,7 +481,6 @@ function RadicaleUsersPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-
 
 			{/* Edit User Dialog */}
 			<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
