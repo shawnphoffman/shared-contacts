@@ -23,7 +23,7 @@ import {
 	updateSyncMetadata,
 } from './db'
 import { parseVCard, generateVCard } from './vcard'
-import { getUsers } from './htpasswd'
+import { getUsers, ensurePrincipalPropsForUser } from './htpasswd'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
@@ -339,6 +339,12 @@ export async function syncDbToRadicale(): Promise<void> {
 				}
 				usersByBookId.get(book.id)?.add(user.username)
 			}
+		}
+
+		// Ensure principal collection has displayname so clients (e.g. Apple Contacts) show child address books as separate groups
+		for (const user of users) {
+			if (user.username.startsWith('ro-')) continue
+			await ensurePrincipalPropsForUser(user.username)
 		}
 
 		const contactBookEntries = await getContactAddressBookEntries()

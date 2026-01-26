@@ -21,8 +21,36 @@ function getAddressBookPath(bookId: string): string {
 	return path.join(RADICALE_STORAGE_PATH, 'collection-root', bookId)
 }
 
+function getPrincipalPath(username: string): string {
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username)
+}
+
 async function ensureDirectoryExists(dirPath: string): Promise<void> {
 	await mkdir(dirPath, { recursive: true })
+}
+
+/** Ensure the principal collection (e.g. /shawn/) has a displayname so clients show child address books as separate groups. */
+async function ensurePrincipalProps(principalPath: string, username: string): Promise<void> {
+	const propsPath = path.join(principalPath, '.Radicale.props')
+	try {
+		await access(propsPath, constants.F_OK)
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
+			throw error
+		}
+		const displayName = `CardDAV ${username.charAt(0).toUpperCase()}${username.slice(1)}`
+		const props = {
+			'D:displayname': displayName,
+		}
+		await writeFile(propsPath, JSON.stringify(props), 'utf-8')
+	}
+}
+
+/** Ensure principal path and props exist for a user (so PROPFIND on /username/ returns a displayname). Call on user create and during sync. */
+export async function ensurePrincipalPropsForUser(username: string): Promise<void> {
+	const principalPath = getPrincipalPath(username)
+	await ensureDirectoryExists(principalPath)
+	await ensurePrincipalProps(principalPath, username)
 }
 
 async function ensureAddressBookProps(userPath: string, name: string): Promise<void> {
@@ -43,6 +71,8 @@ async function ensureAddressBookProps(userPath: string, name: string): Promise<v
 }
 
 export async function backfillSharedContactsForUser(username: string): Promise<void> {
+	await ensurePrincipalPropsForUser(username)
+
 	const books = await getAddressBooks()
 	const userBooks = books.length > 0 ? await getAddressBooksForUser(username) : [{ id: '', name: 'Shared Contacts', slug: 'shared-contacts', is_public: true }]
 

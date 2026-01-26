@@ -251,7 +251,7 @@ function CardDAVConnectionPage() {
 					<CardHeader>
 						<CardTitle>Connection Details by User and Book</CardTitle>
 						<CardDescription>
-							To see all your books in one account (e.g. Apple Contacts), set Server Path to <code>/username/</code> (e.g. <code>/shawn/</code>). The client will discover every book listed below. Per-book URLs are for single-book or read-only subscriptions.
+							Assign books to users on the Users page. This server exposes <strong>multiple address book collections</strong> per user. For Apple Contacts: set Server Path to <code>/username/</code> (e.g. <code>/shawn/</code>) so the client discovers all books; open Groups to see each book separately. Per-book URLs below are for single-book or read-only subscriptions.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -368,8 +368,13 @@ function CardDAVConnectionPage() {
 					<div className="text-sm text-muted-foreground dark:text-gray-400">
 						Choose either the proxy URL or the direct URL depending on your deployment. Do not add a <code>/carddav</code> prefix.
 					</div>
-					<div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-						<strong>macOS Contacts (Server Settings):</strong> Use <strong>Server Path</strong> <code>/username/</code> (e.g. <code>/shawn/</code>) to get <em>all</em> your address books in one account. Do <strong>not</strong> use <code>/principals/user/</code> or you will get 403. To sync only one book, use that book’s full path from the table above.
+					<div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 space-y-2">
+						<div>
+							<strong>macOS Contacts:</strong> Set Server Path to <code>/username/</code> (e.g. <code>/shawn/</code>). The server publishes separate collections per book; in Contacts click <strong>Groups</strong> (top-left) to see each book with its own checkbox. Do <strong>not</strong> use <code>/principals/user/</code> or you get 403.
+						</div>
+						<div>
+							<strong>Only one group or wrong contacts?</strong> Remove the CardDAV account and add it again with Server Path <code>/username/</code> only, so Apple re-discovers. To sync a single book only, use that book’s full path from the table above.
+						</div>
 					</div>
 					<Accordion type="single" collapsible className="w-full">
 						<AccordionItem value="ios">
