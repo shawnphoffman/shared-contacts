@@ -193,33 +193,37 @@ function BookCard({ book }: { book: AddressBook }) {
 								Read-only Password
 							</FieldLabel>
 							<FieldContent className="">
-								<div className="relative max-w-xs">
-									<Input
-										id={`readonly-password-${book.id}`}
-										type={showPassword ? 'text' : 'password'}
-										value={readonlyPassword}
-										onChange={e => {
-											setReadonlyPassword(e.target.value)
-											setReadonlyError(null)
-										}}
-										placeholder="Set a password to secure the link"
-										autoComplete="new-password"
-										className="pr-10"
-									/>
-									<button
-										type="button"
-										onClick={() => setShowPassword(!showPassword)}
-										className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-										aria-label={showPassword ? 'Hide password' : 'Show password'}
+								<div className="flex flex-col sm:flex-row sm:items-center gap-2">
+									<div className="relative w-full">
+										<Input
+											id={`readonly-password-${book.id}`}
+											type={showPassword ? 'text' : 'password'}
+											value={readonlyPassword}
+											onChange={e => {
+												setReadonlyPassword(e.target.value)
+												setReadonlyError(null)
+											}}
+											placeholder="Set a password to secure the link"
+											autoComplete="new-password"
+										/>
+										<button
+											type="button"
+											onClick={() => setShowPassword(!showPassword)}
+											className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+											aria-label={showPassword ? 'Hide password' : 'Show password'}
+										>
+											{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+										</button>
+									</div>
+									<Button
+										variant="secondary"
+										size="sm"
+										onClick={handleChangePassword}
+										disabled={updateMutation.isPending || !readonlyPassword.trim()}
 									>
-										{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-									</button>
-								</div>
-								{readonlyPassword.trim() && (
-									<Button variant="secondary" size="sm" onClick={handleChangePassword} disabled={updateMutation.isPending}>
 										{updateMutation.isPending ? 'Saving…' : 'Save password'}
 									</Button>
-								)}
+								</div>
 								{!readonlyPassword && (
 									<span className="text-sm text-muted-foreground">Optional — leave empty to use a random password until you set one.</span>
 								)}
