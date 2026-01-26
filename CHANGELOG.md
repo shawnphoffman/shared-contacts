@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.12.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.11.1...v0.12.0) (2026-01-26)
+## [0.13.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.12.0...v0.13.0) (2026-01-26)
 
 ### Features
 
-* enhance composite user management by adding error handling and ensuring all composite users exist on startup ([70764f0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/70764f0b75b4fbcf355ee7583f6b938bc719fa51))
+* add user-book-assignments API endpoint and integrate it into CardDAV connection page; enhance user filtering logic ([32a5a00](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/32a5a00cbeacea46e7d8bf85ae238d9d31b4e492))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.13.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.12.0...v0.13.0)
+
+- ✨ Feature: add user-book-assignments API endpoint and integrate it into CardDAV connection page; enhance user filtering logic [`32a5a00`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/32a5a00cbeacea46e7d8bf85ae238d9d31b4e492)
+
 #### [v0.12.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.11.1...v0.12.0)
 
+> 25 January 2026
+
 - ✨ Feature: enhance composite user management by adding error handling and ensuring all composite users exist on startup [`70764f0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/70764f0b75b4fbcf355ee7583f6b938bc719fa51)
+- 🔧 Chore: release v0.12.0 [`c1367c0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/c1367c0c55540e9ddf046af268c9ec18e1a069cd)
 
 #### [v0.11.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.11.0...v0.11.1)
 
