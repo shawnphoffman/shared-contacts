@@ -193,8 +193,17 @@ export async function getExplicitAddressBookIdsForUser(username: string): Promis
 export async function setUserAddressBooks(username: string, addressBookIds: Array<string>): Promise<void> {
 	if (!(await tableExists('user_address_books'))) return
 	const pool = getPool()
+	
+	// Get previous assignments before updating
+	const previousIds = await getUserAddressBookIds(username)
+	
 	await pool.query('DELETE FROM user_address_books WHERE username = $1', [username])
-	if (addressBookIds.length === 0) return
+	if (addressBookIds.length === 0) {
+		// Sync composite users: delete all composite users for this base user
+		const { syncCompositeUsers } = await import('./htpasswd')
+		await syncCompositeUsers(username, [], previousIds)
+		return
+	}
 	await pool.query(
 		`
     INSERT INTO user_address_books (username, address_book_id)
@@ -203,6 +212,9 @@ export async function setUserAddressBooks(username: string, addressBookIds: Arra
   `,
 		[username, addressBookIds]
 	)
+	// Sync composite CardDAV users: create/delete composite users based on assignments
+	const { syncCompositeUsers } = await import('./htpasswd')
+	await syncCompositeUsers(username, addressBookIds, previousIds)
 }
 
 export async function getAllContacts(): Promise<Contact[]> {

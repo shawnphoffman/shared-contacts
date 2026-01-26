@@ -13,6 +13,31 @@ const getErrorCode = (error: unknown): string | undefined => {
 	return undefined
 }
 
+/**
+ * Generate composite username for CardDAV: username-bookid
+ * This allows each address book to have its own CardDAV account, avoiding Apple Contacts limitations.
+ */
+export function getCompositeUsername(username: string, bookId: string): string {
+	return `${username}-${bookId}`
+}
+
+/**
+ * Parse composite username back to base username and bookId
+ * Returns null if not a composite username
+ */
+export function parseCompositeUsername(compositeUsername: string): { username: string; bookId: string } | null {
+	const match = compositeUsername.match(/^(.+)-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i)
+	if (!match) return null
+	return { username: match[1], bookId: match[2] }
+}
+
+/**
+ * Check if a username is a composite username (username-bookid format)
+ */
+export function isCompositeUsername(username: string): boolean {
+	return parseCompositeUsername(username) !== null
+}
+
 function getAddressBookPathForUser(username: string, bookId: string): string {
 	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, bookId)
 }
@@ -218,6 +243,144 @@ export async function updateUserPassword(username: string, password: string): Pr
 	})
 
 	await writeFile(USERS_FILE, updatedLines.join('\n') + '\n', 'utf-8')
+}
+
+/**
+ * Get a user's password hash from htpasswd file
+ */
+export async function getUserHash(username: string): Promise<string | null> {
+	try {
+		const content = await readFile(USERS_FILE, 'utf-8')
+		for (const line of content.split('\n')) {
+			const trimmed = line.trim()
+			if (trimmed && !trimmed.startsWith('#')) {
+				const [lineUsername, hash] = trimmed.split(':')
+				if (lineUsername === username) {
+					return hash
+				}
+			}
+		}
+		return null
+	} catch (error: unknown) {
+		if (getErrorCode(error) === 'ENOENT') {
+			return null
+		}
+		throw error
+	}
+}
+
+/**
+ * Create a composite CardDAV user (username-bookid) with the same password hash as the base user.
+ * Used to give each address book its own CardDAV account, avoiding Apple Contacts limitations.
+ */
+export async function createCompositeUser(baseUsername: string, bookId: string): Promise<void> {
+	const compositeUsername = getCompositeUsername(baseUsername, bookId)
+	if (await userExists(compositeUsername)) {
+		return // Already exists
+	}
+
+	const baseHash = await getUserHash(baseUsername)
+	if (!baseHash) {
+		throw new Error(`Base user ${baseUsername} does not exist or has no password hash`)
+	}
+
+	await setUserHash(compositeUsername, baseHash)
+	// Create storage directory for composite user (single book, no nested structure)
+	const compositePath = path.join(RADICALE_STORAGE_PATH, 'collection-root', compositeUsername)
+	await ensureDirectoryExists(compositePath)
+	// Copy contacts from master book directory
+	const masterPath = getAddressBookPath(bookId)
+	try {
+		await access(masterPath, constants.F_OK)
+		const masterFiles = await readdir(masterPath)
+		for (const file of masterFiles) {
+			if (file.endsWith('.vcf') || file.endsWith('.ics')) {
+				const sourcePath = path.join(masterPath, file)
+				const destPath = path.join(compositePath, file)
+				try {
+					await access(destPath, constants.F_OK)
+					continue // Already exists
+				} catch {
+					await copyFile(sourcePath, destPath)
+				}
+			}
+		}
+		// Ensure address book props
+		const books = await getAddressBooks()
+		const book = books.find(b => b.id === bookId)
+		if (book) {
+			await ensureAddressBookProps(compositePath, book.name)
+		}
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
+			throw error
+		}
+	}
+}
+
+/**
+ * Delete a composite CardDAV user
+ */
+export async function deleteCompositeUser(baseUsername: string, bookId: string): Promise<void> {
+	const compositeUsername = getCompositeUsername(baseUsername, bookId)
+	if (!(await userExists(compositeUsername))) {
+		return // Already deleted
+	}
+
+	// Delete from htpasswd
+	let content = ''
+	try {
+		await access(USERS_FILE, constants.F_OK)
+		content = await readFile(USERS_FILE, 'utf-8')
+	} catch (error: unknown) {
+		if (getErrorCode(error) !== 'ENOENT') {
+			throw error
+		}
+		return
+	}
+
+	const lines = content.split('\n')
+	const filteredLines = lines.filter(line => {
+		const trimmed = line.trim()
+		if (trimmed && !trimmed.startsWith('#')) {
+			const [lineUsername] = trimmed.split(':')
+			return lineUsername !== compositeUsername
+		}
+		return true
+	})
+
+	await writeFile(USERS_FILE, filteredLines.join('\n') + '\n', 'utf-8')
+	// Note: We don't delete the storage directory - let sync handle cleanup
+}
+
+/**
+ * Sync composite CardDAV users based on user address book assignments.
+ * Creates composite users for assigned books, deletes for unassigned books.
+ * @param baseUsername The base username (e.g., "shawn")
+ * @param assignedBookIds Array of book IDs currently assigned to the user
+ * @param previousBookIds Optional: previous book IDs to determine what changed
+ */
+export async function syncCompositeUsers(
+	baseUsername: string,
+	assignedBookIds: Array<string>,
+	previousBookIds?: Array<string>
+): Promise<void> {
+	const assignedSet = new Set(assignedBookIds)
+	const previousSet = previousBookIds ? new Set(previousBookIds) : new Set<string>()
+
+	// Create composite users for newly assigned books
+	for (const bookId of assignedBookIds) {
+		if (!previousSet.has(bookId)) {
+			await createCompositeUser(baseUsername, bookId)
+		}
+	}
+
+	// Delete composite users for unassigned books
+	for (const bookId of previousSet) {
+		if (!assignedSet.has(bookId)) {
+			await deleteCompositeUser(baseUsername, bookId)
+		}
+	}
 }
 
 /**

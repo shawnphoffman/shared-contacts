@@ -82,9 +82,10 @@ function getProxyUIBaseUrl(): string {
 	return 'https://contacts.example.com'
 }
 
-/** CardDAV subscription URL for a user and address book (uses stable book id in path). */
+/** CardDAV subscription URL for a user and address book (uses composite username format: username-bookid). */
 function getCardDAVUrl(username: string, bookId: string, baseUrl: string): string {
-	return `${baseUrl}/${encodeURIComponent(username)}/${encodeURIComponent(bookId)}/`
+	const compositeUsername = `${username}-${bookId}`
+	return `${baseUrl}/${encodeURIComponent(compositeUsername)}/`
 }
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -251,7 +252,7 @@ function CardDAVConnectionPage() {
 					<CardHeader>
 						<CardTitle>Connection Details by User and Book</CardTitle>
 						<CardDescription>
-							Assign books to users on the Users page. This server exposes <strong>multiple address book collections</strong> per user. For Apple Contacts: set Server Path to <code>/username/</code> (e.g. <code>/shawn/</code>) so the client discovers all books; open Groups to see each book separately. Per-book URLs below are for single-book or read-only subscriptions.
+							Assign books to users on the Users page. Each address book gets its own CardDAV account using composite usernames (<code>username-bookid</code>). This avoids Apple Contacts limitations where only one book per account is shown. Use the composite username and Server Path <code>/username-bookid/</code> (e.g., <code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>) when adding accounts in CardDAV clients.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -282,11 +283,17 @@ function CardDAVConnectionPage() {
 													</TableCell>
 												</TableRow>
 												{usersForBook.map(user => {
+													const compositeUsername = `${user.username}-${book.id}`
 													const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
 													const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
 													return (
 														<TableRow key={`${user.username}-${book.id}`}>
-															<TableCell className="font-medium max-w-48 truncate">{user.username}</TableCell>
+															<TableCell className="font-medium max-w-48 truncate">
+																<div className="space-y-1">
+																	<div className="text-xs text-muted-foreground">{user.username}</div>
+																	<div className="font-mono text-xs">{compositeUsername}</div>
+																</div>
+															</TableCell>
 															<TableCell>
 																<div className="space-y-2">
 																	<div>
@@ -370,10 +377,13 @@ function CardDAVConnectionPage() {
 					</div>
 					<div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 space-y-2">
 						<div>
-							<strong>macOS Contacts:</strong> Set Server Path to <code>/username/</code> (e.g. <code>/shawn/</code>). The server publishes separate collections per book; in Contacts click <strong>Groups</strong> (top-left) to see each book with its own checkbox. Do <strong>not</strong> use <code>/principals/user/</code> or you get 403.
+							<strong>macOS Contacts Limitation:</strong> Apple Contacts on macOS has a known bug where it only shows <strong>one address book per CardDAV account</strong>, even when the server exposes multiple collections. It typically shows an "All" group and only syncs contacts from the first collection.
 						</div>
 						<div>
-							<strong>Only one group or wrong contacts?</strong> Remove the CardDAV account and add it again with Server Path <code>/username/</code> only, so Apple re-discovers. To sync a single book only, use that book’s full path from the table above.
+							<strong>Solution:</strong> Each address book uses a composite username (<code>username-bookid</code>). When adding a CardDAV account in Contacts, use the <strong>composite username</strong> from the table above (e.g., <code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>) and Server Path <code>/username-bookid/</code> (e.g., <code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book appears as a separate account, avoiding Apple Contacts limitations.
+						</div>
+						<div className="text-xs italic">
+							Note: iOS Contacts handles multiple collections better, but macOS Contacts requires this workaround. This is an Apple limitation, not a server issue.
 						</div>
 					</div>
 					<Accordion type="single" collapsible className="w-full">
@@ -483,7 +493,10 @@ function CardDAVConnectionPage() {
 												<strong>Server Address:</strong> host only, e.g. {proxyBaseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
 											</li>
 											<li>
-												<strong>Server Path:</strong> use the <em>full path</em> from the subscription URL above (e.g. <code>/username/book-id/</code>). Do <strong>not</strong> use <code>/principals/user/</code> — this server does not use principal paths.
+												<strong>Username:</strong> Use the <strong>composite username</strong> from the table above (e.g., <code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>).
+											</li>
+											<li>
+												<strong>Server Path:</strong> Use <code>/username-bookid/</code> matching the composite username (e.g., <code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book uses its own composite username, so each appears as a separate account. Do <strong>not</strong> use <code>/principals/user/</code> — this server does not use principal paths.
 											</li>
 											<li>Port: 443 for HTTPS, 5232 for direct</li>
 											<li>Use SSL: on for HTTPS</li>

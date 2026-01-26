@@ -4,6 +4,7 @@ import { syncDbToRadicale, syncRadicaleToDb, startWatchingRadicale, startPeriodi
 import { startApiServer, setMigrationsComplete } from './api'
 import { runMigrations } from './migrations'
 import { runPathMigrationIfNeeded } from './path-migration'
+import { runCompositeUsersMigrationIfNeeded } from './composite-users-migration'
 import { syncReadonlyUsersToHtpasswd } from './readonly-auth'
 
 async function main() {
@@ -20,6 +21,9 @@ async function main() {
 
 		// One-time path migration: rename collection-root/{slug} -> collection-root/{id}
 		await runPathMigrationIfNeeded()
+
+		// One-time composite users migration: create username-bookid users for existing assignments
+		await runCompositeUsersMigrationIfNeeded()
 
 		// Sync read-only subscription users from DB to htpasswd
 		await syncReadonlyUsersToHtpasswd()

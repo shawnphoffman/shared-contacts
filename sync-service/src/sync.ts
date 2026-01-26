@@ -23,7 +23,7 @@ import {
 	updateSyncMetadata,
 } from './db'
 import { parseVCard, generateVCard } from './vcard'
-import { getUsers, ensurePrincipalPropsForUser } from './htpasswd'
+import { getUsers, ensurePrincipalPropsForUser, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from './htpasswd'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
@@ -38,10 +38,17 @@ const getErrorCode = (error: unknown): string | undefined => {
 
 /**
  * Get the path to an address book in Radicale for a specific user.
- * Uses address book id (stable, unpredictable) not slug.
+ * For composite usernames (username-bookid), returns the composite user's root directory.
+ * For regular usernames, returns the nested path (username/bookid).
  */
 function getAddressBookPathForUser(username: string, bookId: string): string {
-	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, bookId)
+	// If username is already composite, use it directly (no nested bookId)
+	if (isCompositeUsername(username)) {
+		return path.join(RADICALE_STORAGE_PATH, 'collection-root', username)
+	}
+	// Otherwise, use composite username format
+	const compositeUsername = getCompositeUsername(username, bookId)
+	return path.join(RADICALE_STORAGE_PATH, 'collection-root', compositeUsername)
 }
 
 /**
@@ -101,8 +108,10 @@ function ensureAddressBookProps(collectionPath: string, book: AddressBook): void
 
 /**
  * Extract the address book path segment from a file path.
- * After migration this is the book id; before/during it can be slug.
- * master: [bookId, filename], user: [username, bookId, filename]
+ * Handles both composite usernames (username-bookid) and nested paths (username/bookid).
+ * master: [bookId, filename]
+ * composite user: [username-bookid, filename] -> extract bookId from username
+ * nested user: [username, bookId, filename] -> extract bookId from path
  */
 function extractBookPathSegmentFromPath(filePath: string): string | null {
 	const parts = filePath.split(path.sep).filter(Boolean)
@@ -110,6 +119,16 @@ function extractBookPathSegmentFromPath(filePath: string): string | null {
 	if (rootIndex === -1) return null
 	const relative = parts.slice(rootIndex + 1)
 	if (relative.length < 2) return null
+	
+	// Check if first segment is a composite username (username-bookid)
+	const firstSegment = relative[0]
+	const parsed = parseCompositeUsername(firstSegment)
+	if (parsed) {
+		// Composite username: return the bookId from the username
+		return parsed.bookId
+	}
+	
+	// Nested path: return the second segment (bookId)
 	return relative.length >= 3 ? relative[1] : relative[0]
 }
 
@@ -136,14 +155,46 @@ async function getVCardFiles(): Promise<Array<string>> {
 	try {
 		const users = await getUsers()
 		for (const user of users) {
-			const userBooks = hasAddressBooks ? await getAddressBooksForUser(user.username) : books
-			for (const book of userBooks) {
-				const userPath = getAddressBookPathForUser(user.username, book.id)
-				if (fs.existsSync(userPath)) {
-					const userFiles = fs.readdirSync(userPath)
-					userFiles
-						.filter(file => (file.endsWith('.vcf') || file.endsWith('.ics')) && file !== '.Radicale.props')
-						.forEach(file => files.push(path.join(userPath, file)))
+			// Skip ro-* users (read-only subscriptions)
+			if (user.username.startsWith('ro-')) continue
+			
+			if (hasAddressBooks) {
+				// For composite usernames, the path already includes the bookId
+				if (isCompositeUsername(user.username)) {
+					const userPath = getAddressBookPathForUser(user.username, '') // bookId not needed for composite
+					if (fs.existsSync(userPath)) {
+						const userFiles = fs.readdirSync(userPath)
+						userFiles
+							.filter(file => (file.endsWith('.vcf') || file.endsWith('.ics')) && file !== '.Radicale.props')
+							.forEach(file => files.push(path.join(userPath, file)))
+					}
+				} else {
+					// Base username: check all assigned books
+					const { getExplicitAddressBookIdsForUser } = await import('./db')
+					const assignedBookIds = await getExplicitAddressBookIdsForUser(user.username)
+					for (const book of books) {
+						if (book.is_public || assignedBookIds.includes(book.id)) {
+							const compositeUsername = getCompositeUsername(user.username, book.id)
+							const userPath = getAddressBookPathForUser(compositeUsername, '')
+							if (fs.existsSync(userPath)) {
+								const userFiles = fs.readdirSync(userPath)
+								userFiles
+									.filter(file => (file.endsWith('.vcf') || file.endsWith('.ics')) && file !== '.Radicale.props')
+									.forEach(file => files.push(path.join(userPath, file)))
+							}
+						}
+					}
+				}
+			} else {
+				// No address books: use regular username
+				for (const book of books) {
+					const userPath = getAddressBookPathForUser(user.username, book.id)
+					if (fs.existsSync(userPath)) {
+						const userFiles = fs.readdirSync(userPath)
+						userFiles
+							.filter(file => (file.endsWith('.vcf') || file.endsWith('.ics')) && file !== '.Radicale.props')
+							.forEach(file => files.push(path.join(userPath, file)))
+					}
 				}
 			}
 		}
@@ -324,27 +375,52 @@ export async function syncDbToRadicale(): Promise<void> {
 		const { books, defaultBook, hasAddressBooks } = await getAddressBooksForSync()
 		const bookById = new Map(books.map(book => [book.id, book]))
 
-		const users = await getUsers()
+		// Build usersByBookId using composite usernames (username-bookid)
+		// This allows each address book to have its own CardDAV account
 		const usersByBookId = new Map<string, Set<string>>()
 		for (const book of books) {
 			usersByBookId.set(book.id, new Set<string>())
 		}
-		for (const user of users) {
-			// ro-* users are read-only subscription accounts; they get their copy in the readonly loop below, not here
-			if (user.username.startsWith('ro-')) continue
-			const userBooks = hasAddressBooks ? await getAddressBooksForUser(user.username) : books
-			for (const book of userBooks) {
-				if (!usersByBookId.has(book.id)) {
-					usersByBookId.set(book.id, new Set<string>())
-				}
-				usersByBookId.get(book.id)?.add(user.username)
+		
+		if (hasAddressBooks) {
+			// Get base users from database (not htpasswd, which includes composite users)
+			const { getExplicitAddressBookIdsForUser } = await import('./db')
+			const allHtpasswdUsers = await getUsers()
+			// Extract base usernames (exclude composite and ro-*)
+			const baseUsernames = new Set<string>()
+			for (const user of allHtpasswdUsers) {
+				if (user.username.startsWith('ro-')) continue
+				if (isCompositeUsername(user.username)) continue
+				baseUsernames.add(user.username)
 			}
-		}
-
-		// Ensure principal collection has displayname so clients (e.g. Apple Contacts) show child address books as separate groups
-		for (const user of users) {
-			if (user.username.startsWith('ro-')) continue
-			await ensurePrincipalPropsForUser(user.username)
+			
+			// For each base user, get their assigned books and create composite usernames
+			for (const baseUsername of baseUsernames) {
+				const assignedBookIds = await getExplicitAddressBookIdsForUser(baseUsername)
+				// Also include public books
+				for (const book of books) {
+					if (book.is_public || assignedBookIds.includes(book.id)) {
+						if (!usersByBookId.has(book.id)) {
+							usersByBookId.set(book.id, new Set<string>())
+						}
+						const compositeUsername = getCompositeUsername(baseUsername, book.id)
+						usersByBookId.get(book.id)?.add(compositeUsername)
+					}
+				}
+			}
+		} else {
+			// No address books: use regular usernames (backward compatibility)
+			const users = await getUsers()
+			for (const user of users) {
+				if (user.username.startsWith('ro-')) continue
+				if (isCompositeUsername(user.username)) continue
+				for (const book of books) {
+					if (!usersByBookId.has(book.id)) {
+						usersByBookId.set(book.id, new Set<string>())
+					}
+					usersByBookId.get(book.id)?.add(user.username)
+				}
+			}
 		}
 
 		const contactBookEntries = await getContactAddressBookEntries()
@@ -552,15 +628,50 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 		for (const book of books) {
 			usersByBookId.set(book.id, new Set<string>())
 		}
-		for (const user of users) {
-			// ro-* users are read-only; we do not sync from their dirs into the DB
-			if (user.username.startsWith('ro-')) continue
-			const userBooks = hasAddressBooks ? await getAddressBooksForUser(user.username) : books
-			for (const book of userBooks) {
-				if (!usersByBookId.has(book.id)) {
-					usersByBookId.set(book.id, new Set<string>())
+		// Build usersByBookId using composite usernames
+		if (hasAddressBooks) {
+			const { getExplicitAddressBookIdsForUser } = await import('./db')
+			const allUsers = await getUsers()
+			const baseUsernames = new Set<string>()
+			for (const user of allUsers) {
+				if (user.username.startsWith('ro-')) continue
+				if (isCompositeUsername(user.username)) {
+					// Composite user: extract bookId and add to mapping
+					const parsed = parseCompositeUsername(user.username)
+					if (parsed) {
+						if (!usersByBookId.has(parsed.bookId)) {
+							usersByBookId.set(parsed.bookId, new Set<string>())
+						}
+						usersByBookId.get(parsed.bookId)?.add(user.username)
+					}
+				} else {
+					baseUsernames.add(user.username)
 				}
-				usersByBookId.get(book.id)?.add(user.username)
+			}
+			// Also handle base usernames (for backward compatibility or if composite users not created yet)
+			for (const baseUsername of baseUsernames) {
+				const assignedBookIds = await getExplicitAddressBookIdsForUser(baseUsername)
+				for (const book of books) {
+					if (book.is_public || assignedBookIds.includes(book.id)) {
+						if (!usersByBookId.has(book.id)) {
+							usersByBookId.set(book.id, new Set<string>())
+						}
+						const compositeUsername = getCompositeUsername(baseUsername, book.id)
+						usersByBookId.get(book.id)?.add(compositeUsername)
+					}
+				}
+			}
+		} else {
+			// No address books: use regular usernames
+			for (const user of users) {
+				if (user.username.startsWith('ro-')) continue
+				if (isCompositeUsername(user.username)) continue
+				for (const book of books) {
+					if (!usersByBookId.has(book.id)) {
+						usersByBookId.set(book.id, new Set<string>())
+					}
+					usersByBookId.get(book.id)?.add(user.username)
+				}
 			}
 		}
 
