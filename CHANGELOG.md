@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.11.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.10.0...v0.11.0) (2026-01-26)
+## [0.11.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.11.0...v0.11.1) (2026-01-26)
 
-### Features
+### Bug Fixes
 
-* implement composite usernames for CardDAV accounts, allowing multiple address books per user; update sync logic and UI instructions accordingly ([afd1467](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/afd14679d6dc5a7a47fc629b070541a0efb58247))
+* update function to retrieve explicit address book IDs for user in setUserAddressBooks ([3a6f2d9](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/3a6f2d9e517aa9a761cd42bcfb6a9ca879706b97))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.11.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.11.0...v0.11.1)
+
+- 🐛 Fix: update function to retrieve explicit address book IDs for user in setUserAddressBooks [`3a6f2d9`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/3a6f2d9e517aa9a761cd42bcfb6a9ca879706b97)
+
 #### [v0.11.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.10.0...v0.11.0)
 
+> 25 January 2026
+
 - ✨ Feature: implement composite usernames for CardDAV accounts, allowing multiple address books per user; update sync logic and UI instructions accordingly [`afd1467`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/afd14679d6dc5a7a47fc629b070541a0efb58247)
+- 🔧 Chore: release v0.11.0 [`f9797c7`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/f9797c7a2960c3cb5dd17ec32adf00dc6859987e)
 
 #### [v0.10.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.9.1...v0.10.0)
 
