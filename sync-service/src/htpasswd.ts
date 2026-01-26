@@ -371,15 +371,92 @@ export async function syncCompositeUsers(
 	// Create composite users for newly assigned books
 	for (const bookId of assignedBookIds) {
 		if (!previousSet.has(bookId)) {
-			await createCompositeUser(baseUsername, bookId)
+			try {
+				await createCompositeUser(baseUsername, bookId)
+			} catch (error) {
+				console.error(`Failed to create composite user ${baseUsername}-${bookId}:`, error)
+				// Continue with other books
+			}
 		}
 	}
 
 	// Delete composite users for unassigned books
 	for (const bookId of previousSet) {
 		if (!assignedSet.has(bookId)) {
-			await deleteCompositeUser(baseUsername, bookId)
+			try {
+				await deleteCompositeUser(baseUsername, bookId)
+			} catch (error) {
+				console.error(`Failed to delete composite user ${baseUsername}-${bookId}:`, error)
+				// Continue with other books
+			}
 		}
+	}
+}
+
+/**
+ * Ensure composite users exist for all current user-address-book assignments.
+ * This is called on startup to catch any missing composite users (e.g., if migration
+ * ran before assignments were made, or if assignments were made manually).
+ */
+export async function ensureAllCompositeUsersExist(): Promise<void> {
+	const { getAddressBooks, getExplicitAddressBookIdsForUser } = await import('./db')
+	const books = await getAddressBooks()
+	if (books.length === 0) return
+
+	const allUsers = await getUsers()
+	const baseUsers = allUsers.filter(
+		user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username)
+	)
+
+	let ensuredCount = 0
+	for (const user of baseUsers) {
+		try {
+			const assignedBookIds = await getExplicitAddressBookIdsForUser(user.username)
+			const publicBooks = books.filter(book => book.is_public)
+			const allBookIds = new Set([...assignedBookIds, ...publicBooks.map(b => b.id)])
+
+			for (const bookId of allBookIds) {
+				const compositeUsername = getCompositeUsername(user.username, bookId)
+				if (!(await userExists(compositeUsername))) {
+					try {
+						await createCompositeUser(user.username, bookId)
+						ensuredCount++
+						console.log(`Ensured composite user exists: ${compositeUsername}`)
+					} catch (error) {
+						console.error(`Failed to ensure composite user ${compositeUsername}:`, error)
+					}
+				} else {
+					// User exists, but ensure directory and props exist
+					const compositePath = path.join(RADICALE_STORAGE_PATH, 'collection-root', compositeUsername)
+					try {
+						await ensureDirectoryExists(compositePath)
+						const book = books.find(b => b.id === bookId)
+						if (book) {
+							const propsPath = path.join(compositePath, '.Radicale.props')
+							try {
+								await access(propsPath, constants.F_OK)
+							} catch {
+								// Props don't exist, create them
+								const props = {
+									tag: 'VADDRESSBOOK',
+									'D:displayname': book.name,
+									'C:addressbook-description': `Contacts for ${book.name}`,
+								}
+								await writeFile(propsPath, JSON.stringify(props), 'utf-8')
+							}
+						}
+					} catch (error) {
+						console.warn(`Failed to ensure directory/props for ${compositeUsername}:`, error)
+					}
+				}
+			}
+		} catch (error) {
+			console.error(`Failed to ensure composite users for ${user.username}:`, error)
+		}
+	}
+
+	if (ensuredCount > 0) {
+		console.log(`Ensured ${ensuredCount} composite users exist`)
 	}
 }
 
