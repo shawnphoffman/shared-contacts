@@ -6,18 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.11.1](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.11.0...v0.11.1) (2026-01-26)
+## [0.12.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.11.1...v0.12.0) (2026-01-26)
 
-### Bug Fixes
+### Features
 
-* update function to retrieve explicit address book IDs for user in setUserAddressBooks ([3a6f2d9](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/3a6f2d9e517aa9a761cd42bcfb6a9ca879706b97))
+* enhance composite user management by adding error handling and ensuring all composite users exist on startup ([70764f0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/70764f0b75b4fbcf355ee7583f6b938bc719fa51))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.12.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.11.1...v0.12.0)
+
+- ✨ Feature: enhance composite user management by adding error handling and ensuring all composite users exist on startup [`70764f0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/70764f0b75b4fbcf355ee7583f6b938bc719fa51)
+
 #### [v0.11.1](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.11.0...v0.11.1)
 
+> 25 January 2026
+
+- 🔧 Chore: release v0.11.1 [`92f2621`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/92f2621dd713495f4af3633bcad5652773bd7924)
 - 🐛 Fix: update function to retrieve explicit address book IDs for user in setUserAddressBooks [`3a6f2d9`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/3a6f2d9e517aa9a761cd42bcfb6a9ca879706b97)
 
 #### [v0.11.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.10.0...v0.11.0)
