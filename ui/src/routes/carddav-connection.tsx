@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Check, Copy, Lock, Server, User } from 'lucide-react'
 import { Fragment, useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
@@ -93,6 +94,48 @@ function getProxyUIBaseUrl(runtimeConfig?: RuntimeConfig): string {
 		return `${protocol}//${hostname}:3030`
 	}
 	return 'https://contacts.example.com'
+}
+
+async function handleDownloadMobileconfig(username: string, bookId: string, bookName: string) {
+	try {
+		const params = new URLSearchParams({
+			username,
+			bookId,
+		})
+		const response = await fetch(`/api/mobileconfig?${params.toString()}`)
+
+		if (!response.ok) {
+			let message = 'Failed to download profile'
+			try {
+				const data = await response.json()
+				if (data?.error) {
+					message = data.error
+				}
+			} catch {
+				// Ignore JSON parsing errors and use default message
+			}
+			toast.error(message)
+			return
+		}
+
+		const blob = await response.blob()
+		const url = window.URL.createObjectURL(blob)
+		const link = document.createElement('a')
+		const shortBookId = bookId.replace(/-/g, '').slice(0, 8) || bookId
+
+		link.href = url
+		link.download = `shared-contacts-${username}-${shortBookId}.mobileconfig`
+
+		document.body.appendChild(link)
+		link.click()
+		link.remove()
+		window.URL.revokeObjectURL(url)
+
+		toast.success(`Profile for "${bookName}" is downloading`)
+	} catch (error) {
+		console.error('Error downloading mobileconfig profile:', error)
+		toast.error('Failed to download profile')
+	}
 }
 
 /** CardDAV subscription URL for a user and address book (uses composite username format: username-bookid). */
@@ -280,11 +323,19 @@ function CardDAVConnectionPage() {
 				<Card>
 					<CardHeader>
 						<CardTitle>Connection Details by User and Book</CardTitle>
-						<CardDescription>
-							Assign books to users on the Users page. Each address book gets its own CardDAV account using composite usernames (
-							<code>username-bookid</code>). This avoids Apple Contacts limitations where only one book per account is shown. Use the
-							composite username and Server Path <code>/username-bookid/</code> (e.g.,{' '}
-							<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>) when adding accounts in CardDAV clients.
+						<CardDescription className="space-y-2">
+							<p>
+								Assign books to users on the Users page. Each address book gets its own CardDAV account using composite usernames (
+								<code>username-bookid</code>). This avoids Apple Contacts limitations where only one book per account is shown. Use the
+								composite username and Server Path <code>/username-bookid/</code> (e.g.,{' '}
+								<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>) when adding accounts in CardDAV clients.
+							</p>
+							<p className="text-xs sm:text-[13px] text-muted-foreground">
+								The <span className="font-medium">Download profile</span> button generates an iOS/macOS <code>.mobileconfig</code> profile
+								for that user and book. It pre-fills the server, path, and composite username but{' '}
+								<span className="font-semibold">never includes the password</span> &mdash; the device will prompt for it during
+								installation. For best results, open this page in Safari on the target device and tap the button directly.
+							</p>
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -364,6 +415,13 @@ function CardDAVConnectionPage() {
 																			<CopyButton text={proxyUrl} label="Proxy Subscription URL" />
 																		</>
 																	)}
+																	<Button
+																		variant="outline"
+																		size="sm"
+																		onClick={() => handleDownloadMobileconfig(user.username, book.id, book.name)}
+																	>
+																		Download profile
+																	</Button>
 																</div>
 															</TableCell>
 														</TableRow>

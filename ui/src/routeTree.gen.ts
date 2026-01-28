@@ -19,7 +19,9 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUserBookAssignmentsRouteImport } from './routes/api/user-book-assignments'
+import { Route as ApiRuntimeConfigRouteImport } from './routes/api/runtime-config'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
+import { Route as ApiMobileconfigRouteImport } from './routes/api/mobileconfig'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
 import { Route as ApiAddressBooksRouteImport } from './routes/api/address-books'
@@ -86,9 +88,19 @@ const ApiUserBookAssignmentsRoute = ApiUserBookAssignmentsRouteImport.update({
   path: '/api/user-book-assignments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRuntimeConfigRoute = ApiRuntimeConfigRouteImport.update({
+  id: '/api/runtime-config',
+  path: '/api/runtime-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
   id: '/api/radicale-users',
   path: '/api/radicale-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMobileconfigRoute = ApiMobileconfigRouteImport.update({
+  id: '/api/mobileconfig',
+  path: '/api/mobileconfig',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -184,7 +196,9 @@ export interface FileRoutesByFullPath {
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
+  '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
@@ -212,7 +226,9 @@ export interface FileRoutesByTo {
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
+  '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
@@ -241,7 +257,9 @@ export interface FileRoutesById {
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
   '/api/health': typeof ApiHealthRoute
+  '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
@@ -271,7 +289,9 @@ export interface FileRouteTypes {
     | '/api/address-books'
     | '/api/contacts'
     | '/api/health'
+    | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/runtime-config'
     | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
@@ -299,7 +319,9 @@ export interface FileRouteTypes {
     | '/api/address-books'
     | '/api/contacts'
     | '/api/health'
+    | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/runtime-config'
     | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
@@ -327,7 +349,9 @@ export interface FileRouteTypes {
     | '/api/address-books'
     | '/api/contacts'
     | '/api/health'
+    | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/runtime-config'
     | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
@@ -356,7 +380,9 @@ export interface RootRouteChildren {
   ApiAddressBooksRoute: typeof ApiAddressBooksRouteWithChildren
   ApiContactsRoute: typeof ApiContactsRouteWithChildren
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiMobileconfigRoute: typeof ApiMobileconfigRoute
   ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
+  ApiRuntimeConfigRoute: typeof ApiRuntimeConfigRoute
   ApiUserBookAssignmentsRoute: typeof ApiUserBookAssignmentsRoute
 }
 
@@ -432,11 +458,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUserBookAssignmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/runtime-config': {
+      id: '/api/runtime-config'
+      path: '/api/runtime-config'
+      fullPath: '/api/runtime-config'
+      preLoaderRoute: typeof ApiRuntimeConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/radicale-users': {
       id: '/api/radicale-users'
       path: '/api/radicale-users'
       fullPath: '/api/radicale-users'
       preLoaderRoute: typeof ApiRadicaleUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mobileconfig': {
+      id: '/api/mobileconfig'
+      path: '/api/mobileconfig'
+      fullPath: '/api/mobileconfig'
+      preLoaderRoute: typeof ApiMobileconfigRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -635,7 +675,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAddressBooksRoute: ApiAddressBooksRouteWithChildren,
   ApiContactsRoute: ApiContactsRouteWithChildren,
   ApiHealthRoute: ApiHealthRoute,
+  ApiMobileconfigRoute: ApiMobileconfigRoute,
   ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
+  ApiRuntimeConfigRoute: ApiRuntimeConfigRoute,
   ApiUserBookAssignmentsRoute: ApiUserBookAssignmentsRoute,
 }
 export const routeTree = rootRouteImport

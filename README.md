@@ -59,6 +59,24 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 4. **Regular backups** of database and Radicale data
 5. **Keep Docker images updated**
 
+## Mobileconfig profiles and signing
+
+You can generate `.mobileconfig` profiles from the CardDAV Connection page to simplify setting up iOS and macOS clients. Each profile configures a single CardDAV account for a specific `(user, address book)` pair using a composite username (`username-bookid`). Profiles are generated dynamically and are **not signed** by default.
+
+In a production deployment, you may want profiles to be signed so devices show a trusted issuer and tampering is harder. A future version of this project will support optional signing controlled by environment variables:
+
+- `MOBILECONFIG_SIGNING_ENABLED=true|false`: turns signing on or off (defaults to `false`)
+- `MOBILECONFIG_SIGNING_CERT_PATH`: path to a PEM-encoded signing certificate
+- `MOBILECONFIG_SIGNING_KEY_PATH`: path to the corresponding private key (PEM)
+- `MOBILECONFIG_SIGNING_CHAIN_PATH` (optional): path to intermediate certificates for the chain
+
+When enabled, the server will generate the unsigned `.mobileconfig` profile, then sign it before returning it. The signing implementation will likely use either:
+
+- An OpenSSL subprocess (e.g. `openssl smime -sign ... -outform der`) for a simple, battle-tested integration
+- Or a Node PKCS#7/CMS library to produce the signed payload in-process
+
+Certificates and keys should be provided via Docker secrets or mounted volumes, **never baked into the image**. `PayloadOrganization` and `PayloadIdentifier` values in the profile will be aligned with the certificate subject so devices show a consistent “signed by” organization.
+
 ## License
 
 GNU AGPLv3
