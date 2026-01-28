@@ -6,23 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.16.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.15.0...v0.16.0) (2026-01-28)
+## [0.17.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.16.0...v0.17.0) (2026-01-28)
 
 ### Features
 
-* add runtime configuration fetching and update CardDAV base URL logic in CardDAVConnectionPage ([a448f5f](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/a448f5fe2cdac69cafc2250aa283ba99afc6093b))
-* enhance readiness check and error handling during startup in sync service ([d53d9fc](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/d53d9fc047cfde131a5be834d301e4eaea7fc00d))
-* implement graceful shutdown handling in sync service to ensure proper resource cleanup on termination signals ([0581b92](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/0581b92520ef1a451968456ee7cbab4be39785d9))
+* add mobileconfig profile generation and download functionality in CardDAVConnectionPage ([7a31c90](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/7a31c90335faaf9b0789374da997542799de3c38))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.17.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.16.0...v0.17.0)
+
+- ✨ Feature: add mobileconfig profile generation and download functionality in CardDAVConnectionPage [`7a31c90`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/7a31c90335faaf9b0789374da997542799de3c38)
+
 #### [v0.16.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.15.0...v0.16.0)
+
+> 28 January 2026
 
 - ✨ Feature: add runtime configuration fetching and update CardDAV base URL logic in CardDAVConnectionPage [`a448f5f`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/a448f5fe2cdac69cafc2250aa283ba99afc6093b)
 - ✨ Feature: enhance readiness check and error handling during startup in sync service [`d53d9fc`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/d53d9fc047cfde131a5be834d301e4eaea7fc00d)
 - ✨ Feature: implement graceful shutdown handling in sync service to ensure proper resource cleanup on termination signals [`0581b92`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/0581b92520ef1a451968456ee7cbab4be39785d9)
+- 🔧 Chore: release v0.16.0 [`84b00f0`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/84b00f0361d10707e68353e67ec5683ad2a97f50)
 
 #### [v0.15.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.14.0...v0.15.0)
 
