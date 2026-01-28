@@ -6,28 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.15.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.14.0...v0.15.0) (2026-01-26)
+## [0.16.0](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/compare/v0.15.0...v0.16.0) (2026-01-28)
 
 ### Features
 
-* add optional public URLs for CardDAV connection in environment configuration and update connection logic in UI ([8da8a34](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/8da8a3469e9aae943b5edd7887cc908418b79fbf))
-* add password visibility toggle and auto-generate slug functionality in BooksPage ([9f9d1e7](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/9f9d1e791aa7cbf55e0241ab93b1845ecaa3bd04))
-* enhance password input UI with improved layout and visibility toggle in BookCard component ([bbb0c05](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/bbb0c0581ba29ce12ed9a181ca9b6fe21377c954))
-
-### Bug Fixes
-
-* clarify CardDAV connection instructions and improve UI for displaying URLs in CardDAVConnectionPage ([740f982](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/740f982d7dbf9966d49030c12ed42c891fc92423))
+* add runtime configuration fetching and update CardDAV base URL logic in CardDAVConnectionPage ([a448f5f](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/a448f5fe2cdac69cafc2250aa283ba99afc6093b))
+* enhance readiness check and error handling during startup in sync service ([d53d9fc](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/d53d9fc047cfde131a5be834d301e4eaea7fc00d))
+* implement graceful shutdown handling in sync service to ensure proper resource cleanup on termination signals ([0581b92](https://shawnphoffman-GitHub/shawnphoffman/shared-contacts/commit/0581b92520ef1a451968456ee7cbab4be39785d9))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.16.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.15.0...v0.16.0)
+
+- ✨ Feature: add runtime configuration fetching and update CardDAV base URL logic in CardDAVConnectionPage [`a448f5f`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/a448f5fe2cdac69cafc2250aa283ba99afc6093b)
+- ✨ Feature: enhance readiness check and error handling during startup in sync service [`d53d9fc`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/d53d9fc047cfde131a5be834d301e4eaea7fc00d)
+- ✨ Feature: implement graceful shutdown handling in sync service to ensure proper resource cleanup on termination signals [`0581b92`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/0581b92520ef1a451968456ee7cbab4be39785d9)
+
 #### [v0.15.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.14.0...v0.15.0)
+
+> 26 January 2026
 
 - 🐛 Fix: clarify CardDAV connection instructions and improve UI for displaying URLs in CardDAVConnectionPage [`740f982`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/740f982d7dbf9966d49030c12ed42c891fc92423)
 - ✨ Feature: add password visibility toggle and auto-generate slug functionality in BooksPage [`9f9d1e7`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/9f9d1e791aa7cbf55e0241ab93b1845ecaa3bd04)
 - ✨ Feature: enhance password input UI with improved layout and visibility toggle in BookCard component [`bbb0c05`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/bbb0c0581ba29ce12ed9a181ca9b6fe21377c954)
 - ✨ Feature: add optional public URLs for CardDAV connection in environment configuration and update connection logic in UI [`8da8a34`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/8da8a3469e9aae943b5edd7887cc908418b79fbf)
+- 🔧 Chore: release v0.15.0 [`3aac943`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/3aac94369e5a6fbc5b717e524ddb57bb4c556fe1)
 - ♻️ Refactor: streamline JSX structure in RadicaleUsersPage and enhance dialog title with selected user context [`9f1d0ac`](https://shawnphoffman-github/shawnphoffman/shared-contacts/commit/9f1d0ace1a1233f0ccd07ba24201feb127bfb9e5)
 
 #### [v0.14.0](https://shawnphoffman-github/shawnphoffman/shared-contacts/compare/v0.13.2...v0.14.0)
