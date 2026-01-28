@@ -8,10 +8,34 @@ import { runCompositeUsersMigrationIfNeeded } from './composite-users-migration'
 import { ensureAllCompositeUsersExist } from './htpasswd'
 import { syncReadonlyUsersToHtpasswd } from './readonly-auth'
 
+function setupSignalHandlers() {
+	const handleShutdown = async (signal: 'SIGTERM' | 'SIGINT') => {
+		console.log(`${signal} received, shutting down gracefully...`)
+		try {
+			await closePool()
+		} catch (err) {
+			console.error('Error while closing database pool during shutdown:', err)
+		}
+		process.exit(0)
+	}
+
+	process.on('SIGTERM', () => {
+		void handleShutdown('SIGTERM')
+	})
+
+	process.on('SIGINT', () => {
+		void handleShutdown('SIGINT')
+	})
+}
+
 async function main() {
 	console.log('Starting Shared Contacts Sync Service...')
 	console.log('RADICALE_STORAGE_PATH: /data/collections')
 	console.log(`SYNC_INTERVAL: ${process.env.SYNC_INTERVAL || '30000'}ms`)
+
+	// Always register signal handlers so we can shut down gracefully,
+	// even if startup throws before migrations complete.
+	setupSignalHandlers()
 
 	try {
 		// Start API server first (so health checks work)
@@ -59,19 +83,6 @@ async function main() {
 		}, readonlyAuthInterval)
 
 		console.log('Sync service started successfully')
-
-		// Keep the process alive
-		process.on('SIGTERM', async () => {
-			console.log('SIGTERM received, shutting down gracefully...')
-			await closePool()
-			process.exit(0)
-		})
-
-		process.on('SIGINT', async () => {
-			console.log('SIGINT received, shutting down gracefully...')
-			await closePool()
-			process.exit(0)
-		})
 	} catch (error) {
 		console.error('Fatal error during sync service startup:', error)
 		// Record the startup error so /ready can report it, but keep the process alive
