@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { closePool } from './db'
 import { syncDbToRadicale, syncRadicaleToDb, startWatchingRadicale, startPeriodicSync } from './sync'
-import { startApiServer, setMigrationsComplete } from './api'
+import { startApiServer, setMigrationsComplete, setStartupError } from './api'
 import { runMigrations } from './migrations'
 import { runPathMigrationIfNeeded } from './path-migration'
 import { runCompositeUsersMigrationIfNeeded } from './composite-users-migration'
@@ -73,9 +73,14 @@ async function main() {
 			process.exit(0)
 		})
 	} catch (error) {
-		console.error('Fatal error:', error)
-		await closePool()
-		process.exit(1)
+		console.error('Fatal error during sync service startup:', error)
+		// Record the startup error so /ready can report it, but keep the process alive
+		setStartupError(error)
+		try {
+			await closePool()
+		} catch (closeError) {
+			console.error('Error while closing database pool after startup failure:', closeError)
+		}
 	}
 }
 

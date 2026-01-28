@@ -5,11 +5,20 @@ import { getUsers, createUser, updateUserPassword, deleteUser, backfillSharedCon
 const app = express()
 const PORT = 3001
 
-// Track when migrations are complete
+// Track when migrations are complete and whether startup hit a fatal error
 let migrationsComplete = false
+let startupError: Error | null = null
 
 export function setMigrationsComplete() {
 	migrationsComplete = true
+}
+
+export function setStartupError(error: unknown) {
+	if (error instanceof Error) {
+		startupError = error
+	} else {
+		startupError = new Error(String(error))
+	}
 }
 
 app.use(cors())
@@ -20,13 +29,23 @@ app.get('/health', (_req: Request, res: Response) => {
 	res.json({ status: 'ok' })
 })
 
-// Readiness check (only returns ok after migrations complete)
+// Readiness check:
+// - returns 500 if a fatal startup error occurred
+// - returns 200 only after migrations complete
+// - otherwise 503 while still starting up
 app.get('/ready', (_req: Request, res: Response) => {
-	if (migrationsComplete) {
-		res.json({ status: 'ready', migrations: 'complete' })
-	} else {
-		res.status(503).json({ status: 'not ready', migrations: 'pending' })
+	if (startupError) {
+		return res.status(500).json({
+			status: 'error',
+			message: startupError.message || 'Sync service startup error',
+		})
 	}
+
+	if (migrationsComplete) {
+		return res.json({ status: 'ready', migrations: 'complete' })
+	}
+
+	return res.status(503).json({ status: 'not ready', migrations: 'pending' })
 })
 
 // Get all Radicale users
@@ -34,14 +53,12 @@ app.get('/api/radicale-users', async (req: Request, res: Response) => {
 	try {
 		const includeComposite = req.query.include_composite === 'true'
 		const allUsers = await getUsers()
-		
+
 		// Filter out composite users unless explicitly requested
 		// Composite users are auto-managed and shouldn't appear in the UI
 		const { isCompositeUsername } = await import('./htpasswd')
-		const users = includeComposite
-			? allUsers
-			: allUsers.filter(user => !isCompositeUsername(user.username))
-		
+		const users = includeComposite ? allUsers : allUsers.filter(user => !isCompositeUsername(user.username))
+
 		res.json(users)
 	} catch (error: unknown) {
 		console.error('Error fetching users:', error)
