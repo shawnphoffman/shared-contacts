@@ -24,6 +24,11 @@ interface AddressBook {
 	readonly_enabled?: boolean
 }
 
+interface RuntimeConfig {
+	uiBaseUrl: string | null
+	carddavBaseUrl: string | null
+}
+
 async function fetchUsers(): Promise<Array<RadicaleUser>> {
 	const response = await fetch('/api/radicale-users')
 	if (!response.ok) {
@@ -36,6 +41,14 @@ async function fetchAddressBooks(): Promise<Array<AddressBook>> {
 	const response = await fetch('/api/address-books?readonly=1')
 	if (!response.ok) {
 		throw new Error('Failed to fetch address books')
+	}
+	return response.json()
+}
+
+async function fetchRuntimeConfig(): Promise<RuntimeConfig> {
+	const response = await fetch('/api/runtime-config')
+	if (!response.ok) {
+		throw new Error('Failed to fetch runtime config')
 	}
 	return response.json()
 }
@@ -56,10 +69,10 @@ function getDirectUIBaseUrl(): string {
 	return 'http://localhost:3030'
 }
 
-function getProxyCardDAVBaseUrl(): string {
-	// Check for configured URL first
-	if (import.meta.env.PUBLIC_CARDDAV_URL) {
-		return import.meta.env.PUBLIC_CARDDAV_URL
+function getProxyCardDAVBaseUrl(runtimeConfig?: RuntimeConfig): string {
+	// Prefer runtime configuration from server if available
+	if (runtimeConfig?.carddavBaseUrl) {
+		return runtimeConfig.carddavBaseUrl
 	}
 	// Fall back to current location
 	if (typeof window !== 'undefined') {
@@ -69,10 +82,10 @@ function getProxyCardDAVBaseUrl(): string {
 	return 'https://carddav.example.com'
 }
 
-function getProxyUIBaseUrl(): string {
-	// Check for configured URL first
-	if (import.meta.env.PUBLIC_UI_URL) {
-		return import.meta.env.PUBLIC_UI_URL
+function getProxyUIBaseUrl(runtimeConfig?: RuntimeConfig): string {
+	// Prefer runtime configuration from server if available
+	if (runtimeConfig?.uiBaseUrl) {
+		return runtimeConfig.uiBaseUrl
 	}
 	// Fall back to current location
 	if (typeof window !== 'undefined') {
@@ -139,12 +152,16 @@ function CardDAVConnectionPage() {
 		queryKey: ['user-book-assignments'],
 		queryFn: fetchUserBookAssignments,
 	})
+	const { data: runtimeConfig } = useQuery({
+		queryKey: ['runtime-config'],
+		queryFn: fetchRuntimeConfig,
+	})
 	const isLoading = usersLoading || booksLoading || assignmentsLoading
 
 	const directBaseUrl = getDirectCardDAVBaseUrl()
 	const directUiBaseUrl = getDirectUIBaseUrl()
-	const proxyBaseUrl = getProxyCardDAVBaseUrl()
-	const proxyUiBaseUrl = getProxyUIBaseUrl()
+	const proxyBaseUrl = getProxyCardDAVBaseUrl(runtimeConfig)
+	const proxyUiBaseUrl = getProxyUIBaseUrl(runtimeConfig)
 	const traefikExample = `# TRAEFIK (example)
 # CONTACTS - URL for management UI
 - traefik.http.routers.contacts.service=contacts
@@ -507,15 +524,15 @@ function CardDAVConnectionPage() {
 								<div className="mb-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
 									<div>
 										<strong>macOS Contacts Limitation:</strong> Apple Contacts on macOS has a known bug where it only shows{' '}
-										<strong>one address book per CardDAV account</strong>, even when the server exposes multiple collections. It typically shows
-										an "All" group and only syncs contacts from the first collection.
+										<strong>one address book per CardDAV account</strong>, even when the server exposes multiple collections. It typically
+										shows an "All" group and only syncs contacts from the first collection.
 									</div>
 									<div>
-										<strong>Solution:</strong> Each address book uses a composite username (<code>username-bookid</code>). When adding a CardDAV
-										account in Contacts, use the <strong>composite username</strong> from the table above (e.g.,{' '}
+										<strong>Solution:</strong> Each address book uses a composite username (<code>username-bookid</code>). When adding a
+										CardDAV account in Contacts, use the <strong>composite username</strong> from the table above (e.g.,{' '}
 										<code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>) and Server Path <code>/username-bookid/</code> (e.g.,{' '}
-										<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book appears as a separate account, avoiding Apple
-										Contacts limitations.
+										<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book appears as a separate account, avoiding
+										Apple Contacts limitations.
 									</div>
 									<div className="text-xs italic">
 										Note: iOS Contacts handles multiple collections better, but macOS Contacts requires this workaround. This is an Apple
