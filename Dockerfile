@@ -74,6 +74,12 @@ COPY migrations /app/migrations
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
+# OCI image metadata
+LABEL org.opencontainers.image.title="Shared Contacts"
+LABEL org.opencontainers.image.description="Self-hostable CardDAV server for managing shared contacts"
+LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
+LABEL org.opencontainers.image.source="https://github.com/shawnphoffman/shared-contacts"
+
 # Expose ports
 EXPOSE 3030 3001 5232
 

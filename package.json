@@ -3,6 +3,7 @@
 	"version": "0.17.0",
 	"description": "Self-hostable CardDAV server for managing shared contacts with a modern web-based management interface",
 	"private": true,
+	"license": "AGPL-3.0-or-later",
 	"engines": {
 		"node": ">=20.0.0",
 		"npm": ">=9.0.0"
