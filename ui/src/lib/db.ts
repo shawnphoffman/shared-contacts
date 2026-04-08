@@ -128,7 +128,36 @@ export function parseContactRow<T extends Record<string, unknown>>(row: T): T {
 	return row
 }
 
+/**
+ * Cached set of column names for the contacts table.
+ * Columns only change at migration/restart, so a lazy-init cache with no
+ * invalidation is safe — the process restarts after migrations run.
+ */
+let contactColumnsCache: Set<string> | null = null
+
+async function getContactColumns(): Promise<Set<string>> {
+	if (contactColumnsCache) return contactColumnsCache
+	const dbPool = getPool()
+	const result = await dbPool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = 'contacts' AND table_schema = 'public'
+  `)
+	contactColumnsCache = new Set(result.rows.map((r: any) => r.column_name))
+	return contactColumnsCache
+}
+
+/**
+ * Cache for table existence checks. Tables are only created at
+ * migration/restart, so once a table is confirmed to exist it stays valid
+ * for the lifetime of the process.
+ */
+const tableExistsCache = new Map<string, boolean>()
+
 export async function tableExists(tableName: string): Promise<boolean> {
+	const cached = tableExistsCache.get(tableName)
+	if (cached !== undefined) return cached
+
 	const dbPool = getPool()
 	const result = await dbPool.query(
 		`
@@ -138,7 +167,9 @@ export async function tableExists(tableName: string): Promise<boolean> {
   `,
 		[tableName]
 	)
-	return result.rows.length > 0
+	const exists = result.rows.length > 0
+	tableExistsCache.set(tableName, exists)
+	return exists
 }
 
 async function attachAddressBooks(contacts: Array<Contact>): Promise<Array<Contact>> {
@@ -416,13 +447,8 @@ export async function findDuplicateContact(fullName: string | null, email: strin
 export async function createContact(contact: Partial<Contact>): Promise<Contact> {
 	const dbPool = getPool()
 
-	// Check which columns exist in the database
-	const columnCheck = await dbPool.query(`
-    SELECT column_name
-    FROM information_schema.columns
-    WHERE table_name = 'contacts' AND table_schema = 'public'
-  `)
-	const existingColumns = new Set(columnCheck.rows.map((r: any) => r.column_name))
+	// Check which columns exist in the database (cached)
+	const existingColumns = await getContactColumns()
 
 	const fields: Array<keyof Contact> = [
 		'vcard_id',
@@ -553,13 +579,8 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 export async function updateContact(id: string, contact: Partial<Contact>): Promise<Contact> {
 	const dbPool = getPool()
 
-	// Check which columns exist in the database
-	const columnCheck = await dbPool.query(`
-    SELECT column_name
-    FROM information_schema.columns
-    WHERE table_name = 'contacts' AND table_schema = 'public'
-  `)
-	const existingColumns = new Set(columnCheck.rows.map((r: any) => r.column_name))
+	// Check which columns exist in the database (cached)
+	const existingColumns = await getContactColumns()
 
 	const updates: Array<string> = []
 	const values: Array<any> = []
