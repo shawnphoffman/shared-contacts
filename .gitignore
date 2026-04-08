@@ -45,3 +45,6 @@ app.config.timestamp_*.js
 
 /ignore
 /test-logs
+
+# Analysis notes
+.notes/
