@@ -108,6 +108,26 @@ export interface Contact {
 	address_books?: Array<AddressBook> | null
 }
 
+/**
+ * Parse JSONB fields that may be returned as strings from PostgreSQL.
+ * This handles the case where pg returns JSONB as already-parsed objects
+ * or as raw JSON strings depending on the driver configuration.
+ */
+const JSONB_FIELDS = [
+	'phones', 'emails', 'addresses', 'urls', 'org_units',
+	'categories', 'labels', 'logos', 'sounds', 'keys', 'custom_fields',
+] as const
+
+export function parseContactRow<T extends Record<string, unknown>>(row: T): T {
+	for (const field of JSONB_FIELDS) {
+		if (field in row && row[field]) {
+			(row as Record<string, unknown>)[field] =
+				typeof row[field] === 'string' ? JSON.parse(row[field] as string) : row[field]
+		}
+	}
+	return row
+}
+
 export async function tableExists(tableName: string): Promise<boolean> {
 	const dbPool = getPool()
 	const result = await dbPool.query(
@@ -335,21 +355,7 @@ export async function setUserAddressBooks(username: string, addressBookIds: Arra
 export async function getAllContacts(): Promise<Array<Contact>> {
 	const dbPool = getPool()
 	const result = await dbPool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC')
-	// Parse JSONB fields
-	const contacts = result.rows.map(row => {
-		if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-		if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-		if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-		if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
-		if (row.org_units) row.org_units = typeof row.org_units === 'string' ? JSON.parse(row.org_units) : row.org_units
-		if (row.categories) row.categories = typeof row.categories === 'string' ? JSON.parse(row.categories) : row.categories
-		if (row.labels) row.labels = typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
-		if (row.logos) row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
-		if (row.sounds) row.sounds = typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
-		if (row.keys) row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
-		if (row.custom_fields) row.custom_fields = typeof row.custom_fields === 'string' ? JSON.parse(row.custom_fields) : row.custom_fields
-		return row
-	})
+	const contacts = result.rows.map(parseContactRow)
 	return attachAddressBooks(contacts)
 }
 
@@ -357,19 +363,7 @@ export async function getContactById(id: string): Promise<Contact | null> {
 	const dbPool = getPool()
 	const result = await dbPool.query('SELECT * FROM contacts WHERE id = $1', [id])
 	if (!result.rows[0]) return null
-	// Parse JSONB fields
-	const row = result.rows[0]
-	if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-	if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-	if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-	if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
-	if (row.org_units) row.org_units = typeof row.org_units === 'string' ? JSON.parse(row.org_units) : row.org_units
-	if (row.categories) row.categories = typeof row.categories === 'string' ? JSON.parse(row.categories) : row.categories
-	if (row.labels) row.labels = typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
-	if (row.logos) row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
-	if (row.sounds) row.sounds = typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
-	if (row.keys) row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
-	if (row.custom_fields) row.custom_fields = typeof row.custom_fields === 'string' ? JSON.parse(row.custom_fields) : row.custom_fields
+	const row = parseContactRow(result.rows[0])
 	const [contactWithBooks] = await attachAddressBooks([row])
 	return contactWithBooks
 }
@@ -553,20 +547,7 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
      RETURNING *`,
 		values
 	)
-	// Parse JSONB fields
-	const row = result.rows[0]
-	if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-	if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-	if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-	if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
-	if (row.org_units) row.org_units = typeof row.org_units === 'string' ? JSON.parse(row.org_units) : row.org_units
-	if (row.categories) row.categories = typeof row.categories === 'string' ? JSON.parse(row.categories) : row.categories
-	if (row.labels) row.labels = typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
-	if (row.logos) row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
-	if (row.sounds) row.sounds = typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
-	if (row.keys) row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
-	if (row.custom_fields) row.custom_fields = typeof row.custom_fields === 'string' ? JSON.parse(row.custom_fields) : row.custom_fields
-	return row
+	return parseContactRow(result.rows[0])
 }
 
 export async function updateContact(id: string, contact: Partial<Contact>): Promise<Contact> {
@@ -675,20 +656,7 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 
 	values.push(id)
 	const result = await dbPool.query(`UPDATE contacts SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`, values)
-	// Parse JSONB fields
-	const row = result.rows[0]
-	if (row.phones) row.phones = typeof row.phones === 'string' ? JSON.parse(row.phones) : row.phones
-	if (row.emails) row.emails = typeof row.emails === 'string' ? JSON.parse(row.emails) : row.emails
-	if (row.addresses) row.addresses = typeof row.addresses === 'string' ? JSON.parse(row.addresses) : row.addresses
-	if (row.urls) row.urls = typeof row.urls === 'string' ? JSON.parse(row.urls) : row.urls
-	if (row.org_units) row.org_units = typeof row.org_units === 'string' ? JSON.parse(row.org_units) : row.org_units
-	if (row.categories) row.categories = typeof row.categories === 'string' ? JSON.parse(row.categories) : row.categories
-	if (row.labels) row.labels = typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels
-	if (row.logos) row.logos = typeof row.logos === 'string' ? JSON.parse(row.logos) : row.logos
-	if (row.sounds) row.sounds = typeof row.sounds === 'string' ? JSON.parse(row.sounds) : row.sounds
-	if (row.keys) row.keys = typeof row.keys === 'string' ? JSON.parse(row.keys) : row.keys
-	if (row.custom_fields) row.custom_fields = typeof row.custom_fields === 'string' ? JSON.parse(row.custom_fields) : row.custom_fields
-	return row
+	return parseContactRow(result.rows[0])
 }
 
 export async function deleteContact(id: string): Promise<void> {
