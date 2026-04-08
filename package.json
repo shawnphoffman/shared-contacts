@@ -16,6 +16,8 @@
 		"lint:fix": "npm --prefix ui run lint -- --fix && npm --prefix sync-service run lint -- --fix",
 		"lint:ui": "npm --prefix ui run lint",
 		"lint:sync": "npm --prefix sync-service run lint",
+		"test": "npm --prefix sync-service run test && npm --prefix ui run test",
+		"test:unit": "npm --prefix sync-service run test:unit && npm --prefix ui run test:unit",
 		"prepare": "husky"
 	},
 	"keywords": [
