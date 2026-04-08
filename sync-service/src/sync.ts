@@ -24,6 +24,7 @@ import {
 } from './db'
 import { parseVCard, generateVCard } from './vcard'
 import { getUsers, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from './htpasswd'
+import { atomicWriteFileSync } from './fs-utils'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
@@ -102,7 +103,7 @@ function ensureAddressBookProps(collectionPath: string, book: AddressBook): void
 			'D:displayname': book.name,
 			'C:addressbook-description': `Contacts for ${book.name}`,
 		}
-		fs.writeFileSync(propsPath, JSON.stringify(props), 'utf-8')
+		atomicWriteFileSync(propsPath, JSON.stringify(props), 'utf-8')
 	}
 }
 
@@ -230,7 +231,7 @@ async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: str
 	ensureDirectoryExists(masterPath)
 	ensureAddressBookProps(masterPath, book)
 	const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
-	fs.writeFileSync(masterFilePath, vcardData, 'utf-8')
+	atomicWriteFileSync(masterFilePath, vcardData, 'utf-8')
 
 	try {
 		for (const username of usernames) {
@@ -240,7 +241,7 @@ async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: str
 			ensureDirectoryExists(userPath)
 			ensureAddressBookProps(userPath, book)
 			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
-			fs.writeFileSync(userFilePath, vcardData, 'utf-8')
+			atomicWriteFileSync(userFilePath, vcardData, 'utf-8')
 		}
 	} catch (error) {
 		console.error('Error writing to user directories:', error)
@@ -934,7 +935,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					if (!fs.existsSync(masterFilePath)) {
 						ensureDirectoryExists(masterPath)
 						ensureAddressBookProps(masterPath, book)
-						fs.writeFileSync(masterFilePath, vcardContent, 'utf-8')
+						atomicWriteFileSync(masterFilePath, vcardContent, 'utf-8')
 						console.log(`Copied new contact ${vcardId} into ${book.id} master directory`)
 					}
 
