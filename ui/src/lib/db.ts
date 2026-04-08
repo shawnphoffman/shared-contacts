@@ -390,6 +390,28 @@ export async function getAllContacts(): Promise<Array<Contact>> {
 	return attachAddressBooks(contacts)
 }
 
+export async function getAllContactsPaginated({
+	limit = 100,
+	offset = 0,
+}: {
+	limit?: number
+	offset?: number
+}): Promise<{ data: Array<Contact>; total: number; limit: number; offset: number }> {
+	const dbPool = getPool()
+	const clampedLimit = Math.max(1, Math.min(500, limit))
+	const clampedOffset = Math.max(0, offset)
+
+	const [countResult, dataResult] = await Promise.all([
+		dbPool.query('SELECT COUNT(*) FROM contacts'),
+		dbPool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC LIMIT $1 OFFSET $2', [clampedLimit, clampedOffset]),
+	])
+
+	const total = parseInt(countResult.rows[0].count, 10)
+	const contacts = dataResult.rows.map(parseContactRow)
+	const data = await attachAddressBooks(contacts)
+	return { data, total, limit: clampedLimit, offset: clampedOffset }
+}
+
 export async function getContactById(id: string): Promise<Contact | null> {
 	const dbPool = getPool()
 	const result = await dbPool.query('SELECT * FROM contacts WHERE id = $1', [id])
