@@ -11,9 +11,9 @@
 		"tagArgs": ["--no-sign"]
 	},
 	"github": {
-		"release": false,
+		"release": true,
 		"releaseName": "v${version}",
-		"releaseNotes": "bash ./scripts/generate-release-notes.sh ${version}"
+		"autoGenerate": true
 	},
 	"npm": {
 		"publish": false
