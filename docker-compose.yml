@@ -44,6 +44,12 @@ services:
       postgres:
         condition: service_healthy
     entrypoint: [ '/init-radicale.sh' ]
+    healthcheck:
+      test: [ 'CMD', 'python3', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:5232/.web')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   sync-service:
     container_name: shared-contacts-sync
@@ -64,7 +70,7 @@ services:
       postgres:
         condition: service_healthy
       radicale:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: [ 'CMD', 'node', '-e', "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" ]
       interval: 5s
