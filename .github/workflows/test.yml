@@ -51,7 +51,7 @@ jobs:
       - name: Wait for health check
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:3030/api/health > /dev/null 2>&1; then
+            if docker exec shared-contacts-app node -e "require('http').get('http://localhost:3030/api/health',(r)=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then
               echo "Health check passed"
               exit 0
             fi
@@ -63,7 +63,7 @@ jobs:
           exit 1
 
       - name: Verify API responds
-        run: curl -sf http://localhost:3030/api/health
+        run: docker exec shared-contacts-app node -e "require('http').get('http://localhost:3030/api/health',(r)=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>{console.log(d);process.exit(r.statusCode===200?0:1)})}).on('error',e=>{console.error(e);process.exit(1)})"
 
       - name: Cleanup
         if: always()
