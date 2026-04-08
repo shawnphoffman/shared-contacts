@@ -14,7 +14,8 @@
 		"lint": "npm --prefix ui run lint && npm --prefix sync-service run lint",
 		"lint:fix": "npm --prefix ui run lint -- --fix && npm --prefix sync-service run lint -- --fix",
 		"lint:ui": "npm --prefix ui run lint",
-		"lint:sync": "npm --prefix sync-service run lint"
+		"lint:sync": "npm --prefix sync-service run lint",
+		"prepare": "husky"
 	},
 	"keywords": [
 		"carddav",
@@ -33,8 +34,11 @@
 	},
 	"homepage": "https://github.com/shawnphoffman/shared-contacts#readme",
 	"devDependencies": {
+		"@commitlint/cli": "^20.5.0",
+		"@commitlint/config-conventional": "^20.5.0",
 		"@release-it/conventional-changelog": "^10.0.4",
 		"auto-changelog": "^2.5.0",
+		"husky": "^9.1.7",
 		"prettier": "^3.5.3",
 		"release-it": "^19.2.3"
 	}
