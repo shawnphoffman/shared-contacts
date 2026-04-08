@@ -2,8 +2,12 @@ import bcrypt from 'bcrypt'
 import path from 'path'
 import { readFile, writeFile, access, constants, readdir, copyFile, mkdir, rm, stat } from 'fs/promises'
 import { getAddressBooks, getAddressBooksForUser } from './db'
+import { AsyncMutex, atomicWriteFile } from './fs-utils'
 
 const USERS_FILE = '/data/users'
+
+/** Mutex for serializing all htpasswd file read-modify-write operations */
+const htpasswdLock = new AsyncMutex()
 const RADICALE_STORAGE_PATH = '/data/collections'
 
 const getErrorCode = (error: unknown): string | undefined => {
@@ -181,68 +185,72 @@ export async function userExists(username: string): Promise<boolean> {
  * Create a new user with a password
  */
 export async function createUser(username: string, password: string): Promise<void> {
-	if (await userExists(username)) {
-		throw new Error(`User ${username} already exists`)
-	}
-
-	// Hash password with bcrypt (10 rounds is standard)
-	const hash = await bcrypt.hash(password, 10)
-
-	// Read existing users
-	let content = ''
-	try {
-		await access(USERS_FILE, constants.F_OK)
-		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: unknown) {
-		if (getErrorCode(error) !== 'ENOENT') {
-			throw error
+	return htpasswdLock.withLock(async () => {
+		if (await userExists(username)) {
+			throw new Error(`User ${username} already exists`)
 		}
-	}
 
-	// Append new user (format: username:hashed_password)
-	const newLine = `${username}:${hash}\n`
-	const newContent = content + (content && !content.endsWith('\n') ? '\n' : '') + newLine
+		// Hash password with bcrypt (10 rounds is standard)
+		const hash = await bcrypt.hash(password, 10)
 
-	await writeFile(USERS_FILE, newContent, 'utf-8')
-	await backfillSharedContactsForUser(username)
+		// Read existing users
+		let content = ''
+		try {
+			await access(USERS_FILE, constants.F_OK)
+			content = await readFile(USERS_FILE, 'utf-8')
+		} catch (error: unknown) {
+			if (getErrorCode(error) !== 'ENOENT') {
+				throw error
+			}
+		}
+
+		// Append new user (format: username:hashed_password)
+		const newLine = `${username}:${hash}\n`
+		const newContent = content + (content && !content.endsWith('\n') ? '\n' : '') + newLine
+
+		await atomicWriteFile(USERS_FILE, newContent, 'utf-8')
+		await backfillSharedContactsForUser(username)
+	})
 }
 
 /**
  * Update a user's password
  */
 export async function updateUserPassword(username: string, password: string): Promise<void> {
-	if (!(await userExists(username))) {
-		throw new Error(`User ${username} does not exist`)
-	}
-
-	// Hash password with bcrypt
-	const hash = await bcrypt.hash(password, 10)
-
-	// Read existing users
-	let content = ''
-	try {
-		await access(USERS_FILE, constants.F_OK)
-		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: unknown) {
-		if (getErrorCode(error) !== 'ENOENT') {
-			throw error
+	return htpasswdLock.withLock(async () => {
+		if (!(await userExists(username))) {
+			throw new Error(`User ${username} does not exist`)
 		}
-	}
 
-	// Replace the user's line
-	const lines = content.split('\n')
-	const updatedLines = lines.map(line => {
-		const trimmed = line.trim()
-		if (trimmed && !trimmed.startsWith('#')) {
-			const [lineUsername] = trimmed.split(':')
-			if (lineUsername === username) {
-				return `${username}:${hash}`
+		// Hash password with bcrypt
+		const hash = await bcrypt.hash(password, 10)
+
+		// Read existing users
+		let content = ''
+		try {
+			await access(USERS_FILE, constants.F_OK)
+			content = await readFile(USERS_FILE, 'utf-8')
+		} catch (error: unknown) {
+			if (getErrorCode(error) !== 'ENOENT') {
+				throw error
 			}
 		}
-		return line
-	})
 
-	await writeFile(USERS_FILE, updatedLines.join('\n') + '\n', 'utf-8')
+		// Replace the user's line
+		const lines = content.split('\n')
+		const updatedLines = lines.map(line => {
+			const trimmed = line.trim()
+			if (trimmed && !trimmed.startsWith('#')) {
+				const [lineUsername] = trimmed.split(':')
+				if (lineUsername === username) {
+					return `${username}:${hash}`
+				}
+			}
+			return line
+		})
+
+		await atomicWriteFile(USERS_FILE, updatedLines.join('\n') + '\n', 'utf-8')
+	})
 }
 
 /**
@@ -322,35 +330,37 @@ export async function createCompositeUser(baseUsername: string, bookId: string):
  * Delete a composite CardDAV user
  */
 export async function deleteCompositeUser(baseUsername: string, bookId: string): Promise<void> {
-	const compositeUsername = getCompositeUsername(baseUsername, bookId)
-	if (!(await userExists(compositeUsername))) {
-		return // Already deleted
-	}
-
-	// Delete from htpasswd
-	let content = ''
-	try {
-		await access(USERS_FILE, constants.F_OK)
-		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: unknown) {
-		if (getErrorCode(error) !== 'ENOENT') {
-			throw error
+	return htpasswdLock.withLock(async () => {
+		const compositeUsername = getCompositeUsername(baseUsername, bookId)
+		if (!(await userExists(compositeUsername))) {
+			return // Already deleted
 		}
-		return
-	}
 
-	const lines = content.split('\n')
-	const filteredLines = lines.filter(line => {
-		const trimmed = line.trim()
-		if (trimmed && !trimmed.startsWith('#')) {
-			const [lineUsername] = trimmed.split(':')
-			return lineUsername !== compositeUsername
+		// Delete from htpasswd
+		let content = ''
+		try {
+			await access(USERS_FILE, constants.F_OK)
+			content = await readFile(USERS_FILE, 'utf-8')
+		} catch (error: unknown) {
+			if (getErrorCode(error) !== 'ENOENT') {
+				throw error
+			}
+			return
 		}
-		return true
+
+		const lines = content.split('\n')
+		const filteredLines = lines.filter(line => {
+			const trimmed = line.trim()
+			if (trimmed && !trimmed.startsWith('#')) {
+				const [lineUsername] = trimmed.split(':')
+				return lineUsername !== compositeUsername
+			}
+			return true
+		})
+
+		await atomicWriteFile(USERS_FILE, filteredLines.join('\n') + '\n', 'utf-8')
+		// Note: We don't delete the storage directory - let sync handle cleanup
 	})
-
-	await writeFile(USERS_FILE, filteredLines.join('\n') + '\n', 'utf-8')
-	// Note: We don't delete the storage directory - let sync handle cleanup
 }
 
 /**
@@ -544,63 +554,67 @@ async function cleanupOldNestedDirectories(): Promise<void> {
  * Does not run backfill.
  */
 export async function setUserHash(username: string, hash: string): Promise<void> {
-	let content = ''
-	try {
-		await access(USERS_FILE, constants.F_OK)
-		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: unknown) {
-		if (getErrorCode(error) !== 'ENOENT') {
-			throw error
-		}
-	}
-	const lines = content.split('\n')
-	let found = false
-	const newLines = lines.map(line => {
-		const trimmed = line.trim()
-		if (trimmed && !trimmed.startsWith('#')) {
-			const [lineUsername] = trimmed.split(':')
-			if (lineUsername === username) {
-				found = true
-				return `${username}:${hash}`
+	return htpasswdLock.withLock(async () => {
+		let content = ''
+		try {
+			await access(USERS_FILE, constants.F_OK)
+			content = await readFile(USERS_FILE, 'utf-8')
+		} catch (error: unknown) {
+			if (getErrorCode(error) !== 'ENOENT') {
+				throw error
 			}
 		}
-		return line
+		const lines = content.split('\n')
+		let found = false
+		const newLines = lines.map(line => {
+			const trimmed = line.trim()
+			if (trimmed && !trimmed.startsWith('#')) {
+				const [lineUsername] = trimmed.split(':')
+				if (lineUsername === username) {
+					found = true
+					return `${username}:${hash}`
+				}
+			}
+			return line
+		})
+		if (!found) {
+			newLines.push(`${username}:${hash}`)
+		}
+		await atomicWriteFile(USERS_FILE, newLines.join('\n').replace(/\n*$/, '\n'), 'utf-8')
 	})
-	if (!found) {
-		newLines.push(`${username}:${hash}`)
-	}
-	await writeFile(USERS_FILE, newLines.join('\n').replace(/\n*$/, '\n'), 'utf-8')
 }
 
 /**
  * Delete a user
  */
 export async function deleteUser(username: string): Promise<void> {
-	if (!(await userExists(username))) {
-		throw new Error(`User ${username} does not exist`)
-	}
-
-	// Read existing users
-	let content = ''
-	try {
-		await access(USERS_FILE, constants.F_OK)
-		content = await readFile(USERS_FILE, 'utf-8')
-	} catch (error: unknown) {
-		if (getErrorCode(error) !== 'ENOENT') {
-			throw error
+	return htpasswdLock.withLock(async () => {
+		if (!(await userExists(username))) {
+			throw new Error(`User ${username} does not exist`)
 		}
-	}
 
-	// Remove the user's line
-	const lines = content.split('\n')
-	const filteredLines = lines.filter(line => {
-		const trimmed = line.trim()
-		if (trimmed && !trimmed.startsWith('#')) {
-			const [lineUsername] = trimmed.split(':')
-			return lineUsername !== username
+		// Read existing users
+		let content = ''
+		try {
+			await access(USERS_FILE, constants.F_OK)
+			content = await readFile(USERS_FILE, 'utf-8')
+		} catch (error: unknown) {
+			if (getErrorCode(error) !== 'ENOENT') {
+				throw error
+			}
 		}
-		return true
+
+		// Remove the user's line
+		const lines = content.split('\n')
+		const filteredLines = lines.filter(line => {
+			const trimmed = line.trim()
+			if (trimmed && !trimmed.startsWith('#')) {
+				const [lineUsername] = trimmed.split(':')
+				return lineUsername !== username
+			}
+			return true
+		})
+
+		await atomicWriteFile(USERS_FILE, filteredLines.join('\n') + '\n', 'utf-8')
 	})
-
-	await writeFile(USERS_FILE, filteredLines.join('\n') + '\n', 'utf-8')
 }
