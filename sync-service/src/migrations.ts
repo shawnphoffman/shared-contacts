@@ -114,8 +114,29 @@ async function runMigration(filename: string): Promise<void> {
 
 	try {
 		const sql = readFileSync(filePath, 'utf-8')
-		// Execute the migration SQL
-		await pool.query(sql)
+
+		// If the SQL already contains its own transaction management, run it directly.
+		// Match BEGIN as a standalone statement (not inside strings like 'BEGIN:VCARD').
+		const hasTransaction = /^\s*BEGIN\s*;/im.test(sql)
+
+		if (hasTransaction) {
+			await pool.query(sql)
+		} else {
+			// Wrap in a transaction for atomicity — prevents partial migration
+			// application from leaving the schema in an inconsistent state.
+			const client = await pool.connect()
+			try {
+				await client.query('BEGIN')
+				await client.query(sql)
+				await client.query('COMMIT')
+			} catch (error) {
+				await client.query('ROLLBACK')
+				throw error
+			} finally {
+				client.release()
+			}
+		}
+
 		console.log(`✓ Applied migration: ${filename}`)
 	} catch (error) {
 		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
