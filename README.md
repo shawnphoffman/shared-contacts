@@ -1,5 +1,7 @@
 # Shared Contacts - CardDAV Server
 
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
 > [!WARNING]
 > This project is not production ready but is slowly becoming more stable. I stood this project up as an experiment with Cursor and I'm now trying to harden it. Do NOT use this without proper backups or with mission-critical data. Currently, there is NO AUTHENTICATION so do not expose this publicly.
 

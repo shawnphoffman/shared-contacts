@@ -1,6 +1,7 @@
 {
 	"name": "shared-contacts-sync-service",
 	"description": "Sync service for CardDAV contacts between Radicale and PostgreSQL",
+	"license": "AGPL-3.0-or-later",
 	"main": "dist/index.js",
 	"scripts": {
 		"build": "tsc",
