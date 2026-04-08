@@ -19,7 +19,22 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            sync-service/package-lock.json
+            ui/package-lock.json
+      - run: cd sync-service && npm ci && npm run test:unit
+      - run: cd ui && npm ci && npm run test:unit
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}
