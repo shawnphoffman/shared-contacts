@@ -9,7 +9,7 @@ COPY sync-service/tsconfig.json ./
 
 # Install all dependencies (including dev dependencies for TypeScript build)
 # Use npm install instead of npm ci to handle potential lock file mismatches
-RUN npm install && npm cache clean --force
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY sync-service/src ./src
@@ -85,6 +85,12 @@ EXPOSE 3030 3001 5232
 
 # Set working directory
 WORKDIR /app
+
+# Create non-root user for running services
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app /data /config
+
+USER appuser
 
 # Use our custom entrypoint
 ENTRYPOINT ["/docker-entrypoint.sh"]

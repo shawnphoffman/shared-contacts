@@ -5,8 +5,8 @@ services:
     container_name: shared-contacts-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-sharedcontacts}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMePlease!!!}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       POSTGRES_DB: sharedcontacts
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -30,7 +30,8 @@ services:
     container_name: shared-contacts-app
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-ChangeMePlease!!!}@shared-contacts-postgres:5432/sharedcontacts
+      DATABASE_URL: postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@shared-contacts-postgres:5432/sharedcontacts
+      NODE_ENV: production
       SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
       # Optional: Public URLs for CardDAV connection page (used for convenience only)
       # If not set, URLs will be derived from the current location
