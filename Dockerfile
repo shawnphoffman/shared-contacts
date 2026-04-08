@@ -8,7 +8,6 @@ COPY sync-service/package*.json ./
 COPY sync-service/tsconfig.json ./
 
 # Install all dependencies (including dev dependencies for TypeScript build)
-# Use npm install instead of npm ci to handle potential lock file mismatches
 RUN npm ci && npm cache clean --force
 
 # Copy source code
@@ -86,11 +85,9 @@ EXPOSE 3030 3001 5232
 # Set working directory
 WORKDIR /app
 
-# Create non-root user for running services
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /app /data /config
-
-USER appuser
+# TODO: Run as non-root user — requires entrypoint changes to handle
+# volume ownership (mounted volumes ignore in-image chown). Implement
+# with gosu/su-exec: start as root, fix permissions, then drop to appuser.
 
 # Use our custom entrypoint
 ENTRYPOINT ["/docker-entrypoint.sh"]
