@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
-import { createContact, getAddressBookBySlug, getAllContacts, getContactById, setContactAddressBooks } from '../../lib/db'
+import { createContact, getAddressBookBySlug, getAllContacts, getAllContactsPaginated, getContactById, setContactAddressBooks } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
 import type { Contact } from '../../lib/db'
@@ -89,8 +89,27 @@ function decodePhotoPayload(payload: PhotoPayload): {
 export const Route = createFileRoute('/api/contacts')({
 	server: {
 		handlers: {
-			GET: async () => {
+			GET: async ({ request }) => {
 				try {
+					const url = new URL(request.url)
+					const limitParam = url.searchParams.get('limit')
+					const offsetParam = url.searchParams.get('offset')
+
+					// If pagination params are present, return paginated envelope
+					if (limitParam !== null || offsetParam !== null) {
+						const result = await getAllContactsPaginated({
+							limit: limitParam ? parseInt(limitParam, 10) : undefined,
+							offset: offsetParam ? parseInt(offsetParam, 10) : undefined,
+						})
+						return json({
+							data: result.data.map(sanitizeContact),
+							total: result.total,
+							limit: result.limit,
+							offset: result.offset,
+						})
+					}
+
+					// Default: return flat array for backward compatibility
 					const contacts = await getAllContacts()
 					return json(contacts.map(sanitizeContact))
 				} catch (error) {
