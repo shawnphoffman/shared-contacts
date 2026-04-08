@@ -1155,14 +1155,23 @@ export async function startWatchingRadicale(): Promise<void> {
 /**
  * Start periodic sync
  */
+let isSyncing = false
+
 export function startPeriodicSync(): void {
 	console.log(`Starting periodic sync every ${SYNC_INTERVAL}ms`)
 
 	setInterval(async () => {
+		if (isSyncing) {
+			console.log('Sync already in progress, skipping periodic sync')
+			return
+		}
+		isSyncing = true
 		try {
 			await syncDbToRadicale()
 		} catch (error) {
 			console.error('Periodic sync error:', error)
+		} finally {
+			isSyncing = false
 		}
 	}, SYNC_INTERVAL)
 }

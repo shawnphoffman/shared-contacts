@@ -74,11 +74,18 @@ async function main() {
 
 		// Periodically sync read-only users to htpasswd (in case UI enabled/disabled or changed password)
 		const readonlyAuthInterval = parseInt(process.env.READONLY_AUTH_SYNC_INTERVAL || '30000', 10)
+		let isReadonlyAuthSyncing = false
 		setInterval(async () => {
+			if (isReadonlyAuthSyncing) {
+				return
+			}
+			isReadonlyAuthSyncing = true
 			try {
 				await syncReadonlyUsersToHtpasswd()
 			} catch (err) {
 				console.error('Read-only auth sync error:', err)
+			} finally {
+				isReadonlyAuthSyncing = false
 			}
 		}, readonlyAuthInterval)
 
