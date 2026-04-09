@@ -4,7 +4,7 @@ import { logger } from '../../lib/logger'
 import { createContact, getAllContacts, getAllContactsPaginated, getContactById, setContactAddressBooks } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
-import { sanitizeContact, resolveAddressBookIds, decodePhotoPayload, zodError } from '../../lib/contact-helpers'
+import { decodePhotoPayload, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { CreateContactSchema } from '../../lib/schemas'
 import type { Contact } from '../../lib/db'
 

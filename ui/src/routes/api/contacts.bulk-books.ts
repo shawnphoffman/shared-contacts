@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { getBulkContactAddressBookIds, bulkSetContactAddressBooks } from '../../lib/db'
+import { bulkSetContactAddressBooks, getBulkContactAddressBookIds } from '../../lib/db'
 import { zodError } from '../../lib/contact-helpers'
 import { BulkBooksSchema } from '../../lib/schemas'
 

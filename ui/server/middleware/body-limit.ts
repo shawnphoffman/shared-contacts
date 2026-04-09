@@ -1,4 +1,4 @@
-import { defineEventHandler, getHeader, createError } from 'h3'
+import { createError, defineEventHandler, getHeader } from 'h3'
 
 /** Maximum request body size in bytes (5 MB — covers base64-encoded photos in JSON). */
 const MAX_BODY_BYTES = 5 * 1024 * 1024

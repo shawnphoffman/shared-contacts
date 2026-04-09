@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { getDeletedContacts, restoreContact, permanentlyDeleteContact, emptyTrash } from '../../lib/db'
+import { emptyTrash, getDeletedContacts, permanentlyDeleteContact, restoreContact } from '../../lib/db'
 
 export const Route = createFileRoute('/api/contacts/trash')({
 	server: {

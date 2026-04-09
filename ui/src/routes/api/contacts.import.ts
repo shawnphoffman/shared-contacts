@@ -3,7 +3,7 @@ import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
 import { createContact, findDuplicateContact, getAddressBookBySlug, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
-import { parseCSV, mapCSVRowToContact } from '../../lib/csv'
+import { mapCSVRowToContact, parseCSV } from '../../lib/csv'
 import type { Contact } from '../../lib/db'
 
 export const Route = createFileRoute('/api/contacts/import')({

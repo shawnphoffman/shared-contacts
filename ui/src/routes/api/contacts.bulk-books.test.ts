@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { bulkSetContactAddressBooks, getBulkContactAddressBookIds } from '../../lib/db'
+import { BulkBooksSchema } from '../../lib/schemas'
 
 vi.mock('../../lib/db', () => ({
 	getBulkContactAddressBookIds: vi.fn(),
@@ -19,15 +22,12 @@ vi.mock('../../lib/schemas', () => ({
 	},
 }))
 
-import { getBulkContactAddressBookIds, bulkSetContactAddressBooks } from '../../lib/db'
-import { BulkBooksSchema } from '../../lib/schemas'
-
 const getHandler = async () => {
 	const mod = await import('./contacts.bulk-books')
 	const route = mod.Route as Record<string, unknown>
 	const options = route.options as Record<string, unknown>
 	const server = options.server as Record<string, unknown>
-	const handlers = server.handlers as Record<string, Function>
+	const handlers = server.handlers as Record<string, (...args: Array<unknown>) => unknown>
 	return handlers
 }
 

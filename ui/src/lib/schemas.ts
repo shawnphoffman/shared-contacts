@@ -89,7 +89,7 @@ export const BulkBooksSchema = z.object({
 	add_to_book_ids: z.array(z.string()).optional().default([]),
 	remove_from_book_ids: z.array(z.string()).optional().default([]),
 }).refine(
-	(data) => (data.add_to_book_ids?.length ?? 0) > 0 || (data.remove_from_book_ids?.length ?? 0) > 0,
+	(data) => data.add_to_book_ids.length > 0 || data.remove_from_book_ids.length > 0,
 	{ message: 'Provide at least one of add_to_book_ids or remove_from_book_ids' }
 )
 

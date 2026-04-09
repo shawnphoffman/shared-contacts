@@ -10,7 +10,7 @@ import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
 import { Checkbox } from './ui/checkbox'
-import { ContactPhotoSection, ContactAdvancedFields, ContactExtendedFields } from './contact-form'
+import { ContactAdvancedFields, ContactExtendedFields, ContactPhotoSection } from './contact-form'
 import type { CropArea } from '../lib/image'
 import type { AddressBook, Contact, ContactField } from '../lib/db'
 

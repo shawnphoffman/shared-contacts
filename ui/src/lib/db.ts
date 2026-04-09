@@ -123,7 +123,7 @@ export function parseContactRow<T extends Record<string, unknown>>(row: T): T {
 	for (const field of JSONB_FIELDS) {
 		if (field in row && row[field]) {
 			(row as Record<string, unknown>)[field] =
-				typeof row[field] === 'string' ? JSON.parse(row[field] as string) : row[field]
+				typeof row[field] === 'string' ? JSON.parse(row[field]) : row[field]
 		}
 	}
 	return row
@@ -423,7 +423,7 @@ export async function getContactById(id: string, includeDeleted = false): Promis
 	return contactWithBooks
 }
 
-export async function getContactsByIds(ids: string[], includeDeleted = false): Promise<Array<Contact>> {
+export async function getContactsByIds(ids: Array<string>, includeDeleted = false): Promise<Array<Contact>> {
 	if (ids.length === 0) return []
 	const dbPool = getPool()
 	const deletedClause = includeDeleted ? '' : ' AND deleted_at IS NULL'
@@ -432,7 +432,7 @@ export async function getContactsByIds(ids: string[], includeDeleted = false): P
 	return attachAddressBooks(contacts)
 }
 
-export async function getBulkContactAddressBookIds(contactIds: string[]): Promise<Map<string, string[]>> {
+export async function getBulkContactAddressBookIds(contactIds: Array<string>): Promise<Map<string, Array<string>>> {
 	if (contactIds.length === 0) return new Map()
 	const hasTable = await tableExists('contact_address_books')
 	if (!hasTable) return new Map()
@@ -441,7 +441,7 @@ export async function getBulkContactAddressBookIds(contactIds: string[]): Promis
 		'SELECT contact_id, address_book_id FROM contact_address_books WHERE contact_id = ANY($1::uuid[])',
 		[contactIds],
 	)
-	const map = new Map<string, string[]>()
+	const map = new Map<string, Array<string>>()
 	for (const row of result.rows) {
 		const existing = map.get(row.contact_id) || []
 		existing.push(row.address_book_id)
@@ -451,7 +451,7 @@ export async function getBulkContactAddressBookIds(contactIds: string[]): Promis
 }
 
 export async function bulkSetContactAddressBooks(
-	assignments: Array<{ contactId: string; bookIds: string[] }>,
+	assignments: Array<{ contactId: string; bookIds: Array<string> }>,
 ): Promise<void> {
 	if (assignments.length === 0) return
 	const hasTable = await tableExists('contact_address_books')

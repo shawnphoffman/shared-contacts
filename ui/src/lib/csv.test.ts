@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	parseCSVLine,
-	toCanonicalHeader,
+	CSV_COLUMNS,
+	contactsToCsv,
+	escapeCsvField,
+	mapCSVRowToContact,
 	normalizeHeader,
 	parseCSV,
-	mapCSVRowToContact,
-	escapeCsvField,
-	contactsToCsv,
-	CSV_COLUMNS,
+	parseCSVLine,
+	toCanonicalHeader,
 } from './csv'
 import type { Contact } from './db'
 

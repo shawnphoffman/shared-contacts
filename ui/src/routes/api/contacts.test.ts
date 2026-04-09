@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createContact, getAllContacts, getAllContactsPaginated } from '../../lib/db'
+import { CreateContactSchema } from '../../lib/schemas'
 
 // Mock db module before imports
 vi.mock('../../lib/db', () => ({
@@ -37,16 +40,13 @@ vi.mock('../../lib/schemas', () => ({
 	},
 }))
 
-import { getAllContacts, getAllContactsPaginated, createContact } from '../../lib/db'
-import { CreateContactSchema } from '../../lib/schemas'
-
 // Extract the handler from the route module
 const getHandler = async () => {
 	const mod = await import('./contacts')
 	const route = mod.Route as Record<string, unknown>
 	const options = route.options as Record<string, unknown>
 	const server = options.server as Record<string, unknown>
-	const handlers = server.handlers as Record<string, Function>
+	const handlers = server.handlers as Record<string, (...args: Array<unknown>) => unknown>
 	return handlers
 }
 

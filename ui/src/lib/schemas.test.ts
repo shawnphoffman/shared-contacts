@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-	CreateContactSchema,
-	UpdateContactSchema,
-	MergeContactsSchema,
 	BulkBooksSchema,
-	CreateAddressBookSchema,
-	UpdateAddressBookSchema,
-	CreateRadicaleUserSchema,
-	PaginationSchema,
 	ContactFieldSchema,
+	CreateAddressBookSchema,
+	CreateContactSchema,
+	CreateRadicaleUserSchema,
 	CustomFieldSchema,
+	MergeContactsSchema,
+	PaginationSchema,
+	UpdateAddressBookSchema,
+	UpdateContactSchema,
 } from './schemas'
 
 // ---------------------------------------------------------------------------

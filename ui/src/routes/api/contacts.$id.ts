@@ -4,7 +4,7 @@ import { logger } from '../../lib/logger'
 import { deleteContact, getContactById, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
-import { sanitizeContact, resolveAddressBookIds, decodePhotoPayloadForUpdate, zodError } from '../../lib/contact-helpers'
+import { decodePhotoPayloadForUpdate, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { UpdateContactSchema } from '../../lib/schemas'
 import type { Contact } from '../../lib/db'
 

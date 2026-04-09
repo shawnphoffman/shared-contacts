@@ -1,18 +1,18 @@
-import { describe, it, expect } from 'vitest'
-import type { Contact } from './db'
+import { describe, expect, it } from 'vitest'
 import {
-	normalizeEmail,
-	normalizePhone,
+	detectDuplicates,
 	emailsMatch,
-	phonesMatch,
-	normalizeName,
-	namesMatch,
-	namesFuzzyMatch,
 	getContactEmails,
 	getContactPhones,
 	mergeContacts,
-	detectDuplicates,
+	namesFuzzyMatch,
+	namesMatch,
+	normalizeEmail,
+	normalizeName,
+	normalizePhone,
+	phonesMatch,
 } from './merge'
+import type { Contact } from './db'
 
 /** Factory helper – returns a minimal valid Contact with overrides. */
 function makeContact(overrides: Partial<Contact> = {}): Contact {
