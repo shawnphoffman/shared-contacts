@@ -3,6 +3,7 @@ import path from 'path'
 import { readFile, writeFile, access, constants, readdir, copyFile, mkdir, rm, stat } from 'fs/promises'
 import { getAddressBooks, getAddressBooksForUser } from './db'
 import { AsyncMutex, atomicWriteFile } from './fs-utils'
+import { logger } from './logger'
 
 const USERS_FILE = '/data/users'
 
@@ -384,7 +385,7 @@ export async function syncCompositeUsers(
 			try {
 				await createCompositeUser(baseUsername, bookId)
 			} catch (error) {
-				console.error(`Failed to create composite user ${baseUsername}-${bookId}:`, error)
+				logger.error({ err: error, baseUsername, bookId }, 'Failed to create composite user')
 				// Continue with other books
 			}
 		}
@@ -396,7 +397,7 @@ export async function syncCompositeUsers(
 			try {
 				await deleteCompositeUser(baseUsername, bookId)
 			} catch (error) {
-				console.error(`Failed to delete composite user ${baseUsername}-${bookId}:`, error)
+				logger.error({ err: error, baseUsername, bookId }, 'Failed to delete composite user')
 				// Continue with other books
 			}
 		}
@@ -433,9 +434,9 @@ export async function ensureAllCompositeUsersExist(): Promise<void> {
 					try {
 						await createCompositeUser(user.username, bookId)
 						ensuredCount++
-						console.log(`Ensured composite user exists: ${compositeUsername}`)
+						logger.info({ compositeUsername }, 'Ensured composite user exists')
 					} catch (error) {
-						console.error(`Failed to ensure composite user ${compositeUsername}:`, error)
+						logger.error({ err: error, compositeUsername }, 'Failed to ensure composite user')
 					}
 				} else {
 					// User exists, but ensure directory and props exist
@@ -458,17 +459,17 @@ export async function ensureAllCompositeUsersExist(): Promise<void> {
 							}
 						}
 					} catch (error) {
-						console.warn(`Failed to ensure directory/props for ${compositeUsername}:`, error)
+						logger.warn({ err: error, compositeUsername }, 'Failed to ensure directory/props for composite user')
 					}
 				}
 			}
 		} catch (error) {
-			console.error(`Failed to ensure composite users for ${user.username}:`, error)
+			logger.error({ err: error, username: user.username }, 'Failed to ensure composite users for user')
 		}
 	}
 
 	if (ensuredCount > 0) {
-		console.log(`Ensured ${ensuredCount} composite users exist`)
+		logger.info({ ensuredCount }, 'Ensured composite users exist')
 	}
 
 	// Clean up old nested directories for books users no longer have access to
@@ -522,9 +523,9 @@ async function cleanupOldNestedDirectories(): Promise<void> {
 								try {
 									await rm(entryPath, { recursive: true, force: true })
 									cleanedCount++
-									console.log(`Removed old nested directory: ${entryPath} (user ${user.username} no longer has access)`)
+									logger.info({ entryPath, username: user.username }, 'Removed old nested directory (user no longer has access)')
 								} catch (error) {
-									console.warn(`Failed to remove nested directory ${entryPath}:`, error)
+									logger.warn({ err: error, entryPath }, 'Failed to remove nested directory')
 								}
 							}
 						}
@@ -535,17 +536,17 @@ async function cleanupOldNestedDirectories(): Promise<void> {
 				}
 			} catch (error: unknown) {
 				if (getErrorCode(error) !== 'ENOENT') {
-					console.warn(`Failed to read principal directory for ${user.username}:`, error)
+					logger.warn({ err: error, username: user.username }, 'Failed to read principal directory')
 				}
 				// Principal directory doesn't exist, which is fine
 			}
 		} catch (error) {
-			console.error(`Failed to cleanup nested directories for ${user.username}:`, error)
+			logger.error({ err: error, username: user.username }, 'Failed to cleanup nested directories')
 		}
 	}
 
 	if (cleanedCount > 0) {
-		console.log(`Cleaned up ${cleanedCount} old nested directories`)
+		logger.info({ cleanedCount }, 'Cleaned up old nested directories')
 	}
 }
 

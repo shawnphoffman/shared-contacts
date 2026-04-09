@@ -1,6 +1,7 @@
 import { getPool } from './db'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { logger } from './logger'
 
 // Get migrations directory - handle both dev and production paths
 function getMigrationsDir(): string {
@@ -94,12 +95,12 @@ async function verifyMigration06Columns(): Promise<boolean> {
 		const allExist = requiredColumns.every(col => foundColumns.includes(col))
 
 		if (!allExist) {
-			console.log(`⚠ Migration 06 columns missing. Found: ${foundColumns.join(', ')}, Required: ${requiredColumns.join(', ')}`)
+			logger.info({ foundColumns, requiredColumns }, 'Migration 06 columns missing')
 		}
 
 		return allExist
 	} catch (error) {
-		console.error('Error verifying migration 06 columns:', error)
+		logger.error({ err: error }, 'Error verifying migration 06 columns')
 		return false
 	}
 }
@@ -137,11 +138,11 @@ async function runMigration(filename: string): Promise<void> {
 			}
 		}
 
-		console.log(`✓ Applied migration: ${filename}`)
+		logger.info({ filename }, 'Applied migration')
 	} catch (error) {
 		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
 			// Migration file doesn't exist - this is okay for optional migrations
-			console.log(`⚠ Migration file not found: ${filename} (skipping)`)
+			logger.info({ filename }, 'Migration file not found (skipping)')
 			return
 		}
 		throw error
@@ -153,7 +154,7 @@ async function runMigration(filename: string): Promise<void> {
  */
 export async function runMigrations(): Promise<void> {
 	try {
-		console.log('Checking database migrations...')
+		logger.info('Checking database migrations...')
 
 		// Ensure migrations table exists
 		await ensureMigrationsTable()
@@ -170,7 +171,7 @@ export async function runMigrations(): Promise<void> {
 		if (appliedMigrations.includes('06_add_multiple_fields.sql')) {
 			const columnsExist = await verifyMigration06Columns()
 			if (!columnsExist) {
-				console.log('⚠ Migration 06 is marked as applied but columns are missing. Re-running...')
+				logger.info('Migration 06 is marked as applied but columns are missing. Re-running...')
 				// Remove from applied list so it runs again
 				const pool = getPool()
 				await pool.query('DELETE FROM schema_migrations WHERE name = $1', ['06_add_multiple_fields.sql'])
@@ -184,29 +185,29 @@ export async function runMigrations(): Promise<void> {
 		}
 
 		if (pendingMigrations.length === 0) {
-			console.log('✓ Database is up to date (all migrations applied)')
+			logger.info('Database is up to date (all migrations applied)')
 			return
 		}
 
-		console.log(`Found ${pendingMigrations.length} pending migration(s): ${pendingMigrations.join(', ')}`)
+		logger.info({ count: pendingMigrations.length, migrations: pendingMigrations }, 'Found pending migrations')
 
 		// Run pending migrations in order
 		for (const filename of pendingMigrations) {
-			console.log(`Applying migration: ${filename}...`)
+			logger.info({ filename }, 'Applying migration...')
 
 			try {
 				await runMigration(filename)
 				await markMigrationApplied(filename)
-				console.log(`✓ Successfully applied: ${filename}`)
+				logger.info({ filename }, 'Successfully applied migration')
 			} catch (error) {
-				console.error(`✗ Failed to apply migration ${filename}:`, error)
+				logger.error({ err: error, filename }, 'Failed to apply migration')
 				throw new Error(`Migration ${filename} failed: ${error instanceof Error ? error.message : String(error)}`)
 			}
 		}
 
-		console.log('✓ All migrations completed successfully')
+		logger.info('All migrations completed successfully')
 	} catch (error) {
-		console.error('Migration error:', error)
+		logger.error({ err: error }, 'Migration error')
 		throw error
 	}
 }

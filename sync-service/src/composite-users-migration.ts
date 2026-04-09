@@ -3,6 +3,7 @@ import * as path from 'path'
 import { getPool } from './db'
 import { getAddressBooks } from './db'
 import { getUsers, getCompositeUsername, isCompositeUsername, createCompositeUser } from './htpasswd'
+import { logger } from './logger'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
 const COLLECTION_ROOT = 'collection-root'
@@ -36,18 +37,18 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 		return
 	}
 
-	console.log('Running one-time composite users migration...')
+	logger.info('Running one-time composite users migration...')
 	const books = await getAddressBooks()
 	if (books.length === 0) {
 		await pool.query('INSERT INTO composite_users_migration_done (done_at) VALUES (NOW())')
-		console.log('Composite users migration skipped (no address books).')
+		logger.info('Composite users migration skipped (no address books)')
 		return
 	}
 
 	const rootPath = path.join(RADICALE_STORAGE_PATH, COLLECTION_ROOT)
 	if (!fs.existsSync(rootPath)) {
 		await pool.query('INSERT INTO composite_users_migration_done (done_at) VALUES (NOW())')
-		console.log('Composite users migration skipped (collection-root not found).')
+		logger.info('Composite users migration skipped (collection-root not found)')
 		return
 	}
 
@@ -56,7 +57,7 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 	try {
 		allUsers = await getUsers()
 	} catch (err) {
-		console.warn('Could not read htpasswd for composite users migration:', err)
+		logger.warn({ err }, 'Could not read htpasswd for composite users migration')
 	}
 
 	const baseUsers = allUsers.filter(
@@ -65,7 +66,7 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 
 	if (baseUsers.length === 0) {
 		await pool.query('INSERT INTO composite_users_migration_done (done_at) VALUES (NOW())')
-		console.log('Composite users migration skipped (no base users found).')
+		logger.info('Composite users migration skipped (no base users found)')
 		return
 	}
 
@@ -89,7 +90,7 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 					const existingUsers = await getUsers()
 					compositeExists = existingUsers.some(u => u.username === compositeUsername)
 				} catch (err) {
-					console.warn(`Could not check if composite user ${compositeUsername} exists:`, err)
+					logger.warn({ err, compositeUsername }, 'Could not check if composite user exists')
 					// Continue anyway - createCompositeUser will handle it
 				}
 				
@@ -98,9 +99,9 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 						// Create composite user (will copy files from master if needed)
 						await createCompositeUser(user.username, bookId)
 						createdCount++
-						console.log(`Created composite user: ${compositeUsername}`)
+						logger.info({ compositeUsername }, 'Created composite user')
 					} catch (error) {
-						console.error(`Failed to create composite user ${compositeUsername}:`, error)
+						logger.error({ err: error, compositeUsername }, 'Failed to create composite user')
 						// Continue with other users/books - migration will complete even if some fail
 					}
 				}
@@ -132,20 +133,20 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 						
 						if (migratedFiles > 0) {
 							migratedCount += migratedFiles
-							console.log(`Migrated ${migratedFiles} files from ${user.username}/${bookId} to ${compositeUsername}`)
+							logger.info({ migratedFiles, username: user.username, bookId, compositeUsername }, 'Migrated files to composite user')
 						}
 					} catch (error) {
-						console.warn(`Failed to migrate files from ${oldPath} to ${newPath}:`, error)
+						logger.warn({ err: error, oldPath, newPath }, 'Failed to migrate files')
 						// Continue - sync will handle any missing files
 					}
 				}
 			}
 		} catch (error) {
-			console.error(`Failed to process user ${user.username}:`, error)
+			logger.error({ err: error, username: user.username }, 'Failed to process user')
 			// Continue with other users
 		}
 	}
 
 	await pool.query('INSERT INTO composite_users_migration_done (done_at) VALUES (NOW())')
-	console.log(`Composite users migration completed. Created ${createdCount} composite users, migrated ${migratedCount} files.`)
+	logger.info({ createdCount, migratedCount }, 'Composite users migration completed')
 }
