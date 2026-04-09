@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 
 export const Route = createFileRoute('/api/about')({
 	server: {
@@ -56,7 +57,7 @@ export const Route = createFileRoute('/api/about')({
 						arch: process.arch,
 					})
 				} catch (error) {
-					console.error('Error fetching about info:', error)
+					logger.error({ err: error }, 'Error fetching about info')
 					return json({ error: 'Failed to fetch about information' }, { status: 500 })
 				}
 			},

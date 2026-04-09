@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import bcrypt from 'bcrypt'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import {
 	getAddressBook,
 	getAddressBookReadonly,
@@ -27,7 +28,7 @@ export const Route = createFileRoute('/api/address-books/$id')({
 						readonly_username: readonlyRow ? `${READONLY_USERNAME_PREFIX}${params.id}` : undefined,
 					})
 				} catch (error) {
-					console.error('Error fetching address book:', error)
+					logger.error({ err: error }, 'Error fetching address book')
 					return json({ error: 'Failed to fetch address book' }, { status: 500 })
 				}
 			},
@@ -80,7 +81,7 @@ export const Route = createFileRoute('/api/address-books/$id')({
 						readonly_username: readonlyRow ? `${READONLY_USERNAME_PREFIX}${params.id}` : undefined,
 					})
 				} catch (error) {
-					console.error('Error updating address book:', error)
+					logger.error({ err: error }, 'Error updating address book')
 					return json({ error: 'Failed to update address book' }, { status: 500 })
 				}
 			},

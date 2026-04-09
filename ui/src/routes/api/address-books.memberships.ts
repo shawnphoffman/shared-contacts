@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { getAddressBooks, getUserAddressBookIds, setUserAddressBooks } from '../../lib/db'
 
 export const Route = createFileRoute('/api/address-books/memberships')({
@@ -15,7 +16,7 @@ export const Route = createFileRoute('/api/address-books/memberships')({
 					const ids = await getUserAddressBookIds(username)
 					return json({ username, address_book_ids: ids })
 				} catch (error) {
-					console.error('Error fetching address book memberships:', error)
+					logger.error({ err: error }, 'Error fetching address book memberships')
 					return json({ error: 'Failed to fetch memberships' }, { status: 500 })
 				}
 			},
@@ -33,7 +34,7 @@ export const Route = createFileRoute('/api/address-books/memberships')({
 					await setUserAddressBooks(username, filteredIds)
 					return json({ username, address_book_ids: filteredIds })
 				} catch (error) {
-					console.error('Error updating address book memberships:', error)
+					logger.error({ err: error }, 'Error updating address book memberships')
 					return json({ error: 'Failed to update memberships' }, { status: 500 })
 				}
 			},

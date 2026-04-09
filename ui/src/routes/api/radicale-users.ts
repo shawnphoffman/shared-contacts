@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { proxyRequest } from '../../lib/sync-service'
 
 export const Route = createFileRoute('/api/radicale-users')({
@@ -10,7 +11,7 @@ export const Route = createFileRoute('/api/radicale-users')({
 					const { data, status } = await proxyRequest('/api/radicale-users')
 					return json(data, { status })
 				} catch (error: any) {
-					console.error('Error fetching Radicale users:', error)
+					logger.error({ err: error }, 'Error fetching Radicale users')
 					return json({ error: 'Failed to fetch users' }, { status: 500 })
 				}
 			},
@@ -24,7 +25,7 @@ export const Route = createFileRoute('/api/radicale-users')({
 					})
 					return json(data, { status })
 				} catch (error: any) {
-					console.error('Error creating Radicale user:', error)
+					logger.error({ err: error }, 'Error creating Radicale user')
 					return json({ error: 'Failed to create user' }, { status: 500 })
 				}
 			},

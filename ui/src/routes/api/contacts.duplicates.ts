@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { getAllContacts } from '../../lib/db'
 import { detectDuplicates } from '../../lib/merge'
 
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/api/contacts/duplicates')({
 						totalDuplicates: duplicateGroups.reduce((sum, group) => sum + group.contacts.length, 0),
 					})
 				} catch (error) {
-					console.error('Error detecting duplicates:', error)
+					logger.error({ err: error }, 'Error detecting duplicates')
 					return json(
 						{
 							error: 'Failed to detect duplicates',

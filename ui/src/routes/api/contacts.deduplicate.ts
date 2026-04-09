@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { deleteContact, getAllContacts, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import type { Contact } from '../../lib/db'
@@ -170,7 +171,7 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 						...results,
 					})
 				} catch (error) {
-					console.error('Error deduplicating contacts:', error)
+					logger.error({ err: error }, 'Error deduplicating contacts')
 					return json(
 						{
 							error: 'Failed to deduplicate contacts',

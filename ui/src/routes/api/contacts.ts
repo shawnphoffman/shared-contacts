@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { createContact, getAddressBookBySlug, getAllContacts, getAllContactsPaginated, getContactById, setContactAddressBooks } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
@@ -113,7 +114,7 @@ export const Route = createFileRoute('/api/contacts')({
 					const contacts = await getAllContacts()
 					return json(contacts.map(sanitizeContact))
 				} catch (error) {
-					console.error('Error fetching contacts:', error)
+					logger.error({ err: error }, 'Error fetching contacts')
 					return json({ error: 'Failed to fetch contacts' }, { status: 500 })
 				}
 			},
@@ -203,7 +204,7 @@ export const Route = createFileRoute('/api/contacts')({
 					const contactWithBooks = await getContactById(contact.id)
 					return json(sanitizeContact(contactWithBooks || contact), { status: 201 })
 				} catch (error) {
-					console.error('Error creating contact:', error)
+					logger.error({ err: error }, 'Error creating contact')
 					return json({ error: 'Failed to create contact' }, { status: 500 })
 				}
 			},

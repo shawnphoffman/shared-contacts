@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { createContact, findDuplicateContact, getAddressBookBySlug, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
@@ -303,7 +304,7 @@ export const Route = createFileRoute('/api/contacts/import')({
 						...results,
 					})
 				} catch (error) {
-					console.error('Error importing CSV:', error)
+					logger.error({ err: error }, 'Error importing CSV')
 					return json(
 						{
 							error: 'Failed to import CSV',

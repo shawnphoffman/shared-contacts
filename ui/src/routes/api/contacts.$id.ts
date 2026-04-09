@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { deleteContact, getAddressBookBySlug, getContactById, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
@@ -102,7 +103,7 @@ export const Route = createFileRoute('/api/contacts/$id')({
 					}
 					return json(sanitizeContact(contact))
 				} catch (error) {
-					console.error('Error fetching contact:', error)
+					logger.error({ err: error }, 'Error fetching contact')
 					return json({ error: 'Failed to fetch contact' }, { status: 500 })
 				}
 			},
@@ -206,7 +207,7 @@ export const Route = createFileRoute('/api/contacts/$id')({
 					const contactWithBooks = await getContactById(params.id)
 					return json(sanitizeContact(contactWithBooks || contact))
 				} catch (error) {
-					console.error('Error updating contact:', error)
+					logger.error({ err: error }, 'Error updating contact')
 					return json({ error: 'Failed to update contact' }, { status: 500 })
 				}
 			},
@@ -226,7 +227,7 @@ export const Route = createFileRoute('/api/contacts/$id')({
 
 					return json({ message: 'Contact deleted' })
 				} catch (error) {
-					console.error('Error deleting contact:', error)
+					logger.error({ err: error }, 'Error deleting contact')
 					return json({ error: 'Failed to delete contact' }, { status: 500 })
 				}
 			},
