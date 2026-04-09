@@ -1,5 +1,6 @@
 import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
-import Header from '../components/Header'
+import { AppSidebar } from '../components/AppSidebar'
+import { MobileHeader } from '../components/MobileHeader'
 import { ThemeProvider } from '../components/ThemeProvider'
 import { Toaster } from '../components/ui/sonner'
 
@@ -87,8 +88,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 					// enableSystem
 					disableTransitionOnChange
 				>
-					<Header />
-					{children}
+					<div className="flex h-screen overflow-hidden">
+						{/* Desktop sidebar */}
+						<aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-sidebar-border">
+							<AppSidebar />
+						</aside>
+
+						{/* Main content area */}
+						<div className="flex flex-1 flex-col overflow-hidden">
+							<MobileHeader />
+							<main className="flex-1 overflow-y-auto">
+								{children}
+							</main>
+						</div>
+					</div>
 					<Toaster />
 				</ThemeProvider>
 				<Scripts />
