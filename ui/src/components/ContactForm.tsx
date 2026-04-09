@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import Cropper from 'react-easy-crop'
 import { normalizeUrl, validateEmail, validateUrl } from '../lib/validation'
 import { normalizePhoneNumber } from '../lib/utils'
 import { cropToSquareDataUrl, getContactPhotoUrl, readFileAsDataUrl } from '../lib/image'
@@ -7,11 +6,11 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { Field, FieldContent, FieldLabel } from './ui/field'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog'
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
 import { AddressInput, parseAddress } from './AddressInput'
 import { Checkbox } from './ui/checkbox'
+import { ContactPhotoSection, ContactAdvancedFields, ContactExtendedFields } from './contact-form'
 import type { CropArea } from '../lib/image'
 import type { AddressBook, Contact, ContactField } from '../lib/db'
 
@@ -276,20 +275,6 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 		setShowExistingPhoto(false)
 	}
 
-	const addCustomField = () => {
-		setCustomFields([...customFields, { key: '', value: '' }])
-	}
-
-	const updateCustomField = (index: number, updates: Partial<{ key: string; value: string; params?: Array<string> }>) => {
-		const next = [...customFields]
-		next[index] = { ...next[index], ...updates }
-		setCustomFields(next)
-	}
-
-	const removeCustomField = (index: number) => {
-		setCustomFields(customFields.filter((_, i) => i !== index))
-	}
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 
@@ -392,50 +377,25 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 		}
 	}
 
-	const hasMiddleName = formData.middle_name.trim() !== ''
-	const hasNamePrefix = formData.name_prefix.trim() !== ''
-	const hasNameSuffix = formData.name_suffix.trim() !== ''
-	const hasMaidenName = formData.maiden_name.trim() !== ''
-	const hasRole = formData.role.trim() !== ''
-	const hasMailer = formData.mailer.trim() !== ''
-	const hasTimeZone = formData.time_zone.trim() !== ''
-	const hasGeo = formData.geo.trim() !== ''
-	const hasAgent = formData.agent.trim() !== ''
-	const hasProdId = formData.prod_id.trim() !== ''
-	const hasRevision = formData.revision.trim() !== ''
-	const hasSortString = formData.sort_string.trim() !== ''
-	const hasClass = formData.class.trim() !== ''
-	const hasOrgUnits = orgUnitsInput.trim() !== ''
-	const hasCategories = categoriesInput.trim() !== ''
-	const hasLabels = labels.some(label => label.value.trim())
-	const hasLogos = logos.some(logo => logo.value.trim())
-	const hasSounds = sounds.some(sound => sound.value.trim())
-	const hasKeys = keys.some(key => key.value.trim())
-	const hasCustomFields = customFields.some(field => field.key.trim() || field.value.trim())
-
-	const shouldShowAdvancedField = (hasValue: boolean) => showAdvanced || hasValue
-
 	return (
 		<form onSubmit={handleSubmit} className="space-y-6">
-			<div className="flex items-center gap-4">
-				<div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
-					{photoPreviewUrl ? (
-						<img src={photoPreviewUrl} alt="Contact" className="h-full w-full object-cover" />
-					) : showExistingPhoto && existingPhotoUrl ? (
-						<img src={existingPhotoUrl} alt="Contact" className="h-full w-full object-cover" onError={() => setShowExistingPhoto(false)} />
-					) : (
-						<span className="text-sm text-gray-400">No Photo</span>
-					)}
-				</div>
-				<div className="flex flex-col gap-2">
-					<Input type="file" accept="image/*" onChange={handlePhotoFileChange} />
-					{(photoPreviewUrl || (showExistingPhoto && existingPhotoUrl)) && (
-						<Button type="button" variant="outline" onClick={handleRemovePhoto}>
-							Remove photo
-						</Button>
-					)}
-				</div>
-			</div>
+			<ContactPhotoSection
+				photoPreviewUrl={photoPreviewUrl}
+				existingPhotoUrl={existingPhotoUrl}
+				showExistingPhoto={showExistingPhoto}
+				onShowExistingPhotoChange={setShowExistingPhoto}
+				onPhotoFileChange={handlePhotoFileChange}
+				onRemovePhoto={handleRemovePhoto}
+				isCropOpen={isCropOpen}
+				cropSource={cropSource}
+				crop={crop}
+				zoom={zoom}
+				onCropChange={setCrop}
+				onZoomChange={setZoom}
+				onCropComplete={(_area, pixels) => setCroppedAreaPixels(pixels)}
+				onCropSave={handleCropSave}
+				onCropCancel={handleCropCancel}
+			/>
 
 			<div className="grid grid-cols-2 gap-4">
 				<Field>
@@ -651,333 +611,30 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 				</FieldContent>
 			</Field>
 
-			<div className="flex items-center justify-between">
-				<span className="text-sm text-muted-foreground">Advanced fields</span>
-				<Button
-					type="button"
-					variant={showAdvanced ? 'default' : 'outline'}
-					size="sm"
-					aria-pressed={showAdvanced}
-					onClick={() => setShowAdvanced(prev => !prev)}
-				>
-					{showAdvanced ? 'Hide advanced fields' : 'Show advanced fields'}
-				</Button>
-			</div>
+			<ContactAdvancedFields
+				formData={formData}
+				onFormDataChange={updates => setFormData(prev => ({ ...prev, ...updates }))}
+				orgUnitsInput={orgUnitsInput}
+				onOrgUnitsInputChange={setOrgUnitsInput}
+				categoriesInput={categoriesInput}
+				onCategoriesInputChange={setCategoriesInput}
+				showAdvanced={showAdvanced}
+				onToggleAdvanced={() => setShowAdvanced(prev => !prev)}
+			/>
 
-			{(shouldShowAdvancedField(hasNamePrefix) ||
-				shouldShowAdvancedField(hasNameSuffix) ||
-				shouldShowAdvancedField(hasMiddleName) ||
-				shouldShowAdvancedField(hasMaidenName)) && (
-				<div className="grid grid-cols-2 gap-4">
-					{shouldShowAdvancedField(hasNamePrefix) && (
-						<Field>
-							<FieldLabel htmlFor="name_prefix">Name Prefix</FieldLabel>
-							<FieldContent>
-								<Input
-									id="name_prefix"
-									name="name_prefix"
-									autoComplete="honorific-prefix"
-									value={formData.name_prefix}
-									onChange={e => setFormData({ ...formData, name_prefix: e.target.value })}
-									placeholder="Dr., Ms., etc."
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasNameSuffix) && (
-						<Field>
-							<FieldLabel htmlFor="name_suffix">Name Suffix</FieldLabel>
-							<FieldContent>
-								<Input
-									id="name_suffix"
-									name="name_suffix"
-									autoComplete="honorific-suffix"
-									value={formData.name_suffix}
-									onChange={e => setFormData({ ...formData, name_suffix: e.target.value })}
-									placeholder="Jr., III, etc."
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasMiddleName) && (
-						<Field>
-							<FieldLabel htmlFor="middle_name">Middle Name</FieldLabel>
-							<FieldContent>
-								<Input
-									id="middle_name"
-									name="middle_name"
-									autoComplete="additional-name"
-									value={formData.middle_name}
-									onChange={e => setFormData({ ...formData, middle_name: e.target.value })}
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasMaidenName) && (
-						<Field>
-							<FieldLabel htmlFor="maiden_name">Maiden Name</FieldLabel>
-							<FieldContent>
-								<Input
-									id="maiden_name"
-									name="maiden_name"
-									value={formData.maiden_name}
-									onChange={e => setFormData({ ...formData, maiden_name: e.target.value })}
-								/>
-							</FieldContent>
-						</Field>
-					)}
-				</div>
-			)}
-
-			{(shouldShowAdvancedField(hasRole) ||
-				shouldShowAdvancedField(hasMailer) ||
-				shouldShowAdvancedField(hasTimeZone) ||
-				shouldShowAdvancedField(hasGeo)) && (
-				<div className="grid grid-cols-2 gap-4">
-					{shouldShowAdvancedField(hasRole) && (
-						<Field>
-							<FieldLabel htmlFor="role">Role</FieldLabel>
-							<FieldContent>
-								<Input id="role" name="role" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} />
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasMailer) && (
-						<Field>
-							<FieldLabel htmlFor="mailer">Mailer</FieldLabel>
-							<FieldContent>
-								<Input
-									id="mailer"
-									name="mailer"
-									value={formData.mailer}
-									onChange={e => setFormData({ ...formData, mailer: e.target.value })}
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasTimeZone) && (
-						<Field>
-							<FieldLabel htmlFor="time_zone">Time Zone</FieldLabel>
-							<FieldContent>
-								<Input
-									id="time_zone"
-									name="time_zone"
-									value={formData.time_zone}
-									onChange={e => setFormData({ ...formData, time_zone: e.target.value })}
-									placeholder="e.g. America/Los_Angeles"
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasGeo) && (
-						<Field>
-							<FieldLabel htmlFor="geo">Geo</FieldLabel>
-							<FieldContent>
-								<Input
-									id="geo"
-									name="geo"
-									value={formData.geo}
-									onChange={e => setFormData({ ...formData, geo: e.target.value })}
-									placeholder="lat;long"
-								/>
-							</FieldContent>
-						</Field>
-					)}
-				</div>
-			)}
-
-			{(shouldShowAdvancedField(hasAgent) ||
-				shouldShowAdvancedField(hasProdId) ||
-				shouldShowAdvancedField(hasRevision) ||
-				shouldShowAdvancedField(hasSortString) ||
-				shouldShowAdvancedField(hasClass)) && (
-				<div className="grid grid-cols-2 gap-4">
-					{shouldShowAdvancedField(hasAgent) && (
-						<Field>
-							<FieldLabel htmlFor="agent">Agent</FieldLabel>
-							<FieldContent>
-								<Input id="agent" name="agent" value={formData.agent} onChange={e => setFormData({ ...formData, agent: e.target.value })} />
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasProdId) && (
-						<Field>
-							<FieldLabel htmlFor="prod_id">Product ID</FieldLabel>
-							<FieldContent>
-								<Input
-									id="prod_id"
-									name="prod_id"
-									value={formData.prod_id}
-									onChange={e => setFormData({ ...formData, prod_id: e.target.value })}
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasRevision) && (
-						<Field>
-							<FieldLabel htmlFor="revision">Revision</FieldLabel>
-							<FieldContent>
-								<Input
-									id="revision"
-									name="revision"
-									value={formData.revision}
-									onChange={e => setFormData({ ...formData, revision: e.target.value })}
-									placeholder="YYYY-MM-DDThh:mm:ssZ"
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasSortString) && (
-						<Field>
-							<FieldLabel htmlFor="sort_string">Sort String</FieldLabel>
-							<FieldContent>
-								<Input
-									id="sort_string"
-									name="sort_string"
-									value={formData.sort_string}
-									onChange={e => setFormData({ ...formData, sort_string: e.target.value })}
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasClass) && (
-						<Field>
-							<FieldLabel htmlFor="class">Class</FieldLabel>
-							<FieldContent>
-								<Input
-									id="class"
-									name="class"
-									value={formData.class}
-									onChange={e => setFormData({ ...formData, class: e.target.value })}
-									placeholder="PUBLIC, PRIVATE, or CONFIDENTIAL"
-								/>
-							</FieldContent>
-						</Field>
-					)}
-				</div>
-			)}
-
-			{(shouldShowAdvancedField(hasOrgUnits) || shouldShowAdvancedField(hasCategories)) && (
-				<div className="grid grid-cols-2 gap-4">
-					{shouldShowAdvancedField(hasOrgUnits) && (
-						<Field>
-							<FieldLabel htmlFor="org_units">Organization Units</FieldLabel>
-							<FieldContent>
-								<Input
-									id="org_units"
-									name="org_units"
-									value={orgUnitsInput}
-									onChange={e => setOrgUnitsInput(e.target.value)}
-									placeholder="Unit 1, Unit 2"
-								/>
-							</FieldContent>
-						</Field>
-					)}
-					{shouldShowAdvancedField(hasCategories) && (
-						<Field>
-							<FieldLabel htmlFor="categories">Categories</FieldLabel>
-							<FieldContent>
-								<Input
-									id="categories"
-									name="categories"
-									value={categoriesInput}
-									onChange={e => setCategoriesInput(e.target.value)}
-									placeholder="Friends, Work, VIP"
-								/>
-							</FieldContent>
-						</Field>
-					)}
-				</div>
-			)}
-
-			{shouldShowAdvancedField(hasLabels) && (
-				<MultiFieldInput
-					label="Labels"
-					fields={labels}
-					onChange={setLabels}
-					placeholder="Label"
-					inputType="text"
-					defaultType="HOME"
-					typeOptions={['HOME', 'WORK', 'OTHER']}
-				/>
-			)}
-
-			{shouldShowAdvancedField(hasLogos) && (
-				<MultiFieldInput
-					label="Logos"
-					fields={logos}
-					onChange={setLogos}
-					placeholder="Logo URL or data"
-					inputType="url"
-					defaultType="URI"
-					typeOptions={['URI', 'PNG', 'JPEG', 'OTHER']}
-				/>
-			)}
-
-			{shouldShowAdvancedField(hasSounds) && (
-				<MultiFieldInput
-					label="Sounds"
-					fields={sounds}
-					onChange={setSounds}
-					placeholder="Sound URL or data"
-					inputType="url"
-					defaultType="URI"
-					typeOptions={['URI', 'WAV', 'MP3', 'OTHER']}
-				/>
-			)}
-
-			{shouldShowAdvancedField(hasKeys) && (
-				<MultiFieldInput
-					label="Keys"
-					fields={keys}
-					onChange={setKeys}
-					placeholder="Key data or URL"
-					inputType="text"
-					defaultType="PGP"
-					typeOptions={['PGP', 'X509', 'OTHER']}
-				/>
-			)}
-
-			{shouldShowAdvancedField(hasCustomFields) && (
-				<Field>
-					<div className="flex items-center justify-between w-full">
-						<FieldLabel>Custom Fields</FieldLabel>
-						<Button type="button" variant="outline" size="sm" onClick={addCustomField}>
-							+ Add
-						</Button>
-					</div>
-					<FieldContent>
-						{customFields.length === 0 ? (
-							<div className="text-sm text-muted-foreground py-2">No custom fields added.</div>
-						) : (
-							<div className="space-y-2">
-								{customFields.map((field, index) => (
-									<div key={index} className="flex gap-2 items-start">
-										<div className="flex-1 grid grid-cols-2 gap-2">
-											<Input
-												value={field.key}
-												onChange={e => updateCustomField(index, { key: e.target.value })}
-												placeholder="X-CUSTOM-NAME"
-											/>
-											<Input value={field.value} onChange={e => updateCustomField(index, { value: e.target.value })} placeholder="Value" />
-										</div>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											onClick={() => removeCustomField(index)}
-											className="text-destructive hover:text-destructive hover:bg-destructive/10"
-											title="Remove"
-										>
-											<span className="text-lg leading-none">×</span>
-										</Button>
-									</div>
-								))}
-							</div>
-						)}
-					</FieldContent>
-				</Field>
-			)}
+			<ContactExtendedFields
+				labels={labels}
+				onLabelsChange={setLabels}
+				logos={logos}
+				onLogosChange={setLogos}
+				sounds={sounds}
+				onSoundsChange={setSounds}
+				keys={keys}
+				onKeysChange={setKeys}
+				customFields={customFields}
+				onCustomFieldsChange={setCustomFields}
+				showAdvanced={showAdvanced}
+			/>
 
 			<div className="flex gap-2 justify-end">
 				{onCancel && (
@@ -990,46 +647,6 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 				</Button>
 			</div>
 
-			<Dialog open={isCropOpen} onOpenChange={open => !open && handleCropCancel()}>
-				<DialogContent className="max-w-lg">
-					<DialogHeader>
-						<DialogTitle>Crop Photo</DialogTitle>
-					</DialogHeader>
-					<div className="relative h-80 w-full bg-black/80">
-						{cropSource && (
-							<Cropper
-								image={cropSource}
-								crop={crop}
-								zoom={zoom}
-								aspect={1}
-								onCropChange={setCrop}
-								onZoomChange={setZoom}
-								onCropComplete={(_area, pixels) => setCroppedAreaPixels(pixels)}
-							/>
-						)}
-					</div>
-					<div className="flex items-center gap-3">
-						<span className="text-sm text-gray-500">Zoom</span>
-						<input
-							type="range"
-							min={1}
-							max={3}
-							step={0.1}
-							value={zoom}
-							onChange={event => setZoom(Number(event.target.value))}
-							className="flex-1"
-						/>
-					</div>
-					<DialogFooter>
-						<Button type="button" variant="outline" onClick={handleCropCancel}>
-							Cancel
-						</Button>
-						<Button type="button" onClick={handleCropSave}>
-							Use photo
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</form>
 	)
 }
