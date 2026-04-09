@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
+import { Skeleton } from '../components/ui/skeleton'
 import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
 import type { ColumnDef, SortingState } from '@tanstack/react-table'
@@ -75,6 +76,7 @@ function ContactsIndexPage() {
 		data: contacts = [],
 		isLoading,
 		isFetching,
+		error,
 		refetch,
 	} = useQuery({
 		queryKey: ['contacts'],
@@ -463,8 +465,42 @@ function ContactsIndexPage() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center">Loading contacts...</div>
+			<div className="container mx-auto p-6 gap-4 flex flex-col max-w-5xl">
+				<div className="flex sm:justify-between sm:items-center flex-col sm:flex-row gap-2">
+					<Skeleton className="h-9 w-40" />
+					<div className="flex gap-2">
+						<Skeleton className="h-9 w-24" />
+						<Skeleton className="h-9 w-16" />
+					</div>
+				</div>
+				<div className="space-y-4">
+					<Skeleton className="h-9 w-full" />
+					<div className="rounded-md border">
+						<div className="p-4 space-y-4">
+							{Array.from({ length: 8 }).map((_, i) => (
+								<div key={i} className="flex items-center gap-4">
+									<Skeleton className="h-4 w-4 rounded" />
+									<Skeleton className="h-4 flex-1" />
+									<Skeleton className="h-4 w-40 hidden sm:block" />
+									<Skeleton className="h-4 w-32 hidden md:block" />
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
+	if (error) {
+		return (
+			<div className="container mx-auto p-6 max-w-5xl">
+				<div className="text-center py-12">
+					<p className="text-red-500 mb-4">Failed to load contacts</p>
+					<Button variant="outline" onClick={() => refetch()}>
+						Try Again
+					</Button>
+				</div>
 			</div>
 		)
 	}
