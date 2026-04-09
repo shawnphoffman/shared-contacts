@@ -63,10 +63,10 @@ jobs:
           echo "POSTGRES_PASSWORD=testpassword123" >> .env
 
       - name: Build Docker image
-        run: docker compose -f docker-compose.prod.yml build
+        run: docker build -t ghcr.io/shawnphoffman/shared-contacts:latest .
 
       - name: Start services
-        run: docker compose -f docker-compose.prod.yml up -d
+        run: docker compose -f docker-compose.prod.yml up -d --no-build
 
       - name: Wait for health check
         run: |
