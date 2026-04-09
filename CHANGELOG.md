@@ -6,77 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.18.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.17.0...v0.18.0) (2026-04-09)
-
-### Features
-
-* **db:** add pagination support to contacts api ([a663450](https://github.com/shawnphoffman/shared-contacts/commit/a6634501ec9133c2d7580f1fbf7c673619c9e980))
-* **db:** add soft delete with deleted_at column and trash api ([d95574c](https://github.com/shawnphoffman/shared-contacts/commit/d95574c3c70c063353bb0d21aaf37cdffb50bea0))
-* **sync:** add request body size limits to sync-service api ([d1352e9](https://github.com/shawnphoffman/shared-contacts/commit/d1352e99a238edfc2ab522c6189445ac252f1aba))
-* **sync:** add structured logging with pino to sync-service ([39ed258](https://github.com/shawnphoffman/shared-contacts/commit/39ed258358fdb2286441035a717f826c2005661d))
-* **ui:** add contact export endpoint for csv and vcard ([11a5d02](https://github.com/shawnphoffman/shared-contacts/commit/11a5d02a7e44f4d0ea47aadf12c5586974f101ba))
-* **ui:** add export buttons to contacts list ([1a8c296](https://github.com/shawnphoffman/shared-contacts/commit/1a8c2965fcaf36a351e7606eecac86f73cd091be))
-* **ui:** add request body size limits for api routes ([abb71a2](https://github.com/shawnphoffman/shared-contacts/commit/abb71a2274e152e37dd78ff5b28728c9a9bfb05a))
-* **ui:** add skeleton loading states and error boundaries ([f59914d](https://github.com/shawnphoffman/shared-contacts/commit/f59914d817a17ec1a83b870e0cb2f073838a81a5))
-* **ui:** add structured logging with pino to ui server routes ([8e89620](https://github.com/shawnphoffman/shared-contacts/commit/8e89620623fb87c48b173c7ed794c127e87638e9))
-* **ui:** add support links to about page ([70175e4](https://github.com/shawnphoffman/shared-contacts/commit/70175e47e9938ccfae25005bb9aef43194239558))
-* **ui:** add support the trail dialog with header icon ([a12ef08](https://github.com/shawnphoffman/shared-contacts/commit/a12ef08ec22d1f4ce18c354edbb28fcb38e94aeb))
-* **ui:** add trash view for soft-deleted contacts ([fcff4c1](https://github.com/shawnphoffman/shared-contacts/commit/fcff4c12ac0f26c02e4a8afb43239a85e1413c24))
-* **ui:** add zod validation schemas for api endpoints ([f5408af](https://github.com/shawnphoffman/shared-contacts/commit/f5408afee0319086e0245388420bb3ca63c70951))
-
-### Bug Fixes
-
-* **auth:** add file locking and atomic writes to htpasswd operations ([882291c](https://github.com/shawnphoffman/shared-contacts/commit/882291c9de453332c6e01a83dda96e3674a7332e))
-* **ci:** create .env before docker compose build in smoke test ([b66e4e6](https://github.com/shawnphoffman/shared-contacts/commit/b66e4e6873dd0ce922f9f2160b11ad91ce6c6ef5))
-* **ci:** run unit tests only in release-it hook ([870ed2c](https://github.com/shawnphoffman/shared-contacts/commit/870ed2c3bd64edebacfce103fb9417b89d9cb2be))
-* **db:** wrap migration execution in transactions for atomicity ([071940a](https://github.com/shawnphoffman/shared-contacts/commit/071940ae735897b1ea403f4c769e3c7c823ae24b))
-* **deps:** regenerate root package-lock.json with lockfileversion 3 ([82351e6](https://github.com/shawnphoffman/shared-contacts/commit/82351e61b8e0e54912f6ab101323d8190e04d350))
-* **docker:** add radicale health check to dev compose ([7c1d728](https://github.com/shawnphoffman/shared-contacts/commit/7c1d728d4af2ff4fc0566448b243276cbcc5b2dc))
-* **docker:** revert non-root user, add todo for proper implementation ([86bd045](https://github.com/shawnphoffman/shared-contacts/commit/86bd045c584332bb48a7246c71fc33e51fc1dd2b))
-* quote commit-msg hook argument to handle paths with spaces ([fa1ed19](https://github.com/shawnphoffman/shared-contacts/commit/fa1ed194e6a3cbb4586740bd17cb0501e20a063b))
-* **sync:** add atomic file write utility to prevent corruption on crash ([4543fdc](https://github.com/shawnphoffman/shared-contacts/commit/4543fdcebd1680c70239cccc988e4c78204d4d0e))
-* **sync:** prevent concurrent sync overlap with guard flags ([3cc6b37](https://github.com/shawnphoffman/shared-contacts/commit/3cc6b370c8e5b39169ec368eccbd7e68e2fcebb6))
-* **sync:** resolve lint errors breaking CI ([935d48b](https://github.com/shawnphoffman/shared-contacts/commit/935d48b737d9ca008ad09a2afa7e9fd7fca1625d))
-* **ui:** add error handling to photo and runtime-config endpoints ([a584baa](https://github.com/shawnphoffman/shared-contacts/commit/a584baa5d7806e6c331e14089852bc68d2ea5359))
-* **ui:** fix type errors and regenerate route tree ([5c0d4f6](https://github.com/shawnphoffman/shared-contacts/commit/5c0d4f6221722358bed7de277ad75fdfafdcb44d))
-* **ui:** resolve eslint errors in ui package ([85f9a9d](https://github.com/shawnphoffman/shared-contacts/commit/85f9a9d844486cc67203e915abae74afff175ace))
-* use docker exec for smoke test health check ([3215dc3](https://github.com/shawnphoffman/shared-contacts/commit/3215dc33f0d34829e6ffe30bc91fda89c19d0736))
-
-### Performance Improvements
-
-* **db:** batch n+1 queries in bulk-books and merge endpoints ([1d844b9](https://github.com/shawnphoffman/shared-contacts/commit/1d844b948495baed3869da0b947b7210361f9216))
-* **db:** cache information_schema and table existence lookups ([e324031](https://github.com/shawnphoffman/shared-contacts/commit/e324031b535a06506908c952b5e9f193f0007ac9))
-
-### Documentation
-
-* update .env.example with all environment variables ([a0ff7d9](https://github.com/shawnphoffman/shared-contacts/commit/a0ff7d92cc63b7870a5cb3de856ef6737e9bdfe2))
-
-### Tests
-
-* **db:** add unit tests for parsecontactrow jsonb helper ([9dbf801](https://github.com/shawnphoffman/shared-contacts/commit/9dbf8018680dd85e5fbfe4dd52a861031e07c288))
-* **docker:** add integration test infrastructure ([cd0e682](https://github.com/shawnphoffman/shared-contacts/commit/cd0e682843e78de8bcdeedf75a44db24b49008e3))
-* **sync:** add unit tests for sync module functions ([7bef8e8](https://github.com/shawnphoffman/shared-contacts/commit/7bef8e831d2ee564d085c82023da809d6f46b06a))
-* **sync:** write sync pipeline integration tests ([e1b4521](https://github.com/shawnphoffman/shared-contacts/commit/e1b4521499d43a4be925e0d73f6d92fa76607573))
-* **ui:** add api endpoint handler tests ([dd74384](https://github.com/shawnphoffman/shared-contacts/commit/dd743848b959c755170278a9fca296d6af53d220))
-* **ui:** add csv import and export edge case tests ([61d6db4](https://github.com/shawnphoffman/shared-contacts/commit/61d6db471d72ecb69037e71d408d6f34d51fbe24))
-* **ui:** add unit tests for contact merge and deduplication logic ([7a559fd](https://github.com/shawnphoffman/shared-contacts/commit/7a559fd8c21309a2bddc4790459242c4f7898010))
-* **ui:** add unit tests for zod validation schemas ([c473465](https://github.com/shawnphoffman/shared-contacts/commit/c473465aebeb37b32e2928cdb983178880a8de3f))
-* **vcard:** add comprehensive unit tests for vcard parsing and generation ([c5aee7e](https://github.com/shawnphoffman/shared-contacts/commit/c5aee7efec2de88e6ef36aab0e83d8f7f4f7d00e))
-
-### Build System
-
-* add commitlint and husky for conventional commit enforcement ([cda43b0](https://github.com/shawnphoffman/shared-contacts/commit/cda43b043fca8ee205ae62308a91fd7900f5486b))
-* add vitest test infrastructure to sync-service and ui ([15b140d](https://github.com/shawnphoffman/shared-contacts/commit/15b140db84028621e860da94fdb166c16ff27e6f))
-* allow ui tests to pass with no test files ([88610fb](https://github.com/shawnphoffman/shared-contacts/commit/88610fb5da880343b60cb58c45c9ab3a3d861609))
-* **docker:** fix npm ci, remove default passwords, add node_env, add non-root user ([bcb3165](https://github.com/shawnphoffman/shared-contacts/commit/bcb3165bf96131bd1fe26c46c7aee10394617701))
-* **docker:** prune dev dependencies from production image ([b91712b](https://github.com/shawnphoffman/shared-contacts/commit/b91712bb4eafe2112ed8f62be1a9919bf65bc0f8))
-* enable github releases with auto-generated notes in release-it ([9ef4300](https://github.com/shawnphoffman/shared-contacts/commit/9ef4300e896d20eddb2a03846b02af073b84b9b2))
+## [0.18.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.0...v0.18.1) (2026-04-09)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.18.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.0...v0.18.1)
+
+- 👷 CI(ci): add docker build to release workflow [`17b765d`](https://github.com/shawnphoffman/shared-contacts/commit/17b765d3d537af98aaf4ebb2a0ebf7ba58afecbf)
+
 #### [v0.18.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.17.0...v0.18.0)
+
+> 9 April 2026
 
 - 🐛 Fix(deps): regenerate root package-lock.json with lockfileversion 3 [`82351e6`](https://github.com/shawnphoffman/shared-contacts/commit/82351e61b8e0e54912f6ab101323d8190e04d350)
 - 📦 Build: add commitlint and husky for conventional commit enforcement [`cda43b0`](https://github.com/shawnphoffman/shared-contacts/commit/cda43b043fca8ee205ae62308a91fd7900f5486b)
@@ -84,6 +26,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - 📦 Build: add vitest test infrastructure to sync-service and ui [`15b140d`](https://github.com/shawnphoffman/shared-contacts/commit/15b140db84028621e860da94fdb166c16ff27e6f)
 - ♻️ Refactor(ui): extract contact form sub-components [`20f26cb`](https://github.com/shawnphoffman/shared-contacts/commit/20f26cbc0d79207681ca5284e7e91a97b9ae3ee3)
 - ✨ Feature(ui): add zod validation schemas for api endpoints [`f5408af`](https://github.com/shawnphoffman/shared-contacts/commit/f5408afee0319086e0245388420bb3ca63c70951)
+- 🔧 Chore: release v0.18.0 [`a1190a0`](https://github.com/shawnphoffman/shared-contacts/commit/a1190a0877c3e953d97ef4acff42ff5a7f32d717)
 - ✨ Feature(sync): add structured logging with pino to sync-service [`39ed258`](https://github.com/shawnphoffman/shared-contacts/commit/39ed258358fdb2286441035a717f826c2005661d)
 - ♻️ Refactor(ui): extract csv parsing and export into shared lib [`b7b533e`](https://github.com/shawnphoffman/shared-contacts/commit/b7b533e58c65082ab4c870388b553a5830bf2686)
 - ✅ Test(sync): write sync pipeline integration tests [`e1b4521`](https://github.com/shawnphoffman/shared-contacts/commit/e1b4521499d43a4be925e0d73f6d92fa76607573)
