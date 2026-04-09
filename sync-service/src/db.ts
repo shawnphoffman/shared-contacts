@@ -86,6 +86,7 @@ export interface Contact {
 	vcard_hash: string | null
 	sync_source: string | null // 'db', 'radicale', 'api', or NULL
 	radicale_file_mtime: Date | null
+	deleted_at: Date | null
 	address_books?: Array<AddressBook> | null
 }
 
@@ -239,13 +240,13 @@ export async function setUserAddressBooks(username: string, addressBookIds: Arra
 
 export async function getAllContacts(): Promise<Contact[]> {
 	const pool = getPool()
-	const result = await pool.query('SELECT * FROM contacts ORDER BY updated_at DESC')
+	const result = await pool.query('SELECT * FROM contacts WHERE deleted_at IS NULL ORDER BY updated_at DESC')
 	return result.rows.map(parseContactRow)
 }
 
 export async function getContactByVcardId(vcardId: string): Promise<Contact | null> {
 	const pool = getPool()
-	const result = await pool.query('SELECT * FROM contacts WHERE vcard_id = $1', [vcardId])
+	const result = await pool.query('SELECT * FROM contacts WHERE vcard_id = $1 AND deleted_at IS NULL', [vcardId])
 	if (!result.rows[0]) return null
 	return parseContactRow(result.rows[0])
 }
@@ -396,7 +397,7 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 
 export async function deleteContact(id: string): Promise<void> {
 	const pool = getPool()
-	await pool.query('DELETE FROM contacts WHERE id = $1', [id])
+	await pool.query('UPDATE contacts SET deleted_at = NOW() WHERE id = $1', [id])
 }
 
 export interface SyncMetadata {
@@ -466,6 +467,7 @@ export async function getContactsNeedingRadicaleSync(): Promise<Contact[]> {
 	const result = await pool.query(
 		`SELECT * FROM contacts
 		WHERE vcard_id IS NOT NULL
+		AND deleted_at IS NULL
 		AND (
 			updated_at > COALESCE(last_synced_to_radicale_at, '1970-01-01'::timestamp)
 			OR sync_source != 'radicale'
