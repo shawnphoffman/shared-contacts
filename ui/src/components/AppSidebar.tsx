@@ -40,10 +40,10 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
 			{/* Navigation */}
 			<nav className="flex-1 overflow-y-auto px-3 py-4">
-				{/* Main */}
+				{/* Contacts */}
 				<div className="mb-4">
 					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
-						Main
+						Contacts
 					</p>
 					<Link
 						to="/"
@@ -64,12 +64,21 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 						<Upload className="size-4 shrink-0" />
 						Import
 					</Link>
+					<Link
+						to="/trash"
+						className={navLinkClass}
+						activeProps={{ className: navLinkActiveClass }}
+						onClick={onNavigate}
+					>
+						<Trash2 className="size-4 shrink-0" />
+						Deleted
+					</Link>
 				</div>
 
-				{/* Management */}
+				{/* Address Books */}
 				<div className="mb-4">
 					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
-						Management
+						Address Books
 					</p>
 					<Link
 						to="/books"
@@ -78,7 +87,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 						onClick={onNavigate}
 					>
 						<BookOpen className="size-4 shrink-0" />
-						Address Books
+						All Books
 					</Link>
 					<Link
 						to="/radicale-users"
@@ -87,7 +96,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 						onClick={onNavigate}
 					>
 						<Users className="size-4 shrink-0" />
-						Users
+						Book Users
 					</Link>
 					<Link
 						to="/carddav-connection"
@@ -96,21 +105,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 						onClick={onNavigate}
 					>
 						<LinkIcon className="size-4 shrink-0" />
-						CardDAV
+						CardDAV Config
 					</Link>
 				</div>
 
-				{/* Other */}
+				{/* About */}
 				<div>
-					<Link
-						to="/trash"
-						className={navLinkClass}
-						activeProps={{ className: navLinkActiveClass }}
-						onClick={onNavigate}
-					>
-						<Trash2 className="size-4 shrink-0" />
-						Trash
-					</Link>
 					<Link
 						to="/about"
 						className={navLinkClass}
