@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Code, Database, ExternalLink, Heart, Info, Settings } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Separator } from '../components/ui/separator'
+import { Skeleton } from '../components/ui/skeleton'
+import { Button } from '../components/ui/button'
 
 export const Route = createFileRoute('/about')({
 	component: AboutPage,
@@ -58,8 +60,25 @@ function AboutPage() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center">Loading...</div>
+			<div className="container mx-auto p-6 max-w-2xl">
+				<div className="mb-6">
+					<Skeleton className="h-9 w-32 mb-2" />
+					<Skeleton className="h-5 w-64" />
+				</div>
+				<div className="space-y-6">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Card key={i}>
+							<CardHeader>
+								<Skeleton className="h-6 w-48" />
+								<Skeleton className="h-4 w-64" />
+							</CardHeader>
+							<CardContent className="space-y-3">
+								<Skeleton className="h-4 w-full" />
+								<Skeleton className="h-4 w-3/4" />
+							</CardContent>
+						</Card>
+					))}
+				</div>
 			</div>
 		)
 	}
@@ -67,7 +86,12 @@ function AboutPage() {
 	if (error) {
 		return (
 			<div className="container mx-auto p-6">
-				<div className="text-center text-red-500">Error loading about information</div>
+				<div className="text-center text-red-500">
+					<p>Error loading about information</p>
+					<Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+						Retry
+					</Button>
+				</div>
 			</div>
 		)
 	}
