@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrashRouteImport } from './routes/trash'
 import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ImportRouteImport } from './routes/import'
@@ -27,8 +28,10 @@ import { Route as ApiContactsRouteImport } from './routes/api/contacts'
 import { Route as ApiAddressBooksRouteImport } from './routes/api/address-books'
 import { Route as ApiAboutRouteImport } from './routes/api/about'
 import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
+import { Route as ApiContactsTrashRouteImport } from './routes/api/contacts.trash'
 import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
 import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
+import { Route as ApiContactsExportRouteImport } from './routes/api/contacts.export'
 import { Route as ApiContactsDuplicatesRouteImport } from './routes/api/contacts.duplicates'
 import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
 import { Route as ApiContactsBulkBooksRouteImport } from './routes/api/contacts.bulk-books'
@@ -38,6 +41,11 @@ import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-book
 import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
 
+const TrashRoute = TrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RadicaleUsersRoute = RadicaleUsersRouteImport.update({
   id: '/radicale-users',
   path: '/radicale-users',
@@ -129,6 +137,11 @@ const ApiRadicaleUsersUsernameRoute =
     path: '/$username',
     getParentRoute: () => ApiRadicaleUsersRoute,
   } as any)
+const ApiContactsTrashRoute = ApiContactsTrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
 const ApiContactsMergeRoute = ApiContactsMergeRouteImport.update({
   id: '/merge',
   path: '/merge',
@@ -137,6 +150,11 @@ const ApiContactsMergeRoute = ApiContactsMergeRouteImport.update({
 const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiContactsExportRoute = ApiContactsExportRouteImport.update({
+  id: '/export',
+  path: '/export',
   getParentRoute: () => ApiContactsRoute,
 } as any)
 const ApiContactsDuplicatesRoute = ApiContactsDuplicatesRouteImport.update({
@@ -192,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/trash': typeof TrashRoute
   '/api/about': typeof ApiAboutRoute
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
@@ -206,8 +225,10 @@ export interface FileRoutesByFullPath {
   '/api/contacts/bulk-books': typeof ApiContactsBulkBooksRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
+  '/api/contacts/export': typeof ApiContactsExportRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
+  '/api/contacts/trash': typeof ApiContactsTrashRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
@@ -222,6 +243,7 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/trash': typeof TrashRoute
   '/api/about': typeof ApiAboutRoute
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
@@ -236,8 +258,10 @@ export interface FileRoutesByTo {
   '/api/contacts/bulk-books': typeof ApiContactsBulkBooksRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
+  '/api/contacts/export': typeof ApiContactsExportRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
+  '/api/contacts/trash': typeof ApiContactsTrashRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
@@ -253,6 +277,7 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/trash': typeof TrashRoute
   '/api/about': typeof ApiAboutRoute
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
   '/api/contacts': typeof ApiContactsRouteWithChildren
@@ -267,8 +292,10 @@ export interface FileRoutesById {
   '/api/contacts/bulk-books': typeof ApiContactsBulkBooksRoute
   '/api/contacts/deduplicate': typeof ApiContactsDeduplicateRoute
   '/api/contacts/duplicates': typeof ApiContactsDuplicatesRoute
+  '/api/contacts/export': typeof ApiContactsExportRoute
   '/api/contacts/import': typeof ApiContactsImportRoute
   '/api/contacts/merge': typeof ApiContactsMergeRoute
+  '/api/contacts/trash': typeof ApiContactsTrashRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
@@ -285,6 +312,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/trash'
     | '/api/about'
     | '/api/address-books'
     | '/api/contacts'
@@ -299,8 +327,10 @@ export interface FileRouteTypes {
     | '/api/contacts/bulk-books'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
+    | '/api/contacts/export'
     | '/api/contacts/import'
     | '/api/contacts/merge'
+    | '/api/contacts/trash'
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
     | '/api/radicale-users/$username/backfill'
@@ -315,6 +345,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/trash'
     | '/api/about'
     | '/api/address-books'
     | '/api/contacts'
@@ -329,8 +360,10 @@ export interface FileRouteTypes {
     | '/api/contacts/bulk-books'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
+    | '/api/contacts/export'
     | '/api/contacts/import'
     | '/api/contacts/merge'
+    | '/api/contacts/trash'
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
     | '/api/radicale-users/$username/backfill'
@@ -345,6 +378,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/trash'
     | '/api/about'
     | '/api/address-books'
     | '/api/contacts'
@@ -359,8 +393,10 @@ export interface FileRouteTypes {
     | '/api/contacts/bulk-books'
     | '/api/contacts/deduplicate'
     | '/api/contacts/duplicates'
+    | '/api/contacts/export'
     | '/api/contacts/import'
     | '/api/contacts/merge'
+    | '/api/contacts/trash'
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
     | '/api/radicale-users/$username/backfill'
@@ -376,6 +412,7 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   NewRoute: typeof NewRoute
   RadicaleUsersRoute: typeof RadicaleUsersRoute
+  TrashRoute: typeof TrashRoute
   ApiAboutRoute: typeof ApiAboutRoute
   ApiAddressBooksRoute: typeof ApiAddressBooksRouteWithChildren
   ApiContactsRoute: typeof ApiContactsRouteWithChildren
@@ -388,6 +425,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trash': {
+      id: '/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof TrashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/radicale-users': {
       id: '/radicale-users'
       path: '/radicale-users'
@@ -514,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRadicaleUsersUsernameRouteImport
       parentRoute: typeof ApiRadicaleUsersRoute
     }
+    '/api/contacts/trash': {
+      id: '/api/contacts/trash'
+      path: '/trash'
+      fullPath: '/api/contacts/trash'
+      preLoaderRoute: typeof ApiContactsTrashRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
     '/api/contacts/merge': {
       id: '/api/contacts/merge'
       path: '/merge'
@@ -526,6 +577,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/api/contacts/import'
       preLoaderRoute: typeof ApiContactsImportRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
+    '/api/contacts/export': {
+      id: '/api/contacts/export'
+      path: '/export'
+      fullPath: '/api/contacts/export'
+      preLoaderRoute: typeof ApiContactsExportRouteImport
       parentRoute: typeof ApiContactsRoute
     }
     '/api/contacts/duplicates': {
@@ -618,8 +676,10 @@ interface ApiContactsRouteChildren {
   ApiContactsBulkBooksRoute: typeof ApiContactsBulkBooksRoute
   ApiContactsDeduplicateRoute: typeof ApiContactsDeduplicateRoute
   ApiContactsDuplicatesRoute: typeof ApiContactsDuplicatesRoute
+  ApiContactsExportRoute: typeof ApiContactsExportRoute
   ApiContactsImportRoute: typeof ApiContactsImportRoute
   ApiContactsMergeRoute: typeof ApiContactsMergeRoute
+  ApiContactsTrashRoute: typeof ApiContactsTrashRoute
 }
 
 const ApiContactsRouteChildren: ApiContactsRouteChildren = {
@@ -627,8 +687,10 @@ const ApiContactsRouteChildren: ApiContactsRouteChildren = {
   ApiContactsBulkBooksRoute: ApiContactsBulkBooksRoute,
   ApiContactsDeduplicateRoute: ApiContactsDeduplicateRoute,
   ApiContactsDuplicatesRoute: ApiContactsDuplicatesRoute,
+  ApiContactsExportRoute: ApiContactsExportRoute,
   ApiContactsImportRoute: ApiContactsImportRoute,
   ApiContactsMergeRoute: ApiContactsMergeRoute,
+  ApiContactsTrashRoute: ApiContactsTrashRoute,
 }
 
 const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(
@@ -671,6 +733,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   NewRoute: NewRoute,
   RadicaleUsersRoute: RadicaleUsersRoute,
+  TrashRoute: TrashRoute,
   ApiAboutRoute: ApiAboutRoute,
   ApiAddressBooksRoute: ApiAddressBooksRouteWithChildren,
   ApiContactsRoute: ApiContactsRouteWithChildren,

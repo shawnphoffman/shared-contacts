@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
 import { getAllContacts } from '../../lib/db'
+import type { Contact } from '../../lib/db'
 import { generateVCard } from '../../lib/vcard'
 
 const CSV_COLUMNS = [
@@ -30,15 +31,15 @@ function escapeCsvField(value: string | null | undefined): string {
 	return str
 }
 
-function contactsToCsv(contacts: Array<Record<string, unknown>>): string {
+function contactsToCsv(contacts: Array<Contact>): string {
 	const header = CSV_COLUMNS.join(',')
 	const rows = contacts.map((contact) =>
-		CSV_COLUMNS.map((col) => escapeCsvField(contact[col] as string)).join(','),
+		CSV_COLUMNS.map((col) => escapeCsvField(contact[col as keyof Contact] as string)).join(','),
 	)
 	return [header, ...rows].join('\r\n')
 }
 
-function contactsToVcf(contacts: Array<Record<string, unknown>>): string {
+function contactsToVcf(contacts: Array<Contact>): string {
 	return contacts.map((contact) => generateVCard(contact)).join('\r\n')
 }
 
