@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
 import { createAddressBook, getAddressBooks, getAddressBooksWithReadonly } from '../../lib/db'
+import { zodError } from '../../lib/contact-helpers'
+import { CreateAddressBookSchema } from '../../lib/schemas'
 
 function slugify(value: string): string {
 	return value
@@ -28,12 +30,10 @@ export const Route = createFileRoute('/api/address-books')({
 			POST: async ({ request }) => {
 				try {
 					const body = await request.json()
-					const name = String(body.name || '').trim()
-					if (!name) {
-						return json({ error: 'Name is required' }, { status: 400 })
-					}
-					const slug = String(body.slug || slugify(name))
-					const isPublic = body.is_public !== undefined ? Boolean(body.is_public) : true
+					const parsed = CreateAddressBookSchema.safeParse(body)
+					if (!parsed.success) return zodError(parsed.error)
+					const { name, slug: parsedSlug, is_public: isPublic } = parsed.data
+					const slug = parsedSlug || slugify(name)
 					const created = await createAddressBook({ name, slug, is_public: isPublic })
 					return json(created, { status: 201 })
 				} catch (error) {

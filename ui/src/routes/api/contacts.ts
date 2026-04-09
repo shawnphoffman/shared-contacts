@@ -1,91 +1,12 @@
-import crypto from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { createContact, getAddressBookBySlug, getAllContacts, getAllContactsPaginated, getContactById, setContactAddressBooks } from '../../lib/db'
+import { createContact, getAllContacts, getAllContactsPaginated, getContactById, setContactAddressBooks } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
+import { sanitizeContact, resolveAddressBookIds, decodePhotoPayload, zodError } from '../../lib/contact-helpers'
+import { CreateContactSchema } from '../../lib/schemas'
 import type { Contact } from '../../lib/db'
-
-const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
-
-type PhotoPayload = {
-	photo_data?: string
-	photo_mime?: string
-	photo_width?: number
-	photo_height?: number
-	photo_remove?: boolean
-}
-
-function sanitizeContact(contact: Contact): Omit<Contact, 'photo_blob'> {
-	const { photo_blob, ...rest } = contact
-	return rest
-}
-
-async function resolveAddressBookIds(rawIds?: Array<string>): Promise<Array<string>> {
-	if (Array.isArray(rawIds) && rawIds.length > 0) {
-		return rawIds
-	}
-	const defaultBook = await getAddressBookBySlug('shared-contacts')
-	return defaultBook ? [defaultBook.id] : []
-}
-
-function decodePhotoPayload(payload: PhotoPayload): {
-	photo_blob: Uint8Array | null
-	photo_mime: string | null
-	photo_width: number | null
-	photo_height: number | null
-	photo_hash: string | null
-	photo_updated_at: Date | null
-} {
-	if (payload.photo_remove) {
-		return {
-			photo_blob: null,
-			photo_mime: null,
-			photo_width: null,
-			photo_height: null,
-			photo_hash: null,
-			photo_updated_at: new Date(),
-		}
-	}
-
-	if (!payload.photo_data) {
-		return {
-			photo_blob: null,
-			photo_mime: null,
-			photo_width: null,
-			photo_height: null,
-			photo_hash: null,
-			photo_updated_at: null,
-		}
-	}
-
-	const dataUrlMatch = payload.photo_data.match(/^data:(.+);base64,(.*)$/)
-	const mime = payload.photo_mime || (dataUrlMatch ? dataUrlMatch[1] : null)
-	const base64Data = dataUrlMatch ? dataUrlMatch[2] : payload.photo_data
-	if (!NodeBuffer) {
-		return {
-			photo_blob: null,
-			photo_mime: null,
-			photo_width: null,
-			photo_height: null,
-			photo_hash: null,
-			photo_updated_at: null,
-		}
-	}
-
-	const buffer = NodeBuffer.from(base64Data, 'base64')
-	const hash = crypto.createHash('sha256').update(buffer).digest('hex')
-
-	return {
-		photo_blob: buffer,
-		photo_mime: mime,
-		photo_width: payload.photo_width ?? null,
-		photo_height: payload.photo_height ?? null,
-		photo_hash: hash,
-		photo_updated_at: new Date(),
-	}
-}
 
 export const Route = createFileRoute('/api/contacts')({
 	server: {
@@ -121,59 +42,60 @@ export const Route = createFileRoute('/api/contacts')({
 			POST: async ({ request }) => {
 				try {
 					const body = await request.json()
-					const photoPayload = body as PhotoPayload
-					const photoFields = decodePhotoPayload(photoPayload)
-					const addressBookIds = await resolveAddressBookIds(body.address_book_ids)
+					const parsed = CreateContactSchema.safeParse(body)
+					if (!parsed.success) return zodError(parsed.error)
+					const photoFields = decodePhotoPayload(parsed.data)
+					const addressBookIds = await resolveAddressBookIds(parsed.data.address_book_ids)
 
-					const normalizedPhones = Array.isArray(body.phones)
-						? body.phones.map((phone: { value?: string }) => ({
+					const normalizedPhones = Array.isArray(parsed.data.phones)
+						? parsed.data.phones.map((phone: { value?: string }) => ({
 								...phone,
 								value: normalizePhoneNumber(phone.value) ?? '',
 							}))
-						: body.phones
+						: parsed.data.phones
 
 					const contactData: Partial<Contact> = {
-						full_name: body.full_name,
-						first_name: body.first_name,
-						last_name: body.last_name,
-						middle_name: body.middle_name,
-						name_prefix: body.name_prefix,
-						name_suffix: body.name_suffix,
-						nickname: body.nickname,
-						maiden_name: body.maiden_name,
-						email: body.email,
-						phone: normalizePhoneNumber(body.phone),
+						full_name: parsed.data.full_name,
+						first_name: parsed.data.first_name,
+						last_name: parsed.data.last_name,
+						middle_name: parsed.data.middle_name,
+						name_prefix: parsed.data.name_prefix,
+						name_suffix: parsed.data.name_suffix,
+						nickname: parsed.data.nickname,
+						maiden_name: parsed.data.maiden_name,
+						email: parsed.data.email,
+						phone: normalizePhoneNumber(parsed.data.phone),
 						phones: normalizedPhones,
-						emails: body.emails,
-						organization: body.organization,
-						org_units: body.org_units,
-						job_title: body.job_title,
-						role: body.role,
-						address: body.address,
-						addresses: body.addresses,
-						address_street: body.address_street,
-						address_city: body.address_city,
-						address_state: body.address_state,
-						address_postal: body.address_postal,
-						address_country: body.address_country,
-						birthday: body.birthday ? new Date(body.birthday) : null,
-						homepage: body.homepage,
-						urls: body.urls,
-						categories: body.categories,
-						labels: body.labels,
-						logos: body.logos,
-						sounds: body.sounds,
-						keys: body.keys,
-						mailer: body.mailer,
-						time_zone: body.time_zone,
-						geo: body.geo,
-						agent: body.agent,
-						prod_id: body.prod_id,
-						revision: body.revision,
-						sort_string: body.sort_string,
-						class: body.class,
-						custom_fields: body.custom_fields,
-						notes: body.notes,
+						emails: parsed.data.emails,
+						organization: parsed.data.organization,
+						org_units: parsed.data.org_units,
+						job_title: parsed.data.job_title,
+						role: parsed.data.role,
+						address: parsed.data.address,
+						addresses: parsed.data.addresses,
+						address_street: parsed.data.address_street,
+						address_city: parsed.data.address_city,
+						address_state: parsed.data.address_state,
+						address_postal: parsed.data.address_postal,
+						address_country: parsed.data.address_country,
+						birthday: parsed.data.birthday ? new Date(parsed.data.birthday) : null,
+						homepage: parsed.data.homepage,
+						urls: parsed.data.urls,
+						categories: parsed.data.categories,
+						labels: parsed.data.labels,
+						logos: parsed.data.logos,
+						sounds: parsed.data.sounds,
+						keys: parsed.data.keys,
+						mailer: parsed.data.mailer,
+						time_zone: parsed.data.time_zone,
+						geo: parsed.data.geo,
+						agent: parsed.data.agent,
+						prod_id: parsed.data.prod_id,
+						revision: parsed.data.revision,
+						sort_string: parsed.data.sort_string,
+						class: parsed.data.class,
+						custom_fields: parsed.data.custom_fields,
+						notes: parsed.data.notes,
 						...(photoFields.photo_updated_at
 							? photoFields
 							: {
