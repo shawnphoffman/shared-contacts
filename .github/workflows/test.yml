@@ -25,6 +25,12 @@ jobs:
       - name: Install UI dependencies
         run: cd ui && npm ci
 
+      - name: Lint sync-service
+        run: cd sync-service && npm run lint
+
+      - name: Lint UI
+        run: cd ui && npm run lint
+
       - name: Run sync-service unit tests
         run: cd sync-service && npm run test:unit
 
