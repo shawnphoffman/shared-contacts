@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.21.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.20.0...v0.21.0) (2026-04-09)
+## [0.22.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.21.0...v0.22.0) (2026-04-09)
 
 ### Features
 
-* **ui:** enlarge book dialogs and add read-only status badges ([08a15b6](https://github.com/shawnphoffman/shared-contacts/commit/08a15b6c180cba61c2144a0f6c56b29fab002c7a))
+* **ui:** redesign connection details dialog with vertical card layout ([9662204](https://github.com/shawnphoffman/shared-contacts/commit/9662204dd402d8379a061b8ad4e2161b3a7877f6))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.22.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.21.0...v0.22.0)
+
+- ✨ Feature(ui): redesign connection details dialog with vertical card layout [`9662204`](https://github.com/shawnphoffman/shared-contacts/commit/9662204dd402d8379a061b8ad4e2161b3a7877f6)
+
 #### [v0.21.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.20.0...v0.21.0)
 
+> 9 April 2026
+
 - 🔧 Chore(ci): bump GitHub Actions to latest major versions [`a93abe5`](https://github.com/shawnphoffman/shared-contacts/commit/a93abe5da1f8c161e045c3550ba839a097d8c2cd)
+- 🔧 Chore: release v0.21.0 [`59a206e`](https://github.com/shawnphoffman/shared-contacts/commit/59a206e421b95928ea3d805ebcf4b4d2c1f790c6)
 - ✨ Feature(ui): enlarge book dialogs and add read-only status badges [`08a15b6`](https://github.com/shawnphoffman/shared-contacts/commit/08a15b6c180cba61c2144a0f6c56b29fab002c7a)
 
 #### [v0.20.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.19.1...v0.20.0)
