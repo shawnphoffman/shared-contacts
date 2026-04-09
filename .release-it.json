@@ -12,14 +12,12 @@
 	},
 	"github": {
 		"release": true,
-		"releaseName": "v${version}",
-		"autoGenerate": true
+		"releaseName": "v${version}"
 	},
 	"npm": {
 		"publish": false
 	},
 	"hooks": {
-		"before:init": "npm run test:unit",
 		"after:bump": "npx auto-changelog -p"
 	},
 	"plugins": {
@@ -64,11 +62,13 @@
 					},
 					{
 						"type": "test",
-						"section": "Tests"
+						"section": "Tests",
+						"hidden": true
 					},
 					{
 						"type": "build",
-						"section": "Build System"
+						"section": "Build System",
+						"hidden": true
 					},
 					{
 						"type": "ci",

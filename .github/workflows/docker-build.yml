@@ -1,10 +1,15 @@
+# NOTE: This workflow does NOT trigger automatically from releases created by
+# the Release workflow (release.yml). GitHub Actions events created with
+# GITHUB_TOKEN do not trigger other workflows. The Release workflow handles
+# Docker builds directly after a successful release.
+#
+# This workflow only runs when a v* tag is pushed manually (e.g. hotfix tags
+# pushed from a local machine). For normal releases, see release.yml.
+
 name: Build and Push Docker Image
 
 on:
   push:
-    # branches:
-    #   - main
-    #   - master
     tags:
       - 'v*'
     paths-ignore:
