@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { deleteContact, getContactById, setContactAddressBooks, updateContact } from '../../lib/db'
+import { deleteContact, getContactsByIds, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { mergeContacts } from '../../lib/merge'
 import { sanitizeContact, zodError } from '../../lib/contact-helpers'
@@ -18,14 +18,12 @@ export const Route = createFileRoute('/api/contacts/merge')({
 					if (!parsed.success) return zodError(parsed.error)
 					const { contactIds } = parsed.data
 
-					// Fetch all contacts
-					const contacts: Array<Contact> = []
-					for (const id of contactIds) {
-						const contact = await getContactById(id)
-						if (!contact) {
-							return json({ error: `Contact with id ${id} not found` }, { status: 404 })
-						}
-						contacts.push(contact)
+					// Fetch all contacts in a single query
+					const contacts = await getContactsByIds(contactIds)
+					if (contacts.length !== contactIds.length) {
+						const foundIds = new Set(contacts.map((c) => c.id))
+						const missingId = contactIds.find((id) => !foundIds.has(id))
+						return json({ error: `Contact with id ${missingId} not found` }, { status: 404 })
 					}
 
 					// Merge contacts (this will sort by created_at and identify primary)
