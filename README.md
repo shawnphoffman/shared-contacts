@@ -32,6 +32,13 @@ I also have a large extended family that I'd love to stay in touch with as much 
 ![Contact edit](docs/contacts-3.png)
 ![Synced with Apple Contacts](docs/contacts-4.png)
 
+## AI Contribution Disclosure
+![Level 5](https://badgen.net/badge/AI%20Assistance/Level%205?color=orange)
+> [!IMPORTANT]
+> This project uses [Level 5 AI assistance](https://www.visidata.org/blog/2026/ai/) — AI generated the majority of the code, but the human was involved at every step, reviewing each line with full attention. The human understands every algorithm and has logically validated how it all works.
+>
+> **AI Model:** Claude Opus 4
+
 ## Backup and Restore
 
 ### Backup Database
