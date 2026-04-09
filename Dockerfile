@@ -16,6 +16,9 @@ COPY sync-service/src ./src
 # Build TypeScript
 RUN npm run build
 
+# Remove dev dependencies after build
+RUN npm prune --omit=dev
+
 # Stage 2: Build ui
 FROM node:22-alpine AS ui-builder
 
@@ -32,6 +35,9 @@ COPY ui/ .
 
 # Build the application
 RUN npm run build
+
+# Remove dev dependencies after build
+RUN npm prune --omit=dev
 
 # Stage 3: Production runtime - based on Radicale with Node.js
 FROM ghcr.io/kozea/radicale:latest
