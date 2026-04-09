@@ -6,26 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.19.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.2...v0.19.0) (2026-04-09)
-
-### Features
-
-* **docker:** add built-in HEALTHCHECK to Docker image ([8335f86](https://github.com/shawnphoffman/shared-contacts/commit/8335f863907b856ca901927f767d3521ff32d7b1))
-* **ui:** convert top navbar to responsive sidebar ([f6bde9f](https://github.com/shawnphoffman/shared-contacts/commit/f6bde9f2f1783339b8b973af1e8dc6dc9939c571))
-
-### Bug Fixes
-
-* **ui:** show support dialog only on click and add GitHub link to about page ([f90c4bf](https://github.com/shawnphoffman/shared-contacts/commit/f90c4bfc85325b0da3adca6e2ab637195a14eef8))
+## [0.19.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.19.0...v0.19.1) (2026-04-09)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.19.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.19.0...v0.19.1)
+
+- ♻️ Refactor(ui): reorganize sidebar nav sections and labels [`ff651c1`](https://github.com/shawnphoffman/shared-contacts/commit/ff651c10738405ac10c0e4592f6ea5d20dc5e5be)
+
 #### [v0.19.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.2...v0.19.0)
+
+> 9 April 2026
 
 - ✨ Feature(ui): convert top navbar to responsive sidebar [`f6bde9f`](https://github.com/shawnphoffman/shared-contacts/commit/f6bde9f2f1783339b8b973af1e8dc6dc9939c571)
 - 🐛 Fix(ui): show support dialog only on click and add GitHub link to about page [`f90c4bf`](https://github.com/shawnphoffman/shared-contacts/commit/f90c4bfc85325b0da3adca6e2ab637195a14eef8)
 - 🔧 Chore: release v0.18.3 [`627bca3`](https://github.com/shawnphoffman/shared-contacts/commit/627bca39ff8c40548e17a1d5e1ff458f06a43eeb)
+- 🔧 Chore: release v0.19.0 [`9f76b52`](https://github.com/shawnphoffman/shared-contacts/commit/9f76b525abc5c55418c9a8c904ea0c60276cf90f)
 - ✨ Feature(docker): add built-in HEALTHCHECK to Docker image [`8335f86`](https://github.com/shawnphoffman/shared-contacts/commit/8335f863907b856ca901927f767d3521ff32d7b1)
 
 #### [v0.18.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.1...v0.18.2)
