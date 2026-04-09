@@ -25,6 +25,7 @@ import {
 import { parseVCard, generateVCard } from './vcard'
 import { getUsers, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from './htpasswd'
 import { atomicWriteFileSync } from './fs-utils'
+import { logger } from './logger'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
 const SYNC_INTERVAL = parseInt(process.env.SYNC_INTERVAL || '30000', 10) // Default 30 seconds instead of 5
@@ -200,7 +201,7 @@ async function getVCardFiles(): Promise<Array<string>> {
 			}
 		}
 	} catch (error) {
-		console.error('Error reading user directories:', error)
+		logger.error({ err: error }, 'Error reading user directories')
 	}
 
 	return files
@@ -216,7 +217,7 @@ function readVCardFile(filePath: string): string | null {
 		// ENOENT (file not found) is expected in some cases (files deleted between listing and reading)
 		// Only log other errors to reduce noise
 		if (getErrorCode(error) !== 'ENOENT') {
-			console.error(`Error reading vCard file ${filePath}:`, error)
+			logger.error({ err: error, filePath }, 'Error reading vCard file')
 		}
 		return null
 	}
@@ -244,7 +245,7 @@ async function writeVCardFile(book: AddressBook, vcardId: string, vcardData: str
 			atomicWriteFileSync(userFilePath, vcardData, 'utf-8')
 		}
 	} catch (error) {
-		console.error('Error writing to user directories:', error)
+		logger.error({ err: error }, 'Error writing to user directories')
 	}
 }
 
@@ -269,7 +270,7 @@ async function deleteVCardFile(book: AddressBook, vcardId: string, usernames: Ar
 			}
 		}
 	} catch (error) {
-		console.error('Error deleting from user directories:', error)
+		logger.error({ err: error }, 'Error deleting from user directories')
 	}
 }
 
@@ -372,7 +373,7 @@ function resolveConflict(conflict: ConflictInfo): 'db' | 'radicale' {
  * Only syncs contacts that have changed since last sync to prevent loops
  */
 export async function syncDbToRadicale(): Promise<void> {
-	console.log('Syncing PostgreSQL → Radicale...')
+	logger.info('Syncing PostgreSQL → Radicale...')
 
 	try {
 		const contacts = await getContactsNeedingRadicaleSync()
@@ -446,7 +447,7 @@ export async function syncDbToRadicale(): Promise<void> {
 
 		for (const contact of contacts) {
 			if (!contact.vcard_id) {
-				console.warn(`Contact ${contact.id} has no vcard_id, skipping`)
+				logger.warn({ contactId: contact.id }, 'Contact has no vcard_id, skipping')
 				continue
 			}
 
@@ -510,7 +511,7 @@ export async function syncDbToRadicale(): Promise<void> {
 							conflicts++
 							const resolution = resolveConflict(conflict)
 							if (resolution === 'radicale') {
-								console.log(`Conflict detected for ${contact.vcard_id}: Radicale version is newer, skipping sync`)
+								logger.info({ vcardId: contact.vcard_id }, 'Conflict detected: Radicale version is newer, skipping sync')
 								await updateSyncMetadata(contact.id, {
 									last_synced_to_radicale_at: new Date(),
 									radicale_file_mtime: fileMtime,
@@ -518,7 +519,7 @@ export async function syncDbToRadicale(): Promise<void> {
 								skipped++
 								continue
 							}
-							console.log(`Conflict detected for ${contact.vcard_id}: DB version is newer, overwriting Radicale`)
+							logger.info({ vcardId: contact.vcard_id }, 'Conflict detected: DB version is newer, overwriting Radicale')
 						}
 					}
 				}
@@ -555,7 +556,7 @@ export async function syncDbToRadicale(): Promise<void> {
 				if (!vcardContent) continue
 				const vcardId = extractVCardId(filePath, vcardContent)
 				if (vcardId && !existingVCardIds.has(vcardId)) {
-					console.log(`Deleting orphaned vCard file from ${book.id}: ${vcardId}`)
+					logger.info({ bookId: book.id, vcardId }, 'Deleting orphaned vCard file')
 					await deleteVCardFile(book, vcardId, usernames)
 				}
 			}
@@ -581,16 +582,16 @@ export async function syncDbToRadicale(): Promise<void> {
 				try {
 					fs.copyFileSync(src, dest)
 				} catch (err) {
-					console.warn(`Failed to copy ${file} to read-only dir for ${book.name}:`, err)
+					logger.warn({ err, file, bookName: book.name }, 'Failed to copy to read-only dir')
 				}
 			}
 		}
 
 		if (synced > 0 || skipped > 0 || conflicts > 0) {
-			console.log(`Synced ${synced} contacts to Radicale (${skipped} skipped, ${conflicts} conflicts resolved)`)
+			logger.info({ synced, skipped, conflicts }, 'Synced contacts to Radicale')
 		}
 	} catch (error) {
-		console.error('Error syncing DB to Radicale:', error)
+		logger.error({ err: error }, 'Error syncing DB to Radicale')
 		throw error
 	}
 }
@@ -602,7 +603,7 @@ export async function syncDbToRadicale(): Promise<void> {
  */
 export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 	if (!silent) {
-		console.log('Syncing Radicale → PostgreSQL...')
+		logger.info('Syncing Radicale → PostgreSQL...')
 	}
 
 	try {
@@ -709,7 +710,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			const vcardData = parseVCard(vcardContent)
 			const vcardId = vcardData.uid || extractVCardId(filePath, vcardContent)
 			if (!vcardId) {
-				console.warn(`Could not extract vCard ID from ${filePath}, skipping`)
+				logger.warn({ filePath }, 'Could not extract vCard ID, skipping')
 				continue
 			}
 
@@ -719,7 +720,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				(pathSegment && bookBySlug.get(pathSegment)) ||
 				(pathSegment === 'shared-contacts' ? defaultBook : null)
 			if (!book) {
-				console.warn(`Unknown address book for ${filePath}, skipping`)
+				logger.warn({ filePath }, 'Unknown address book, skipping')
 				continue
 			}
 
@@ -767,7 +768,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 						const resolution = resolveConflict(conflict)
 						if (resolution === 'db') {
 							// DB version wins, skip updating from Radicale
-							console.log(`Conflict detected for ${vcardId}: DB version is newer, skipping Radicale update`)
+							logger.info({ vcardId }, 'Conflict detected: DB version is newer, skipping Radicale update')
 							// Update metadata to reflect we saw the Radicale file
 							await updateSyncMetadata(existingContact.id, {
 								last_synced_from_radicale_at: new Date(),
@@ -777,7 +778,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 							continue
 						}
 						// Radicale version wins, continue to update
-						console.log(`Conflict detected for ${vcardId}: Radicale version is newer, updating DB`)
+						logger.info({ vcardId }, 'Conflict detected: Radicale version is newer, updating DB')
 					}
 				}
 			}
@@ -855,7 +856,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					}
 					photoHash = crypto.createHash('sha256').update(photoBlob).digest('hex')
 				} catch (error) {
-					console.warn(`Failed to decode photo for ${vcardId}:`, error)
+					logger.warn({ err: error, vcardId }, 'Failed to decode photo')
 				}
 			}
 
@@ -936,7 +937,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 						ensureDirectoryExists(masterPath)
 						ensureAddressBookProps(masterPath, book)
 						atomicWriteFileSync(masterFilePath, vcardContent, 'utf-8')
-						console.log(`Copied new contact ${vcardId} into ${book.id} master directory`)
+						logger.info({ vcardId, bookId: book.id }, 'Copied new contact into master directory')
 					}
 
 					created++
@@ -996,16 +997,16 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			}
 
 			if (currentBookIds.size === 0 && contact.sync_source === 'radicale') {
-				console.log(`Deleting contact ${contact.vcard_id} from DB (deleted from all address books)`)
+				logger.info({ vcardId: contact.vcard_id }, 'Deleting contact from DB (deleted from all address books)')
 				await deleteContact(contact.id)
 			}
 		}
 
 		if (created > 0 || updated > 0 || skipped > 0 || conflicts > 0) {
-			console.log(`Synced Radicale to DB: ${created} created, ${updated} updated (${skipped} skipped, ${conflicts} conflicts resolved)`)
+			logger.info({ created, updated, skipped, conflicts }, 'Synced Radicale to DB')
 		}
 	} catch (error) {
-		console.error('Error syncing Radicale to DB:', error)
+		logger.error({ err: error }, 'Error syncing Radicale to DB')
 		throw error
 	}
 }
@@ -1030,11 +1031,11 @@ export async function startWatchingRadicale(): Promise<void> {
 			})
 			watchers.push(masterWatcher)
 			watchedPaths.add(masterPath)
-			console.log(`Watching Radicale storage: ${masterPath}`)
+			logger.info({ masterPath }, 'Watching Radicale storage')
 		}
 	}
 
-	console.log(`File watcher debounce: ${FILE_WATCHER_DEBOUNCE_MS}ms`)
+	logger.info({ debounceMs: FILE_WATCHER_DEBOUNCE_MS }, 'File watcher debounce configured')
 
 	try {
 		const users = await getUsers()
@@ -1051,16 +1052,16 @@ export async function startWatchingRadicale(): Promise<void> {
 				})
 				watchers.push(userWatcher)
 				watchedPaths.add(userPath)
-				console.log(`Also watching user directory: ${userPath}`)
+				logger.info({ userPath }, 'Also watching user directory')
 			}
 		}
 	} catch (error) {
-		console.error('Error setting up user directory watchers:', error)
+		logger.error({ err: error }, 'Error setting up user directory watchers')
 	}
 
 	// Use a single debounce mechanism for all watchers
 	if (watchers.length === 0) {
-		console.warn('No Radicale directories available to watch.')
+		logger.warn('No Radicale directories available to watch.')
 		return
 	}
 	const allWatchers = watchers
@@ -1077,9 +1078,9 @@ export async function startWatchingRadicale(): Promise<void> {
 
 		// Only log if there are many files changed (likely a batch sync)
 		if (files.length > 1) {
-			console.log(`${files.length} vCard files changed, syncing Radicale → PostgreSQL...`)
+			logger.info({ fileCount: files.length }, 'vCard files changed, syncing Radicale → PostgreSQL...')
 		} else if (files.length === 1) {
-			console.log(`vCard file changed: ${files[0]}, syncing Radicale → PostgreSQL...`)
+			logger.info({ file: files[0] }, 'vCard file changed, syncing Radicale → PostgreSQL...')
 		}
 
 		await syncRadicaleToDb(true) // Silent mode since we already logged above
@@ -1130,16 +1131,16 @@ export async function startWatchingRadicale(): Promise<void> {
 							await setContactAddressBooks(contact.id, Array.from(currentBookIds))
 						}
 						if (currentBookIds.size === 0 && contact.sync_source === 'radicale') {
-							console.log(`Deleting contact ${vcardId} from DB (deleted from all address books)`)
+							logger.info({ vcardId }, 'Deleting contact from DB (deleted from all address books)')
 							await deleteContact(contact.id)
 						} else if (contact.sync_source !== 'radicale') {
-							console.log(`Contact ${vcardId} deleted from Radicale but keeping in DB (will be recreated)`)
+							logger.info({ vcardId }, 'Contact deleted from Radicale but keeping in DB (will be recreated)')
 						}
 					} else if (contact.sync_source === 'radicale') {
-						console.log(`Deleting contact ${vcardId} from DB (deleted from Radicale)`)
+						logger.info({ vcardId }, 'Deleting contact from DB (deleted from Radicale)')
 						await deleteContact(contact.id)
 					} else {
-						console.log(`Contact ${vcardId} deleted from Radicale but keeping in DB (will be recreated)`)
+						logger.info({ vcardId }, 'Contact deleted from Radicale but keeping in DB (will be recreated)')
 					}
 				}
 			}
@@ -1148,7 +1149,7 @@ export async function startWatchingRadicale(): Promise<void> {
 		})
 
 		watcher.on('error', (error: unknown) => {
-			console.error('Watcher error:', error)
+			logger.error({ err: error }, 'Watcher error')
 		})
 	}
 }
@@ -1159,18 +1160,18 @@ export async function startWatchingRadicale(): Promise<void> {
 let isSyncing = false
 
 export function startPeriodicSync(): void {
-	console.log(`Starting periodic sync every ${SYNC_INTERVAL}ms`)
+	logger.info({ intervalMs: SYNC_INTERVAL }, 'Starting periodic sync')
 
 	setInterval(async () => {
 		if (isSyncing) {
-			console.log('Sync already in progress, skipping periodic sync')
+			logger.info('Sync already in progress, skipping periodic sync')
 			return
 		}
 		isSyncing = true
 		try {
 			await syncDbToRadicale()
 		} catch (error) {
-			console.error('Periodic sync error:', error)
+			logger.error({ err: error }, 'Periodic sync error')
 		} finally {
 			isSyncing = false
 		}

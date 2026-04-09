@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { getUsers, createUser, updateUserPassword, deleteUser, backfillSharedContactsForUser } from './htpasswd'
+import { logger, httpLogger } from './logger'
 
 const app = express()
 const PORT = 3001
@@ -23,6 +24,7 @@ export function setStartupError(error: unknown) {
 
 app.use(cors())
 app.use(express.json())
+app.use(httpLogger)
 
 // Health check (always returns ok once server is running)
 app.get('/health', (_req: Request, res: Response) => {
@@ -61,7 +63,7 @@ app.get('/api/radicale-users', async (req: Request, res: Response) => {
 
 		res.json(users)
 	} catch (error: unknown) {
-		console.error('Error fetching users:', error)
+		logger.error({ err: error }, 'Error fetching users')
 		res.status(500).json({ error: 'Failed to fetch users' })
 	}
 })
@@ -82,7 +84,7 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
 		await createUser(username, password)
 		res.status(201).json({ username })
 	} catch (error: unknown) {
-		console.error('Error creating user:', error)
+		logger.error({ err: error }, 'Error creating user')
 		if (error instanceof Error && error.message.includes('already exists')) {
 			return res.status(409).json({ error: error.message })
 		}
@@ -94,11 +96,11 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
 app.post('/api/radicale-users/backfill/:username', async (req: Request, res: Response) => {
 	try {
 		const { username } = req.params
-		console.log('backfilling user', username)
+		logger.info({ username }, 'backfilling user')
 		await backfillSharedContactsForUser(username)
 		res.json({ success: true })
 	} catch (error: unknown) {
-		console.error('Error backfilling shared contacts:', error)
+		logger.error({ err: error }, 'Error backfilling shared contacts')
 		res.status(500).json({ error: 'Failed to backfill shared contacts' })
 	}
 })
@@ -116,7 +118,7 @@ app.put('/api/radicale-users/:username', async (req: Request, res: Response) => 
 		await updateUserPassword(username, password)
 		res.json({ username })
 	} catch (error: unknown) {
-		console.error('Error updating user:', error)
+		logger.error({ err: error }, 'Error updating user')
 		if (error instanceof Error && error.message.includes('does not exist')) {
 			return res.status(404).json({ error: error.message })
 		}
@@ -131,7 +133,7 @@ app.delete('/api/radicale-users/:username', async (req: Request, res: Response) 
 		await deleteUser(username)
 		res.json({ success: true })
 	} catch (error: unknown) {
-		console.error('Error deleting user:', error)
+		logger.error({ err: error }, 'Error deleting user')
 		if (error instanceof Error && error.message.includes('does not exist')) {
 			return res.status(404).json({ error: error.message })
 		}
@@ -141,6 +143,6 @@ app.delete('/api/radicale-users/:username', async (req: Request, res: Response) 
 
 export function startApiServer() {
 	app.listen(PORT, () => {
-		console.log(`API server listening on port ${PORT}`)
+		logger.info({ port: PORT }, 'API server listening')
 	})
 }

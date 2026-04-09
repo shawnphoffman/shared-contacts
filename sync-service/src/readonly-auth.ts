@@ -1,5 +1,6 @@
 import { deleteUser, getUsers, setUserHash } from './htpasswd'
 import { getAllAddressBookReadonly } from './db'
+import { logger } from './logger'
 
 const READONLY_USERNAME_PREFIX = 'ro-'
 
@@ -26,7 +27,7 @@ export async function syncReadonlyUsersToHtpasswd(): Promise<void> {
 				await deleteUser(user.username)
 			} catch (err) {
 				// User might have been removed already
-				console.warn(`Could not remove read-only user ${user.username}:`, err)
+				logger.warn({ err, username: user.username }, 'Could not remove read-only user')
 			}
 		}
 	}

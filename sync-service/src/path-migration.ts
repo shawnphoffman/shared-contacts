@@ -3,6 +3,7 @@ import * as path from 'path'
 import { getPool } from './db'
 import { getAddressBooks } from './db'
 import { getUsers } from './htpasswd'
+import { logger } from './logger'
 
 const RADICALE_STORAGE_PATH = '/data/collections'
 const COLLECTION_ROOT = 'collection-root'
@@ -30,18 +31,18 @@ export async function runPathMigrationIfNeeded(): Promise<void> {
 		return
 	}
 
-	console.log('Running one-time path migration (slug -> id)...')
+	logger.info('Running one-time path migration (slug -> id)...')
 	const books = await getAddressBooks()
 	if (books.length === 0) {
 		await pool.query('INSERT INTO path_migration_done (done_at) VALUES (NOW())')
-		console.log('Path migration skipped (no address books).')
+		logger.info('Path migration skipped (no address books)')
 		return
 	}
 
 	const rootPath = path.join(RADICALE_STORAGE_PATH, COLLECTION_ROOT)
 	if (!fs.existsSync(rootPath)) {
 		await pool.query('INSERT INTO path_migration_done (done_at) VALUES (NOW())')
-		console.log('Path migration skipped (collection-root not found).')
+		logger.info('Path migration skipped (collection-root not found)')
 		return
 	}
 
@@ -50,7 +51,7 @@ export async function runPathMigrationIfNeeded(): Promise<void> {
 		const newMasterPath = path.join(rootPath, book.id)
 		if (fs.existsSync(oldMasterPath) && !fs.existsSync(newMasterPath)) {
 			fs.renameSync(oldMasterPath, newMasterPath)
-			console.log(`Renamed master path: ${book.slug} -> ${book.id}`)
+			logger.info({ from: book.slug, to: book.id }, 'Renamed master path')
 		}
 	}
 
@@ -58,7 +59,7 @@ export async function runPathMigrationIfNeeded(): Promise<void> {
 	try {
 		users = await getUsers()
 	} catch (err) {
-		console.warn('Could not read htpasswd for user path migration:', err)
+		logger.warn({ err }, 'Could not read htpasswd for user path migration')
 	}
 
 	for (const user of users) {
@@ -69,11 +70,11 @@ export async function runPathMigrationIfNeeded(): Promise<void> {
 			const newUserPath = path.join(userDir, book.id)
 			if (fs.existsSync(oldUserPath) && !fs.existsSync(newUserPath)) {
 				fs.renameSync(oldUserPath, newUserPath)
-				console.log(`Renamed user path: ${user.username}/${book.slug} -> ${user.username}/${book.id}`)
+				logger.info({ username: user.username, from: book.slug, to: book.id }, 'Renamed user path')
 			}
 		}
 	}
 
 	await pool.query('INSERT INTO path_migration_done (done_at) VALUES (NOW())')
-	console.log('Path migration completed.')
+	logger.info('Path migration completed')
 }

@@ -7,14 +7,15 @@ import { runPathMigrationIfNeeded } from './path-migration'
 import { runCompositeUsersMigrationIfNeeded } from './composite-users-migration'
 import { ensureAllCompositeUsersExist } from './htpasswd'
 import { syncReadonlyUsersToHtpasswd } from './readonly-auth'
+import { logger } from './logger'
 
 function setupSignalHandlers() {
 	const handleShutdown = async (signal: 'SIGTERM' | 'SIGINT') => {
-		console.log(`${signal} received, shutting down gracefully...`)
+		logger.info({ signal }, 'Received signal, shutting down gracefully...')
 		try {
 			await closePool()
 		} catch (err) {
-			console.error('Error while closing database pool during shutdown:', err)
+			logger.error({ err }, 'Error while closing database pool during shutdown')
 		}
 		process.exit(0)
 	}
@@ -29,9 +30,9 @@ function setupSignalHandlers() {
 }
 
 async function main() {
-	console.log('Starting Shared Contacts Sync Service...')
-	console.log('RADICALE_STORAGE_PATH: /data/collections')
-	console.log(`SYNC_INTERVAL: ${process.env.SYNC_INTERVAL || '30000'}ms`)
+	logger.info('Starting Shared Contacts Sync Service...')
+	logger.info({ radicaleStoragePath: '/data/collections' }, 'RADICALE_STORAGE_PATH')
+	logger.info({ syncInterval: process.env.SYNC_INTERVAL || '30000' }, 'SYNC_INTERVAL')
 
 	// Always register signal handlers so we can shut down gracefully,
 	// even if startup throws before migrations complete.
@@ -60,7 +61,7 @@ async function main() {
 		setMigrationsComplete()
 
 		// Initial sync: Radicale → DB (in case there are existing contacts)
-		console.log('Performing initial sync...')
+		logger.info('Performing initial sync...')
 		await syncRadicaleToDb()
 
 		// Initial sync: DB → Radicale (to ensure consistency)
@@ -83,21 +84,21 @@ async function main() {
 			try {
 				await syncReadonlyUsersToHtpasswd()
 			} catch (err) {
-				console.error('Read-only auth sync error:', err)
+				logger.error({ err }, 'Read-only auth sync error')
 			} finally {
 				isReadonlyAuthSyncing = false
 			}
 		}, readonlyAuthInterval)
 
-		console.log('Sync service started successfully')
+		logger.info('Sync service started successfully')
 	} catch (error) {
-		console.error('Fatal error during sync service startup:', error)
+		logger.error({ err: error }, 'Fatal error during sync service startup')
 		// Record the startup error so /ready can report it, but keep the process alive
 		setStartupError(error)
 		try {
 			await closePool()
 		} catch (closeError) {
-			console.error('Error while closing database pool after startup failure:', closeError)
+			logger.error({ err: closeError }, 'Error while closing database pool after startup failure')
 		}
 	}
 }
