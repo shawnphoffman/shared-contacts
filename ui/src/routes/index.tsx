@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Download, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
@@ -512,6 +512,18 @@ function ContactsIndexPage() {
 						)}
 						<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
 							<RefreshCw className="size-4" />
+						</Button>
+						<Button variant="outline" asChild>
+							<a href="/api/contacts/export?format=csv" download="contacts.csv">
+								<Download className="size-4 mr-1" />
+								CSV
+							</a>
+						</Button>
+						<Button variant="outline" asChild>
+							<a href="/api/contacts/export?format=vcf" download="contacts.vcf">
+								<Download className="size-4 mr-1" />
+								vCard
+							</a>
 						</Button>
 					</div>
 				</div>
