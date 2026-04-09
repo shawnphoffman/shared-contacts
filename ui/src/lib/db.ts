@@ -105,6 +105,7 @@ export interface Contact {
 	vcard_hash: string | null
 	sync_source: string | null // 'db', 'radicale', 'api', or NULL
 	radicale_file_mtime: Date | null
+	deleted_at: Date | null
 	address_books?: Array<AddressBook> | null
 }
 
@@ -385,7 +386,7 @@ export async function setUserAddressBooks(username: string, addressBookIds: Arra
 
 export async function getAllContacts(): Promise<Array<Contact>> {
 	const dbPool = getPool()
-	const result = await dbPool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC')
+	const result = await dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NULL ORDER BY full_name, created_at DESC')
 	const contacts = result.rows.map(parseContactRow)
 	return attachAddressBooks(contacts)
 }
@@ -402,8 +403,8 @@ export async function getAllContactsPaginated({
 	const clampedOffset = Math.max(0, offset)
 
 	const [countResult, dataResult] = await Promise.all([
-		dbPool.query('SELECT COUNT(*) FROM contacts'),
-		dbPool.query('SELECT * FROM contacts ORDER BY full_name, created_at DESC LIMIT $1 OFFSET $2', [clampedLimit, clampedOffset]),
+		dbPool.query('SELECT COUNT(*) FROM contacts WHERE deleted_at IS NULL'),
+		dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NULL ORDER BY full_name, created_at DESC LIMIT $1 OFFSET $2', [clampedLimit, clampedOffset]),
 	])
 
 	const total = parseInt(countResult.rows[0].count, 10)
@@ -412,9 +413,10 @@ export async function getAllContactsPaginated({
 	return { data, total, limit: clampedLimit, offset: clampedOffset }
 }
 
-export async function getContactById(id: string): Promise<Contact | null> {
+export async function getContactById(id: string, includeDeleted = false): Promise<Contact | null> {
 	const dbPool = getPool()
-	const result = await dbPool.query('SELECT * FROM contacts WHERE id = $1', [id])
+	const deletedClause = includeDeleted ? '' : ' AND deleted_at IS NULL'
+	const result = await dbPool.query(`SELECT * FROM contacts WHERE id = $1${deletedClause}`, [id])
 	if (!result.rows[0]) return null
 	const row = parseContactRow(result.rows[0])
 	const [contactWithBooks] = await attachAddressBooks([row])
@@ -423,7 +425,7 @@ export async function getContactById(id: string): Promise<Contact | null> {
 
 export async function getContactByVcardId(vcardId: string): Promise<Contact | null> {
 	const dbPool = getPool()
-	const result = await dbPool.query('SELECT * FROM contacts WHERE vcard_id = $1', [vcardId])
+	const result = await dbPool.query('SELECT * FROM contacts WHERE vcard_id = $1 AND deleted_at IS NULL', [vcardId])
 	if (!result.rows[0]) return null
 	const [contactWithBooks] = await attachAddressBooks([result.rows[0]])
 	return contactWithBooks
@@ -435,7 +437,7 @@ export async function getContactByVcardId(vcardId: string): Promise<Contact | nu
 export async function getContactByEmail(email: string): Promise<Contact | null> {
 	if (!email) return null
 	const dbPool = getPool()
-	const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(email) = LOWER($1) LIMIT 1', [email])
+	const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL LIMIT 1', [email])
 	return result.rows[0] || null
 }
 
@@ -453,13 +455,13 @@ export async function findDuplicateContact(fullName: string | null, email: strin
 
 	// Try name + phone combination
 	if (fullName && phone) {
-		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND phone = $2 LIMIT 1', [fullName, phone])
+		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND phone = $2 AND deleted_at IS NULL LIMIT 1', [fullName, phone])
 		if (result.rows[0]) return result.rows[0]
 	}
 
 	// Try just name (if it's a unique name)
 	if (fullName && fullName !== 'Unnamed Contact') {
-		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) LIMIT 1', [fullName])
+		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND deleted_at IS NULL LIMIT 1', [fullName])
 		if (result.rows[0]) return result.rows[0]
 	}
 
@@ -704,5 +706,27 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 
 export async function deleteContact(id: string): Promise<void> {
 	const dbPool = getPool()
+	await dbPool.query('UPDATE contacts SET deleted_at = NOW() WHERE id = $1', [id])
+}
+
+export async function restoreContact(id: string): Promise<void> {
+	const dbPool = getPool()
+	await dbPool.query('UPDATE contacts SET deleted_at = NULL WHERE id = $1', [id])
+}
+
+export async function permanentlyDeleteContact(id: string): Promise<void> {
+	const dbPool = getPool()
 	await dbPool.query('DELETE FROM contacts WHERE id = $1', [id])
+}
+
+export async function getDeletedContacts(): Promise<Array<Contact>> {
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC')
+	return result.rows.map(parseContactRow)
+}
+
+export async function emptyTrash(): Promise<number> {
+	const dbPool = getPool()
+	const result = await dbPool.query('DELETE FROM contacts WHERE deleted_at IS NOT NULL')
+	return result.rowCount ?? 0
 }
