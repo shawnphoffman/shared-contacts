@@ -423,6 +423,65 @@ export async function getContactById(id: string, includeDeleted = false): Promis
 	return contactWithBooks
 }
 
+export async function getContactsByIds(ids: string[], includeDeleted = false): Promise<Array<Contact>> {
+	if (ids.length === 0) return []
+	const dbPool = getPool()
+	const deletedClause = includeDeleted ? '' : ' AND deleted_at IS NULL'
+	const result = await dbPool.query(`SELECT * FROM contacts WHERE id = ANY($1::uuid[])${deletedClause}`, [ids])
+	const contacts = result.rows.map(parseContactRow)
+	return attachAddressBooks(contacts)
+}
+
+export async function getBulkContactAddressBookIds(contactIds: string[]): Promise<Map<string, string[]>> {
+	if (contactIds.length === 0) return new Map()
+	const hasTable = await tableExists('contact_address_books')
+	if (!hasTable) return new Map()
+	const dbPool = getPool()
+	const result = await dbPool.query(
+		'SELECT contact_id, address_book_id FROM contact_address_books WHERE contact_id = ANY($1::uuid[])',
+		[contactIds],
+	)
+	const map = new Map<string, string[]>()
+	for (const row of result.rows) {
+		const existing = map.get(row.contact_id) || []
+		existing.push(row.address_book_id)
+		map.set(row.contact_id, existing)
+	}
+	return map
+}
+
+export async function bulkSetContactAddressBooks(
+	assignments: Array<{ contactId: string; bookIds: string[] }>,
+): Promise<void> {
+	if (assignments.length === 0) return
+	const hasTable = await tableExists('contact_address_books')
+	if (!hasTable) return
+	const dbPool = getPool()
+	const contactIds = assignments.map((a) => a.contactId)
+
+	const client = await dbPool.connect()
+	try {
+		await client.query('BEGIN')
+		await client.query('DELETE FROM contact_address_books WHERE contact_id = ANY($1::uuid[])', [contactIds])
+		for (const { contactId, bookIds } of assignments) {
+			if (bookIds.length > 0) {
+				await client.query(
+					`INSERT INTO contact_address_books (contact_id, address_book_id)
+					 SELECT $1, UNNEST($2::uuid[])
+					 ON CONFLICT DO NOTHING`,
+					[contactId, bookIds],
+				)
+			}
+		}
+		await client.query('COMMIT')
+	} catch (error) {
+		await client.query('ROLLBACK')
+		throw error
+	} finally {
+		client.release()
+	}
+}
+
 export async function getContactByVcardId(vcardId: string): Promise<Contact | null> {
 	const dbPool = getPool()
 	const result = await dbPool.query('SELECT * FROM contacts WHERE vcard_id = $1 AND deleted_at IS NULL', [vcardId])
