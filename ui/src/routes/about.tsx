@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Code, Database, ExternalLink, Heart, Info, Settings } from 'lucide-react'
+import { Code, Database, ExternalLink, Github, Heart, Info, Settings } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Separator } from '../components/ui/separator'
 import { Skeleton } from '../components/ui/skeleton'
@@ -208,6 +208,16 @@ function AboutPage() {
 							</p>
 							<Separator />
 							<p>For issues, feature requests, or contributions, please visit the GitHub repository.</p>
+								<a
+									href="https://github.com/shawnphoffman/shared-contacts"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex items-center gap-2 text-foreground hover:underline"
+								>
+									<Github className="w-4 h-4" />
+									shawnphoffman/shared-contacts
+									<ExternalLink className="w-3 h-3" />
+								</a>
 						</div>
 					</CardContent>
 				</Card>
