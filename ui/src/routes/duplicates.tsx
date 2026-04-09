@@ -207,7 +207,7 @@ function DuplicatesPage() {
 		return (
 			<div className="container mx-auto p-6">
 				<div className="mb-6">
-					<Button variant="outline" onClick={() => navigate({ to: '/' })}>
+					<Button variant="outline" onClick={() => navigate({ to: '/', search: { book: undefined } })}>
 						← Back to Contacts
 					</Button>
 				</div>
@@ -234,7 +234,7 @@ function DuplicatesPage() {
 					</p>
 				</div>
 				<div className="flex gap-2">
-					<Button variant="outline" onClick={() => navigate({ to: '/' })}>
+					<Button variant="outline" onClick={() => navigate({ to: '/', search: { book: undefined } })}>
 						← Back
 					</Button>
 					<Button variant="outline" onClick={() => refetch()} disabled={isLoading}>

@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Edit, Eye, EyeOff, Plus, Server } from 'lucide-react'
-import { Fragment, useEffect, useState } from 'react'
+import { BookOpen, Edit, Eye, EyeOff, Plus, Server, Users } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
@@ -616,6 +616,12 @@ function BookRow({
 			</TableCell>
 			<TableCell className="text-right">
 				<div className="flex justify-end gap-2">
+					<Button variant="outline" size="sm" asChild>
+						<Link to="/" search={{ book: book.id }}>
+							<Users className="size-4 mr-1" />
+							<span className="hidden sm:inline">Contacts</span>
+						</Link>
+					</Button>
 					<Button variant="outline" size="sm" onClick={onEdit}>
 						<Edit className="size-4 mr-1" />
 						<span className="hidden sm:inline">Edit</span>

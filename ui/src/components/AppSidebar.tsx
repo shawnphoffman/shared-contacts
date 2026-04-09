@@ -47,6 +47,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 					</p>
 					<Link
 						to="/"
+						search={{ book: undefined }}
 						activeOptions={{ exact: true }}
 						className={navLinkClass}
 						activeProps={{ className: navLinkActiveClass }}

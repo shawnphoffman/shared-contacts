@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Download, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Briefcase, Calendar, Download, Mail, Phone, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
@@ -24,6 +24,9 @@ declare module '@tanstack/react-table' {
 
 export const Route = createFileRoute('/')({
 	component: ContactsIndexPage,
+	validateSearch: (search: Record<string, unknown>) => ({
+		book: typeof search.book === 'string' ? search.book : undefined,
+	}),
 })
 
 async function fetchContacts(): Promise<Array<Contact>> {
@@ -34,8 +37,19 @@ async function fetchContacts(): Promise<Array<Contact>> {
 	return response.json()
 }
 
+type FieldFilter = 'hasEmail' | 'hasPhone' | 'hasBirthday' | 'hasOrganization' | 'noBook'
+
+const FIELD_FILTERS: Array<{ id: FieldFilter; label: string; icon: typeof Mail }> = [
+	{ id: 'hasEmail', label: 'Has Email', icon: Mail },
+	{ id: 'hasPhone', label: 'Has Phone', icon: Phone },
+	{ id: 'hasBirthday', label: 'Has Birthday', icon: Calendar },
+	{ id: 'hasOrganization', label: 'Has Org', icon: Briefcase },
+	{ id: 'noBook', label: 'No Book', icon: BookOpen },
+]
+
 function ContactsIndexPage() {
 	const navigate = useNavigate()
+	const { book: bookFromUrl } = Route.useSearch()
 	const [searchQuery, setSearchQuery] = useState('')
 	const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 	const [isBulkDeleting, setIsBulkDeleting] = useState(false)
@@ -44,8 +58,16 @@ function ContactsIndexPage() {
 	const [bulkRemoveFromBookIds, setBulkRemoveFromBookIds] = useState<Set<string>>(new Set())
 	const [isBulkBooksSubmitting, setIsBulkBooksSubmitting] = useState(false)
 	const [addressBooks, setAddressBooks] = useState<Array<{ id: string; name: string }>>([])
-	const [selectedBookId, setSelectedBookId] = useState<string>('all')
+	const [selectedBookId, setSelectedBookId] = useState<string>(bookFromUrl ?? 'all')
+	const [activeFilters, setActiveFilters] = useState<Set<FieldFilter>>(new Set())
 	const showBookCount = addressBooks.length > 1
+
+	// Sync URL param → dropdown when navigating with ?book=
+	useEffect(() => {
+		if (bookFromUrl && addressBooks.length > 0) {
+			setSelectedBookId(bookFromUrl)
+		}
+	}, [bookFromUrl, addressBooks])
 
 	const getNameParts = useCallback((contact: Contact) => {
 		const firstName = contact.first_name?.trim() ?? ''
@@ -355,10 +377,59 @@ function ContactsIndexPage() {
 
 	const [sorting, setSorting] = useState<SortingState>([])
 
+	const toggleFilter = useCallback((filter: FieldFilter) => {
+		setActiveFilters(prev => {
+			const next = new Set(prev)
+			if (next.has(filter)) next.delete(filter)
+			else next.add(filter)
+			return next
+		})
+	}, [])
+
+	const clearAllFilters = useCallback(() => {
+		setActiveFilters(new Set())
+		setSelectedBookId('all')
+		setSearchQuery('')
+		navigate({ to: '/', search: { book: undefined }, replace: true })
+	}, [navigate])
+
+	const handleBookChange = useCallback(
+		(bookId: string) => {
+			setSelectedBookId(bookId)
+			navigate({
+				to: '/',
+				search: { book: bookId === 'all' ? undefined : bookId },
+				replace: true,
+			})
+		},
+		[navigate]
+	)
+
 	const filteredContacts = useMemo(() => {
-		if (selectedBookId === 'all') return contacts
-		return contacts.filter(contact => contact.address_books?.some(book => book.id === selectedBookId))
-	}, [contacts, selectedBookId])
+		let result = contacts
+
+		if (selectedBookId !== 'all') {
+			result = result.filter(contact => contact.address_books?.some(book => book.id === selectedBookId))
+		}
+
+		if (activeFilters.has('hasEmail')) {
+			result = result.filter(c => c.email)
+		}
+		if (activeFilters.has('hasPhone')) {
+			result = result.filter(c => c.phone)
+		}
+		if (activeFilters.has('hasBirthday')) {
+			result = result.filter(c => c.birthday)
+		}
+		if (activeFilters.has('hasOrganization')) {
+			result = result.filter(c => c.organization)
+		}
+		if (activeFilters.has('noBook')) {
+			result = result.filter(c => !c.address_books || c.address_books.length === 0)
+		}
+
+		return result
+	}, [contacts, selectedBookId, activeFilters])
 
 	const table = useReactTable({
 		data: filteredContacts,
@@ -534,7 +605,7 @@ function ContactsIndexPage() {
 						{addressBooks.length > 0 && (
 							<select
 								value={selectedBookId}
-								onChange={e => setSelectedBookId(e.target.value)}
+								onChange={e => handleBookChange(e.target.value)}
 								className="h-9 px-2 rounded-md border border-input bg-background text-sm flex-1"
 								aria-label="Filter by address book"
 							>
@@ -563,6 +634,36 @@ function ContactsIndexPage() {
 						</Button>
 					</div>
 				</div>
+				<div className="flex flex-wrap items-center gap-2">
+					{FIELD_FILTERS.map(({ id, label, icon: Icon }) => (
+						<button
+							key={id}
+							onClick={() => toggleFilter(id)}
+							className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+								activeFilters.has(id)
+									? 'border-primary bg-primary text-primary-foreground'
+									: 'border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+							}`}
+						>
+							<Icon className="size-3" />
+							{label}
+						</button>
+					))}
+					{(activeFilters.size > 0 || selectedBookId !== 'all' || searchQuery) && (
+						<button
+							onClick={clearAllFilters}
+							className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+						>
+							<X className="size-3" />
+							Clear all
+						</button>
+					)}
+				</div>
+				{(activeFilters.size > 0 || selectedBookId !== 'all' || searchQuery) && (
+					<div className="text-sm text-muted-foreground">
+						Showing {table.getRowModel().rows.length} of {contacts.length} contact{contacts.length === 1 ? '' : 's'}
+					</div>
+				)}
 				{selectedContactIds.length >= 1 && (
 					<div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-end">
 						<div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2">

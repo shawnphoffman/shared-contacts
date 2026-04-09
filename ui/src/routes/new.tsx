@@ -41,7 +41,7 @@ function NewContactPage() {
 				onSubmit={async data => {
 					await mutation.mutateAsync(data)
 				}}
-				onCancel={() => navigate({ to: '/' })}
+				onCancel={() => navigate({ to: '/', search: { book: undefined } })}
 			/>
 		</div>
 	)

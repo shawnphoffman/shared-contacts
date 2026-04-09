@@ -95,7 +95,7 @@ function ContactDetailPage() {
 		mutationFn: () => deleteContact(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['contacts'] })
-			navigate({ to: '/' })
+			navigate({ to: '/', search: { book: undefined } })
 		},
 	})
 

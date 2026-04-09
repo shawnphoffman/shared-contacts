@@ -25,7 +25,7 @@ export function MobileHeader() {
 					<AppSidebar onNavigate={() => setOpen(false)} />
 				</SheetContent>
 			</Sheet>
-			<Link to="/" className="flex items-center gap-2 text-foreground">
+			<Link to="/" search={{ book: undefined }} className="flex items-center gap-2 text-foreground">
 				<NotebookTabs className="size-5" />
 				<span className="text-lg font-semibold">Shared Contacts</span>
 			</Link>
