@@ -6,15 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.19.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.19.0...v0.19.1) (2026-04-09)
+## [0.20.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.19.1...v0.20.0) (2026-04-09)
+
+### Features
+
+* **ui:** redesign books page as table with edit and connection details dialogs ([88f7bfb](https://github.com/shawnphoffman/shared-contacts/commit/88f7bfb3286105cee2eab5bfca092a5a4a3eb4de))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.20.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.19.1...v0.20.0)
+
+- ✨ Feature(ui): redesign books page as table with edit and connection details dialogs [`88f7bfb`](https://github.com/shawnphoffman/shared-contacts/commit/88f7bfb3286105cee2eab5bfca092a5a4a3eb4de)
+
 #### [v0.19.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.19.0...v0.19.1)
 
+> 9 April 2026
+
 - ♻️ Refactor(ui): reorganize sidebar nav sections and labels [`ff651c1`](https://github.com/shawnphoffman/shared-contacts/commit/ff651c10738405ac10c0e4592f6ea5d20dc5e5be)
+- 🔧 Chore: release v0.19.1 [`a05df27`](https://github.com/shawnphoffman/shared-contacts/commit/a05df27df1019918335c83708793bc04de26df91)
 
 #### [v0.19.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.2...v0.19.0)
 
