@@ -1,14 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Eye, EyeOff, Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { BookOpen, Edit, Eye, EyeOff, Plus, Server } from 'lucide-react'
+import { Fragment, useEffect, useState } from 'react'
 import { Button } from '../components/ui/button'
-import { Card, CardContent, CardHeader } from '../components/ui/card'
+import { Card, CardContent } from '../components/ui/card'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { Switch } from '../components/ui/switch'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import {
+	CopyButton,
+	fetchRuntimeConfig,
+	fetchUserBookAssignments,
+	fetchUsers,
+	getCardDAVUrl,
+	getDirectCardDAVBaseUrl,
+	getProxyCardDAVBaseUrl,
+	handleDownloadMobileconfig,
+} from '../lib/carddav'
+
+// ── Types ──────────────────────────────────────────────────────────
 
 interface AddressBook {
 	id: string
@@ -22,6 +35,8 @@ interface AddressBookWithReadonly extends AddressBook {
 	readonly_username?: string
 }
 
+// ── API helpers ────────────────────────────────────────────────────
+
 async function fetchAddressBooks(): Promise<Array<AddressBook>> {
 	const response = await fetch('/api/address-books')
 	if (!response.ok) {
@@ -33,9 +48,7 @@ async function fetchAddressBooks(): Promise<Array<AddressBook>> {
 async function createAddressBook(payload: { name: string; slug?: string; is_public?: boolean }): Promise<AddressBook> {
 	const response = await fetch('/api/address-books', {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
+		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(payload),
 	})
 	if (!response.ok) {
@@ -51,9 +64,7 @@ async function updateAddressBook(
 ): Promise<AddressBookWithReadonly> {
 	const response = await fetch(`/api/address-books/${id}`, {
 		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json',
-		},
+		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(payload),
 	})
 	if (!response.ok) {
@@ -71,139 +82,137 @@ async function fetchAddressBook(id: string): Promise<AddressBookWithReadonly> {
 	return response.json()
 }
 
+function generateSlug(name: string): string {
+	return name
+		.toLowerCase()
+		.trim()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+}
+
+// ── Route ──────────────────────────────────────────────────────────
+
 export const Route = createFileRoute('/books')({
 	component: BooksPage,
 })
 
-function BookCard({ book }: { book: AddressBook }) {
+// ── Edit Dialog ────────────────────────────────────────────────────
+
+function EditBookDialog({
+	book,
+	open,
+	onOpenChange,
+}: {
+	book: AddressBook | null
+	open: boolean
+	onOpenChange: (open: boolean) => void
+}) {
 	const queryClient = useQueryClient()
-	const [nameDraft, setNameDraft] = useState(book.name)
+	const [nameDraft, setNameDraft] = useState('')
+	const [isPublic, setIsPublic] = useState(true)
+	const [readonlyEnabled, setReadonlyEnabled] = useState(false)
 	const [readonlyPassword, setReadonlyPassword] = useState('')
 	const [showPassword, setShowPassword] = useState(false)
-	const [nameError, setNameError] = useState<string | null>(null)
-	const [readonlyError, setReadonlyError] = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
 
-	const { data: details, isLoading: detailsLoading } = useQuery({
-		queryKey: ['address-book', book.id],
-		queryFn: () => fetchAddressBook(book.id),
+	const { data: details } = useQuery({
+		queryKey: ['address-book', book?.id],
+		queryFn: () => fetchAddressBook(book!.id),
+		enabled: !!book,
 	})
+
+	// Sync form state when details load or book changes
+	useEffect(() => {
+		if (details) {
+			setNameDraft(details.name)
+			setIsPublic(details.is_public)
+			setReadonlyEnabled(details.readonly_enabled ?? false)
+			setReadonlyPassword('')
+			setShowPassword(false)
+			setError(null)
+		}
+	}, [details])
 
 	const updateMutation = useMutation({
 		mutationFn: (payload: { name?: string; is_public?: boolean; readonly_enabled?: boolean; readonly_password?: string }) =>
-			updateAddressBook(book.id, payload),
+			updateAddressBook(book!.id, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['address-books'] })
-			queryClient.invalidateQueries({ queryKey: ['address-book', book.id] })
-			setNameError(null)
-			setReadonlyError(null)
-			setReadonlyPassword('')
+			queryClient.invalidateQueries({ queryKey: ['address-book', book!.id] })
+			onOpenChange(false)
 		},
-		onError: (err: Error, variables: { name?: string; is_public?: boolean; readonly_enabled?: boolean; readonly_password?: string }) => {
-			const isReadonlyUpdate = variables.readonly_enabled !== undefined || variables.readonly_password !== undefined
-			if (isReadonlyUpdate) setReadonlyError(err.message)
-			else setNameError(err.message)
-		},
+		onError: (err: Error) => setError(err.message),
 	})
 
-	const readonlyEnabled = details?.readonly_enabled ?? false
-
-	useEffect(() => {
-		if (details?.name) setNameDraft(details.name)
-	}, [details?.name])
-
-	const handleNameBlur = () => {
-		const trimmed = nameDraft.trim()
-		if (!trimmed) {
-			setNameDraft(book.name)
+	const handleSave = () => {
+		const trimmedName = nameDraft.trim()
+		if (!trimmedName) {
+			setError('Name is required')
 			return
 		}
-		if (trimmed === book.name) return
-		updateMutation.mutate({ name: trimmed })
-	}
-
-	const handleReadonlyToggle = (checked: boolean) => {
-		setReadonlyError(null)
 		updateMutation.mutate({
-			readonly_enabled: checked,
-			...(checked && readonlyPassword.trim() ? { readonly_password: readonlyPassword } : {}),
+			name: trimmedName,
+			is_public: isPublic,
+			readonly_enabled: readonlyEnabled,
+			...(readonlyEnabled && readonlyPassword.trim() ? { readonly_password: readonlyPassword } : {}),
 		})
 	}
 
-	const handleChangePassword = () => {
-		if (!readonlyPassword.trim()) return
-		updateMutation.mutate({ readonly_enabled: true, readonly_password: readonlyPassword })
-	}
-
-	if (detailsLoading || !details) {
-		return (
-			<Card className="overflow-hidden border bg-card shadow-sm">
-				<CardHeader className="">
-					<div className="h-7 w-48 animate-pulse rounded bg-muted" />
-				</CardHeader>
-				<CardContent>
-					<div className="h-4 w-32 animate-pulse rounded bg-muted" />
-				</CardContent>
-			</Card>
-		)
-	}
+	if (!book) return null
 
 	return (
-		<Card className="overflow-hidden border bg-card shadow-sm">
-			<CardHeader className="space-y-4 gap-0">
-				<div className="space-y-4">
-					<Input
-						value={nameDraft}
-						onChange={e => {
-							setNameDraft(e.target.value)
-							setNameError(null)
-						}}
-						onBlur={handleNameBlur}
-						className="h-11 text-lg font-semibold bg-muted/40 border-muted focus-visible:bg-background focus-visible:ring-2"
-						placeholder="Book name"
-					/>
-					<div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
-						<div>
-							<p className="font-medium text-foreground">Public book</p>
-							<p className="text-sm text-muted-foreground">Visible to all users in the system</p>
-						</div>
-						<Switch checked={details.is_public} onCheckedChange={checked => updateMutation.mutate({ is_public: Boolean(checked) })} />
-					</div>
-				</div>
-				{nameError && <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{nameError}</p>}
-			</CardHeader>
-			<CardContent className="space-y-5 border-t pt-5">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-					<div className="min-w-0 flex-1">
-						<h3 className="font-medium text-foreground">Read-only subscription</h3>
-						<p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-							Share a subscribe-only link so others can view (but not edit) these contacts. You can set a password so only people you share
-							it with can use the link.
-						</p>
-					</div>
-					<div className="flex shrink-0 items-center gap-3">
-						<span className="text-sm text-muted-foreground">{readonlyEnabled ? 'On' : 'Off'}</span>
-						<Switch id={`readonly-toggle-${book.id}`} checked={readonlyEnabled} onCheckedChange={handleReadonlyToggle} />
-					</div>
-				</div>
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Edit Address Book</DialogTitle>
+					<DialogDescription>Update settings for this address book.</DialogDescription>
+				</DialogHeader>
+				<div className="space-y-4 py-2">
+					<Field>
+						<FieldLabel htmlFor="edit-book-name">Name</FieldLabel>
+						<FieldContent>
+							<Input
+								id="edit-book-name"
+								value={nameDraft}
+								onChange={e => {
+									setNameDraft(e.target.value)
+									setError(null)
+								}}
+								placeholder="Book name"
+							/>
+						</FieldContent>
+					</Field>
+					<Field>
+						<FieldLabel>Slug</FieldLabel>
+						<FieldContent>
+							<code className="text-sm text-muted-foreground">{book.slug}</code>
+						</FieldContent>
+					</Field>
+					<label className="flex items-center gap-2">
+						<Checkbox checked={isPublic} onCheckedChange={value => setIsPublic(Boolean(value))} />
+						<span>Public book</span>
+					</label>
 
-				{readonlyEnabled && (
-					<div className="space-y-4 rounded-lg border bg-muted/20 p-4">
-						<Field>
-							<FieldLabel htmlFor={`readonly-password-${book.id}`} className="text-foreground">
-								Read-only Password
-							</FieldLabel>
-							<FieldContent className="">
-								<div className="flex flex-col sm:flex-row sm:items-center gap-2">
-									<div className="relative w-full">
+					{/* Read-only subscription */}
+					<div className="space-y-3 rounded-lg border p-4">
+						<div className="flex items-center justify-between">
+							<div>
+								<p className="font-medium text-sm">Read-only subscription</p>
+								<p className="text-xs text-muted-foreground">Share a subscribe-only link for this book</p>
+							</div>
+							<Switch checked={readonlyEnabled} onCheckedChange={setReadonlyEnabled} />
+						</div>
+						{readonlyEnabled && (
+							<Field>
+								<FieldLabel htmlFor="edit-readonly-password">Password</FieldLabel>
+								<FieldContent>
+									<div className="relative">
 										<Input
-											id={`readonly-password-${book.id}`}
+											id="edit-readonly-password"
 											type={showPassword ? 'text' : 'password'}
 											value={readonlyPassword}
-											onChange={e => {
-												setReadonlyPassword(e.target.value)
-												setReadonlyError(null)
-											}}
-											placeholder="Set a password to secure the link"
+											onChange={e => setReadonlyPassword(e.target.value)}
+											placeholder="Set a password (optional)"
 											autoComplete="new-password"
 										/>
 										<button
@@ -215,40 +224,186 @@ function BookCard({ book }: { book: AddressBook }) {
 											{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
 										</button>
 									</div>
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={handleChangePassword}
-										disabled={updateMutation.isPending || !readonlyPassword.trim()}
-									>
-										{updateMutation.isPending ? 'Saving…' : 'Save password'}
-									</Button>
-								</div>
-								{!readonlyPassword && (
-									<span className="text-sm text-muted-foreground">Optional — leave empty to use a random password until you set one.</span>
-								)}
-							</FieldContent>
-						</Field>
+									<span className="text-xs text-muted-foreground">Leave empty to keep existing or use a random password.</span>
+								</FieldContent>
+							</Field>
+						)}
 					</div>
-				)}
 
-				{readonlyError && <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{readonlyError}</p>}
-			</CardContent>
-		</Card>
+					{error && <div className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</div>}
+				</div>
+				<DialogFooter>
+					<Button variant="outline" onClick={() => onOpenChange(false)}>
+						Cancel
+					</Button>
+					<Button onClick={handleSave} disabled={updateMutation.isPending}>
+						{updateMutation.isPending ? 'Saving…' : 'Save'}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	)
 }
 
-function generateSlug(name: string): string {
-	return name
-		.toLowerCase()
-		.trim()
-		.replace(/[^a-z0-9]+/g, '-') // Replace unsafe characters with hyphens
-		.replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+// ── Connection Details Dialog ──────────────────────────────────────
+
+function ConnectionDetailsDialog({
+	book,
+	open,
+	onOpenChange,
+}: {
+	book: AddressBook | null
+	open: boolean
+	onOpenChange: (open: boolean) => void
+}) {
+	const { data: users = [] } = useQuery({
+		queryKey: ['radicale-users'],
+		queryFn: fetchUsers,
+		enabled: open,
+	})
+	const { data: assignmentsData } = useQuery({
+		queryKey: ['user-book-assignments'],
+		queryFn: fetchUserBookAssignments,
+		enabled: open,
+	})
+	const { data: runtimeConfig } = useQuery({
+		queryKey: ['runtime-config'],
+		queryFn: fetchRuntimeConfig,
+		enabled: open,
+	})
+	const { data: details } = useQuery({
+		queryKey: ['address-book', book?.id],
+		queryFn: () => fetchAddressBook(book!.id),
+		enabled: open && !!book,
+	})
+
+	if (!book) return null
+
+	const directBaseUrl = getDirectCardDAVBaseUrl()
+	const proxyBaseUrl = getProxyCardDAVBaseUrl(runtimeConfig)
+
+	// Filter users assigned to this book
+	const usersForBook = users.filter(user => {
+		if (user.username.startsWith('ro-')) {
+			const bookIdFromRo = user.username.slice(3)
+			return book.id === bookIdFromRo && details?.readonly_enabled === true
+		}
+		const assignments = assignmentsData?.assignments ?? {}
+		const userBookIds = assignments[user.username] ?? []
+		return userBookIds.includes(book.id) || book.is_public
+	})
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-2xl">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2">
+						<Server className="size-5" />
+						Connection Details — {book.name}
+					</DialogTitle>
+					<DialogDescription>
+						CardDAV subscription URLs for users assigned to this book. Use the composite username and URL when configuring CardDAV
+						clients.
+					</DialogDescription>
+				</DialogHeader>
+				<div className="max-h-[60vh] overflow-y-auto">
+					{usersForBook.length === 0 ? (
+						<div className="py-8 text-center text-sm text-muted-foreground">
+							No users are assigned to this book. Assign users on the Book Users page.
+						</div>
+					) : (
+						<div className="rounded-md border">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Username</TableHead>
+										<TableHead>Subscription URL</TableHead>
+										<TableHead className="w-[100px]">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{usersForBook.map(user => {
+										const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
+										const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
+										const urlsAreSame = directUrl === proxyUrl
+										return (
+											<TableRow key={user.username}>
+												<TableCell className="max-w-48">
+													<div className="space-y-1">
+														<div className="text-xs text-muted-foreground">{user.username}</div>
+														<div className="font-mono text-xs truncate">{`${user.username}-${book.id}`}</div>
+													</div>
+												</TableCell>
+												<TableCell>
+													<div className="space-y-2">
+														{urlsAreSame ? (
+															<div>
+																<div className="text-[11px] uppercase text-muted-foreground">URL</div>
+																<code className="text-xs break-all">{directUrl}</code>
+															</div>
+														) : (
+															<>
+																<div>
+																	<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
+																	<code className="text-xs break-all">{directUrl}</code>
+																</div>
+																<div>
+																	<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
+																	<code className="text-xs break-all">{proxyUrl}</code>
+																</div>
+															</>
+														)}
+													</div>
+												</TableCell>
+												<TableCell>
+													<div className="flex flex-col gap-2">
+														{urlsAreSame ? (
+															<CopyButton text={directUrl} label="Subscription URL" />
+														) : (
+															<>
+																<CopyButton text={directUrl} label="Direct URL" />
+																<CopyButton text={proxyUrl} label="Proxy URL" />
+															</>
+														)}
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => handleDownloadMobileconfig(user.username, book.id, book.name)}
+														>
+															Download profile
+														</Button>
+													</div>
+												</TableCell>
+											</TableRow>
+										)
+									})}
+								</TableBody>
+							</Table>
+						</div>
+					)}
+				</div>
+				<DialogFooter>
+					<Button variant="outline" onClick={() => onOpenChange(false)}>
+						Close
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	)
 }
+
+// ── Page ───────────────────────────────────────────────────────────
 
 function BooksPage() {
 	const queryClient = useQueryClient()
+
+	// Dialog state
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+	const [isConnectionDialogOpen, setIsConnectionDialogOpen] = useState(false)
+	const [selectedBook, setSelectedBook] = useState<AddressBook | null>(null)
+
+	// Create form state
 	const [formData, setFormData] = useState({ name: '', slug: '', is_public: true })
 	const [error, setError] = useState<string | null>(null)
 	const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
@@ -267,12 +422,10 @@ function BooksPage() {
 			setError(null)
 			setSlugManuallyEdited(false)
 		},
-		onError: (err: Error) => {
-			setError(err.message)
-		},
+		onError: (err: Error) => setError(err.message),
 	})
 
-	// Auto-generate slug from name when name changes (if slug hasn't been manually edited)
+	// Auto-generate slug from name
 	useEffect(() => {
 		if (!slugManuallyEdited && formData.name) {
 			const generatedSlug = generateSlug(formData.name)
@@ -280,28 +433,35 @@ function BooksPage() {
 		}
 	}, [formData.name, slugManuallyEdited])
 
+	const openEditDialog = (book: AddressBook) => {
+		setSelectedBook(book)
+		setIsEditDialogOpen(true)
+	}
+
+	const openConnectionDialog = (book: AddressBook) => {
+		setSelectedBook(book)
+		setIsConnectionDialogOpen(true)
+	}
+
 	if (isLoading) {
 		return (
-			<div className="container mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
+			<div className="container mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
 				<div className="h-16 w-64 animate-pulse rounded bg-muted" />
-				<div className="space-y-6">
-					<div className="h-48 animate-pulse rounded-lg bg-muted" />
-					<div className="h-48 animate-pulse rounded-lg bg-muted" />
-				</div>
+				<div className="h-48 animate-pulse rounded-lg bg-muted" />
 			</div>
 		)
 	}
 
 	return (
-		<div className="container mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
+		<div className="container mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Address books</h1>
-					<p className="mt-1 text-sm text-muted-foreground">Manage books and read-only subscription links.</p>
+					<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Address Books</h1>
+					<p className="mt-1 text-sm text-muted-foreground">Manage address books and view connection details.</p>
 				</div>
 				<Button onClick={() => setIsCreateDialogOpen(true)} className="shrink-0">
 					<Plus className="mr-2 h-4 w-4" />
-					New book
+					New Book
 				</Button>
 			</div>
 
@@ -313,18 +473,37 @@ function BooksPage() {
 						<p className="mb-6 text-sm text-muted-foreground">Create one to organize contacts and share read-only links.</p>
 						<Button onClick={() => setIsCreateDialogOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
-							Create first book
+							Create First Book
 						</Button>
 					</CardContent>
 				</Card>
 			) : (
-				<div className="space-y-6">
-					{books.map(book => (
-						<BookCard key={book.id} book={book} />
-					))}
+				<div className="rounded-md border">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Name</TableHead>
+								<TableHead className="hidden sm:table-cell">Slug</TableHead>
+								<TableHead className="hidden sm:table-cell">Visibility</TableHead>
+								<TableHead className="hidden sm:table-cell">Read-only</TableHead>
+								<TableHead className="text-right">Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{books.map(book => (
+								<BookRow
+									key={book.id}
+									book={book}
+									onEdit={() => openEditDialog(book)}
+									onConnectionDetails={() => openConnectionDialog(book)}
+								/>
+							))}
+						</TableBody>
+					</Table>
 				</div>
 			)}
 
+			{/* Create Dialog */}
 			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
 				<DialogContent>
 					<DialogHeader>
@@ -340,7 +519,6 @@ function BooksPage() {
 									value={formData.name}
 									onChange={e => {
 										setFormData(prev => ({ ...prev, name: e.target.value }))
-										// Reset manual edit flag when name changes, so slug regenerates
 										if (slugManuallyEdited && formData.slug === generateSlug(formData.name)) {
 											setSlugManuallyEdited(false)
 										}
@@ -399,6 +577,64 @@ function BooksPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* Edit Dialog */}
+			<EditBookDialog book={selectedBook} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
+
+			{/* Connection Details Dialog */}
+			<ConnectionDetailsDialog book={selectedBook} open={isConnectionDialogOpen} onOpenChange={setIsConnectionDialogOpen} />
 		</div>
+	)
+}
+
+// ── Table Row ──────────────────────────────────────────────────────
+
+function BookRow({
+	book,
+	onEdit,
+	onConnectionDetails,
+}: {
+	book: AddressBook
+	onEdit: () => void
+	onConnectionDetails: () => void
+}) {
+	const { data: details } = useQuery({
+		queryKey: ['address-book', book.id],
+		queryFn: () => fetchAddressBook(book.id),
+	})
+
+	return (
+		<TableRow>
+			<TableCell className="font-medium">{book.name}</TableCell>
+			<TableCell className="hidden sm:table-cell">
+				<code className="text-xs text-muted-foreground">{book.slug}</code>
+			</TableCell>
+			<TableCell className="hidden sm:table-cell">
+				<span
+					className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+						book.is_public
+							? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+							: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+					}`}
+				>
+					{book.is_public ? 'Public' : 'Private'}
+				</span>
+			</TableCell>
+			<TableCell className="hidden sm:table-cell">
+				<span className="text-sm text-muted-foreground">{details?.readonly_enabled ? 'On' : 'Off'}</span>
+			</TableCell>
+			<TableCell className="text-right">
+				<div className="flex justify-end gap-2">
+					<Button variant="outline" size="sm" onClick={onEdit}>
+						<Edit className="size-4 mr-1" />
+						<span className="hidden sm:inline">Edit</span>
+					</Button>
+					<Button variant="outline" size="sm" onClick={onConnectionDetails}>
+						<Server className="size-4 mr-1" />
+						<span className="hidden sm:inline">Connection</span>
+					</Button>
+				</div>
+			</TableCell>
+		</TableRow>
 	)
 }
