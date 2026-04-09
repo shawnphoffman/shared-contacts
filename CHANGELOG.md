@@ -6,25 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.18.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.1...v0.18.2) (2026-04-09)
+## [0.18.3](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.2...v0.18.3) (2026-04-09)
 
 ### Bug Fixes
 
-* **ci:** build Docker image locally for smoke test ([0ba91c4](https://github.com/shawnphoffman/shared-contacts/commit/0ba91c449e2e80ba36e0ad1d774ca3eefb9fdfe6))
-* **docker:** set NODE_ENV before sync-service and resolve duplicate mount point ([b9f458f](https://github.com/shawnphoffman/shared-contacts/commit/b9f458fe074df31540fcd574c11063ee1d12c3a0))
-* **sync-service:** add missing 15_soft_delete migration to runner ([ef8a23e](https://github.com/shawnphoffman/shared-contacts/commit/ef8a23ecf56551d07ce64564370ef7aff5e94e40))
-
-### Documentation
-
-* disclose AI usage level ([c972106](https://github.com/shawnphoffman/shared-contacts/commit/c972106666c79b4d54cdadf12ea0bd91545dbd93))
+* **ui:** show support dialog only on click and add GitHub link to about page ([f90c4bf](https://github.com/shawnphoffman/shared-contacts/commit/f90c4bfc85325b0da3adca6e2ab637195a14eef8))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.18.3](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.2...v0.18.3)
+
+- 🐛 Fix(ui): show support dialog only on click and add GitHub link to about page [`f90c4bf`](https://github.com/shawnphoffman/shared-contacts/commit/f90c4bfc85325b0da3adca6e2ab637195a14eef8)
+
 #### [v0.18.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.18.1...v0.18.2)
 
+> 9 April 2026
+
 - 👷 CI(ci): bump GitHub Actions to Node.js 24 compatible versions [`98e0cc5`](https://github.com/shawnphoffman/shared-contacts/commit/98e0cc54f8154f8ba1f7d43e14071565e6e483c7)
+- 🔧 Chore: release v0.18.2 [`fc72f3f`](https://github.com/shawnphoffman/shared-contacts/commit/fc72f3f9e163c2ad0c340925bdff87a8f4fa357e)
 - 👷 CI(ci): skip CI pipeline for docs-only and non-code changes [`0f5aa6f`](https://github.com/shawnphoffman/shared-contacts/commit/0f5aa6f1897088de6fc03d39dc1eca98817af508)
 - 🐛 Fix(docker): set NODE_ENV before sync-service and resolve duplicate mount point [`b9f458f`](https://github.com/shawnphoffman/shared-contacts/commit/b9f458fe074df31540fcd574c11063ee1d12c3a0)
 - 📝 Docs: disclose AI usage level [`c972106`](https://github.com/shawnphoffman/shared-contacts/commit/c972106666c79b4d54cdadf12ea0bd91545dbd93)
