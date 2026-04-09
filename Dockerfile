@@ -52,10 +52,11 @@ RUN apk add --no-cache nodejs npm netcat-openbsd && \
 	rm -rf /var/cache/apk/*
 
 # Create directories for services
-# Remove the base image's /var/lib/radicale volume mount point to avoid
-# "duplicate mount point" errors — we use /data instead
-RUN rm -rf /var/lib/radicale && ln -s /data /var/lib/radicale && \
-    mkdir -p /app/sync-service /app/ui /data /config
+# Note: the base Radicale image declares VOLUME /var/lib/radicale which
+# creates an anonymous volume at runtime. We intentionally do NOT symlink
+# it to /data — doing so causes Docker to shadow bind mounts at /data
+# with the anonymous volume. The unused /var/lib/radicale volume is harmless.
+RUN mkdir -p /app/sync-service /app/ui /data /config
 
 # Copy radicale config
 COPY radicale/config/config /config/config
@@ -97,6 +98,10 @@ WORKDIR /app
 # TODO: Run as non-root user — requires entrypoint changes to handle
 # volume ownership (mounted volumes ignore in-image chown). Implement
 # with gosu/su-exec: start as root, fix permissions, then drop to appuser.
+
+# Built-in health check against the UI server
+HEALTHCHECK --interval=1m --timeout=10s --retries=3 --start-period=60s \
+  CMD node -e "require('http').get('http://localhost:3030/api/health',(r)=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"
 
 # Use our custom entrypoint
 ENTRYPOINT ["/docker-entrypoint.sh"]
