@@ -295,90 +295,73 @@ function ConnectionDetailsDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-3xl">
+			<DialogContent className="sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Server className="size-5" />
 						Connection Details — {book.name}
 					</DialogTitle>
 					<DialogDescription>
-						CardDAV subscription URLs for users assigned to this book. Use the composite username and URL when configuring CardDAV
-						clients.
+						CardDAV subscription URLs for users assigned to this book. Use the composite username and URL when configuring
+						CardDAV clients.
 					</DialogDescription>
 				</DialogHeader>
-				<div className="max-h-[60vh] overflow-y-auto">
+				<div className="max-h-[70vh] overflow-y-auto">
 					{usersForBook.length === 0 ? (
 						<div className="py-8 text-center text-sm text-muted-foreground">
 							No users are assigned to this book. Assign users on the Book Users page.
 						</div>
 					) : (
-						<div className="rounded-md border">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Username</TableHead>
-										<TableHead>Subscription URL</TableHead>
-										<TableHead className="w-[100px]">Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{usersForBook.map(user => {
-										const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
-										const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
-										const urlsAreSame = directUrl === proxyUrl
-										return (
-											<TableRow key={user.username}>
-												<TableCell className="max-w-48">
-													<div className="space-y-1">
-														<div className="text-xs text-muted-foreground">{user.username}</div>
-														<div className="font-mono text-xs truncate">{`${user.username}-${book.id}`}</div>
+						<div className="space-y-4">
+							{usersForBook.map(user => {
+								const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
+								const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
+								const urlsAreSame = directUrl === proxyUrl
+								return (
+									<div key={user.username} className="rounded-lg border p-4 space-y-3">
+										<div>
+											<div className="text-sm font-medium">{user.username}</div>
+											<div className="font-mono text-xs text-muted-foreground">{`${user.username}-${book.id}`}</div>
+										</div>
+										<div className="space-y-2">
+											{urlsAreSame ? (
+												<div className="flex items-start justify-between gap-2">
+													<div className="min-w-0">
+														<div className="text-[11px] uppercase text-muted-foreground mb-0.5">URL</div>
+														<code className="text-xs break-all">{directUrl}</code>
 													</div>
-												</TableCell>
-												<TableCell>
-													<div className="space-y-2">
-														{urlsAreSame ? (
-															<div>
-																<div className="text-[11px] uppercase text-muted-foreground">URL</div>
-																<code className="text-xs break-all">{directUrl}</code>
-															</div>
-														) : (
-															<>
-																<div>
-																	<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
-																	<code className="text-xs break-all">{directUrl}</code>
-																</div>
-																<div>
-																	<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
-																	<code className="text-xs break-all">{proxyUrl}</code>
-																</div>
-															</>
-														)}
+													<CopyButton text={directUrl} label="URL" />
+												</div>
+											) : (
+												<>
+													<div className="flex items-start justify-between gap-2">
+														<div className="min-w-0">
+															<div className="text-[11px] uppercase text-muted-foreground mb-0.5">Direct</div>
+															<code className="text-xs break-all">{directUrl}</code>
+														</div>
+														<CopyButton text={directUrl} label="Direct" />
 													</div>
-												</TableCell>
-												<TableCell>
-													<div className="flex flex-col gap-2">
-														{urlsAreSame ? (
-															<CopyButton text={directUrl} label="Subscription URL" />
-														) : (
-															<>
-																<CopyButton text={directUrl} label="Direct URL" />
-																<CopyButton text={proxyUrl} label="Proxy URL" />
-															</>
-														)}
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() => handleDownloadMobileconfig(user.username, book.id, book.name)}
-														>
-															Download profile
-														</Button>
+													<div className="flex items-start justify-between gap-2">
+														<div className="min-w-0">
+															<div className="text-[11px] uppercase text-muted-foreground mb-0.5">Proxy</div>
+															<code className="text-xs break-all">{proxyUrl}</code>
+														</div>
+														<CopyButton text={proxyUrl} label="Proxy" />
 													</div>
-												</TableCell>
-											</TableRow>
-										)
-									})}
-								</TableBody>
-							</Table>
+												</>
+											)}
+										</div>
+										<Button
+											variant="outline"
+											size="sm"
+											className="w-full"
+											onClick={() => handleDownloadMobileconfig(user.username, book.id, book.name)}
+										>
+											Download profile
+										</Button>
+									</div>
+								)
+							})}
 						</div>
 					)}
 				</div>
