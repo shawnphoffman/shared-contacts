@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getContactById } from '../../lib/db'
+import { logger } from '../../lib/logger'
 
 const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
 
@@ -29,26 +30,31 @@ export const Route = createFileRoute('/api/contacts/$id/photo')({
 	server: {
 		handlers: {
 			GET: async ({ params }) => {
-				const contact = await getContactById(params.id)
-				if (!contact || !contact.photo_blob) {
-					return new Response('Not Found', { status: 404 })
-				}
+				try {
+					const contact = await getContactById(params.id)
+					if (!contact || !contact.photo_blob) {
+						return new Response('Not Found', { status: 404 })
+					}
 
-				const buffer = normalizePhotoBlob(contact.photo_blob)
-				if (!buffer) {
-					return new Response('Not Found', { status: 404 })
-				}
+					const buffer = normalizePhotoBlob(contact.photo_blob)
+					if (!buffer) {
+						return new Response('Not Found', { status: 404 })
+					}
 
-				const arrayBuffer =
-					buffer.buffer instanceof ArrayBuffer
-						? buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
-						: Uint8Array.from(buffer).buffer
-				return new Response(arrayBuffer, {
-					headers: {
-						'Content-Type': contact.photo_mime || 'image/jpeg',
-						'Cache-Control': 'private, max-age=3600',
-					},
-				})
+					const arrayBuffer =
+						buffer.buffer instanceof ArrayBuffer
+							? buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+							: Uint8Array.from(buffer).buffer
+					return new Response(arrayBuffer, {
+						headers: {
+							'Content-Type': contact.photo_mime || 'image/jpeg',
+							'Cache-Control': 'private, max-age=3600',
+						},
+					})
+				} catch (error) {
+					logger.error({ err: error }, 'Error fetching contact photo')
+					return new Response('Internal Server Error', { status: 500 })
+				}
 			},
 		},
 	},
