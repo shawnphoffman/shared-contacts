@@ -16,7 +16,6 @@ import { getAddressBooksForSync } from './address-books'
 import { calculateVCardHash, detectConflict, resolveConflict } from './conflict'
 import {
 	getAddressBookPath,
-	getAddressBookPathForUser,
 	ensureDirectoryExists,
 	ensureAddressBookProps,
 	extractVCardId,
