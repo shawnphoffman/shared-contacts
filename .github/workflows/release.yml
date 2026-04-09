@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - docs/**
+      - .cursor/**
+
+jobs:
+  release:
+    # Skip release commits to avoid infinite loop
+    if: "!startsWith(github.event.head_commit.message, 'chore: release v')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            sync-service/package-lock.json
+            ui/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd sync-service && npm ci
+          cd ../ui && npm ci
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run release -- --ci
