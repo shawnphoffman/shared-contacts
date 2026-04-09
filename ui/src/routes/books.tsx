@@ -162,7 +162,7 @@ function EditBookDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
+			<DialogContent className="sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>Edit Address Book</DialogTitle>
 					<DialogDescription>Update settings for this address book.</DialogDescription>
@@ -295,7 +295,7 @@ function ConnectionDetailsDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl">
+			<DialogContent className="sm:max-w-3xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Server className="size-5" />
@@ -505,7 +505,7 @@ function BooksPage() {
 
 			{/* Create Dialog */}
 			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-				<DialogContent>
+				<DialogContent className="sm:max-w-xl">
 					<DialogHeader>
 						<DialogTitle>Create Address Book</DialogTitle>
 						<DialogDescription>Create a new address book to organize contacts.</DialogDescription>
@@ -621,7 +621,15 @@ function BookRow({
 				</span>
 			</TableCell>
 			<TableCell className="hidden sm:table-cell">
-				<span className="text-sm text-muted-foreground">{details?.readonly_enabled ? 'On' : 'Off'}</span>
+				<span
+					className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+						details?.readonly_enabled
+							? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+							: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+					}`}
+				>
+					{details?.readonly_enabled ? 'Yes' : 'No'}
+				</span>
 			</TableCell>
 			<TableCell className="text-right">
 				<div className="flex justify-end gap-2">
