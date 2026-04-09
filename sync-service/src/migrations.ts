@@ -44,6 +44,7 @@ function getMigrationFiles(): string[] {
 		'12_address_book_path_migration_sentinel.sql',
 		'13_address_book_readonly.sql',
 		'14_composite_users_migration_sentinel.sql',
+		'15_soft_delete.sql',
 	]
 }
 
