@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { createAddressBook, getAddressBooks, getAddressBooksWithReadonly } from '../../lib/db'
 
 function slugify(value: string): string {
@@ -20,7 +21,7 @@ export const Route = createFileRoute('/api/address-books')({
 					const books = withReadonly ? await getAddressBooksWithReadonly() : await getAddressBooks()
 					return json(books)
 				} catch (error) {
-					console.error('Error fetching address books:', error)
+					logger.error({ err: error }, 'Error fetching address books')
 					return json({ error: 'Failed to fetch address books' }, { status: 500 })
 				}
 			},
@@ -36,7 +37,7 @@ export const Route = createFileRoute('/api/address-books')({
 					const created = await createAddressBook({ name, slug, is_public: isPublic })
 					return json(created, { status: 201 })
 				} catch (error) {
-					console.error('Error creating address book:', error)
+					logger.error({ err: error }, 'Error creating address book')
 					return json({ error: 'Failed to create address book' }, { status: 500 })
 				}
 			},

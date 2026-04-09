@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { getAddressBooks, getPool, getUserAddressBookIds, tableExists } from '../../lib/db'
 
 export const Route = createFileRoute('/api/user-book-assignments')({
@@ -37,7 +38,7 @@ export const Route = createFileRoute('/api/user-book-assignments')({
 					// Also include public books for all users (we'll handle this in the UI)
 					return json({ assignments: allAssignments, public_book_ids: books.filter(b => b.is_public).map(b => b.id) })
 				} catch (error) {
-					console.error('Error fetching user-book assignments:', error)
+					logger.error({ err: error }, 'Error fetching user-book assignments')
 					return json({ error: 'Failed to fetch assignments' }, { status: 500 })
 				}
 			},

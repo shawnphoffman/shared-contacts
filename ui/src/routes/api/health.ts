@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { logger } from '../../lib/logger'
 import { proxyRequest } from '../../lib/sync-service'
 
 export const Route = createFileRoute('/api/health')({
@@ -12,7 +13,7 @@ export const Route = createFileRoute('/api/health')({
 					}
 					return Response.json({ status: 'ok', syncService: data })
 				} catch (error: any) {
-					console.error('Health check failed:', error)
+					logger.error({ err: error }, 'Health check failed')
 					return Response.json({ status: 'error' }, { status: 503 })
 				}
 			},

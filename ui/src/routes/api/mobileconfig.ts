@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { getAddressBook, getAddressBookReadonly } from '../../lib/db'
 
 function getCardDAVBaseUrlFromRequest(request: Request): string {
@@ -136,7 +137,7 @@ export const Route = createFileRoute('/api/mobileconfig')({
 						},
 					})
 				} catch (error) {
-					console.error('Error generating mobileconfig profile:', error)
+					logger.error({ err: error }, 'Error generating mobileconfig profile')
 					return json({ error: 'Failed to generate mobileconfig profile' }, { status: 500 })
 				}
 			},

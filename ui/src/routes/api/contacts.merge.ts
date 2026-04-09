@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { deleteContact, getContactById, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { mergeContacts } from '../../lib/merge'
@@ -77,7 +78,7 @@ export const Route = createFileRoute('/api/contacts/merge')({
 						mergedContact: sanitizeContact(updatedContact),
 					})
 				} catch (error) {
-					console.error('Error merging contacts:', error)
+					logger.error({ err: error }, 'Error merging contacts')
 					return json(
 						{
 							error: 'Failed to merge contacts',

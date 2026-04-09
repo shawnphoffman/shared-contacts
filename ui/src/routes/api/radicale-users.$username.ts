@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { proxyRequest } from '../../lib/sync-service'
 
 export const Route = createFileRoute('/api/radicale-users/$username')({
@@ -16,7 +17,7 @@ export const Route = createFileRoute('/api/radicale-users/$username')({
 					})
 					return json(data, { status })
 				} catch (error: any) {
-					console.error('Error updating Radicale user:', error)
+					logger.error({ err: error }, 'Error updating Radicale user')
 					return json({ error: 'Failed to update user' }, { status: 500 })
 				}
 			},
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/api/radicale-users/$username')({
 					const { data, status } = await proxyRequest(`/api/radicale-users/${encodeURIComponent(username)}`, { method: 'DELETE' })
 					return json(data, { status })
 				} catch (error: any) {
-					console.error('Error deleting Radicale user:', error)
+					logger.error({ err: error }, 'Error deleting Radicale user')
 					return json({ error: 'Failed to delete user' }, { status: 500 })
 				}
 			},

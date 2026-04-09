@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { logger } from '../../lib/logger'
 import { getContactAddressBookIds, setContactAddressBooks } from '../../lib/db'
 
 export const Route = createFileRoute('/api/contacts/bulk-books')({
@@ -28,7 +29,7 @@ export const Route = createFileRoute('/api/contacts/bulk-books')({
 
 					return json({ updated: contactIds.length })
 				} catch (error) {
-					console.error('Error updating contact address books:', error)
+					logger.error({ err: error }, 'Error updating contact address books')
 					return json({ error: 'Failed to update contact address books' }, { status: 500 })
 				}
 			},
