@@ -19,6 +19,7 @@
 		"publish": false
 	},
 	"hooks": {
+		"before:init": "npm test",
 		"after:bump": "npx auto-changelog -p"
 	},
 	"plugins": {
@@ -63,13 +64,11 @@
 					},
 					{
 						"type": "test",
-						"section": "Tests",
-						"hidden": true
+						"section": "Tests"
 					},
 					{
 						"type": "build",
-						"section": "Build System",
-						"hidden": true
+						"section": "Build System"
 					},
 					{
 						"type": "ci",
