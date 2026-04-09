@@ -75,6 +75,7 @@ function makeContact(overrides: Partial<Contact> = {}): Contact {
 		vcard_hash: null,
 		sync_source: null,
 		radicale_file_mtime: null,
+		deleted_at: null,
 		...overrides,
 	}
 }
