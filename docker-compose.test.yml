@@ -1,0 +1,35 @@
+name: shared-contacts-test
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: shared-contacts-test-db
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: testdb
+    ports:
+      - '5433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U testuser']
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  radicale:
+    container_name: shared-contacts-test-radicale
+    build:
+      context: ./radicale
+      dockerfile: Dockerfile
+    ports:
+      - '5233:5232'
+    tmpfs:
+      - /data
+    entrypoint: ['/init-radicale.sh']
+    healthcheck:
+      test: ['CMD', 'python3', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:5232/.web')"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
