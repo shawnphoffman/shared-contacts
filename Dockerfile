@@ -52,7 +52,10 @@ RUN apk add --no-cache nodejs npm netcat-openbsd && \
 	rm -rf /var/cache/apk/*
 
 # Create directories for services
-RUN mkdir -p /app/sync-service /app/ui /data /config
+# Remove the base image's /var/lib/radicale volume mount point to avoid
+# "duplicate mount point" errors — we use /data instead
+RUN rm -rf /var/lib/radicale && ln -s /data /var/lib/radicale && \
+    mkdir -p /app/sync-service /app/ui /data /config
 
 # Copy radicale config
 COPY radicale/config/config /config/config

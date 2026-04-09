@@ -71,6 +71,9 @@ if [ ! -f /data/users ]; then
     log "Users file created. Add users with: docker exec -it <container> htpasswd -B /data/users username"
 fi
 
+# Set NODE_ENV for all services
+export NODE_ENV=${NODE_ENV:-production}
+
 # Start Radicale in background
 log "Starting Radicale (CardDAV server)..."
 /app/bin/python /app/bin/radicale --config /config/config &
@@ -97,7 +100,6 @@ fi
 # Start UI in background (we'll keep the script running)
 log "Starting UI..."
 cd /app/ui
-export NODE_ENV=${NODE_ENV:-production}
 export PORT=${PORT:-3030}
 export HOST=${HOST:-0.0.0.0}
 node .output/server/index.mjs &
