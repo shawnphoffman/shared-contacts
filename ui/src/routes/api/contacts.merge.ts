@@ -4,12 +4,9 @@ import { logger } from '../../lib/logger'
 import { deleteContact, getContactById, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { mergeContacts } from '../../lib/merge'
+import { sanitizeContact, zodError } from '../../lib/contact-helpers'
+import { MergeContactsSchema } from '../../lib/schemas'
 import type { Contact } from '../../lib/db'
-
-function sanitizeContact(contact: Contact): Omit<Contact, 'photo_blob'> {
-	const { photo_blob, ...rest } = contact
-	return rest
-}
 
 export const Route = createFileRoute('/api/contacts/merge')({
 	server: {
@@ -17,16 +14,9 @@ export const Route = createFileRoute('/api/contacts/merge')({
 			POST: async ({ request }) => {
 				try {
 					const body = await request.json()
-					const { contactIds } = body
-
-					// Validate input
-					if (!Array.isArray(contactIds)) {
-						return json({ error: 'contactIds must be an array' }, { status: 400 })
-					}
-
-					if (contactIds.length < 2) {
-						return json({ error: 'At least 2 contacts are required to merge' }, { status: 400 })
-					}
+					const parsed = MergeContactsSchema.safeParse(body)
+					if (!parsed.success) return zodError(parsed.error)
+					const { contactIds } = parsed.data
 
 					// Fetch all contacts
 					const contacts: Array<Contact> = []

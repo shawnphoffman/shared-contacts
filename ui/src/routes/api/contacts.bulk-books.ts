@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
 import { getContactAddressBookIds, setContactAddressBooks } from '../../lib/db'
+import { zodError } from '../../lib/contact-helpers'
+import { BulkBooksSchema } from '../../lib/schemas'
 
 export const Route = createFileRoute('/api/contacts/bulk-books')({
 	server: {
@@ -9,16 +11,9 @@ export const Route = createFileRoute('/api/contacts/bulk-books')({
 			POST: async ({ request }) => {
 				try {
 					const body = await request.json()
-					const contactIds = Array.isArray(body.contact_ids) ? body.contact_ids.map(String) : []
-					const addToBookIds = Array.isArray(body.add_to_book_ids) ? body.add_to_book_ids.map(String) : []
-					const removeFromBookIds = Array.isArray(body.remove_from_book_ids) ? body.remove_from_book_ids.map(String) : []
-
-					if (contactIds.length === 0) {
-						return json({ error: 'contact_ids is required and must be a non-empty array' }, { status: 400 })
-					}
-					if (addToBookIds.length === 0 && removeFromBookIds.length === 0) {
-						return json({ error: 'Provide at least one of add_to_book_ids or remove_from_book_ids' }, { status: 400 })
-					}
+					const parsed = BulkBooksSchema.safeParse(body)
+					if (!parsed.success) return zodError(parsed.error)
+					const { contact_ids: contactIds, add_to_book_ids: addToBookIds, remove_from_book_ids: removeFromBookIds } = parsed.data
 
 					for (const contactId of contactIds) {
 						const current = new Set(await getContactAddressBookIds(contactId))
