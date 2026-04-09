@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BookOpen, Heart, Info, Link as LinkIcon, NotebookTabs, Upload, Users } from 'lucide-react'
+import { BookOpen, Heart, Info, Link as LinkIcon, NotebookTabs, Trash2, Upload, Users } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 import { SupportDialog } from './SupportDialog'
@@ -80,6 +80,16 @@ export default function Header() {
 					>
 						<LinkIcon className="w-4 h-4" />
 						<span className="hidden md:inline">CardDAV</span>
+					</Link>
+					<Link
+						to="/trash"
+						className="flex items-center justify-center p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+						activeProps={{
+							className: 'flex items-center justify-center p-2 rounded-lg bg-accent text-accent-foreground',
+						}}
+						aria-label="Trash"
+					>
+						<Trash2 className="w-5 h-5" />
 					</Link>
 					<Link
 						to="/about"
