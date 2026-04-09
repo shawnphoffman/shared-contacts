@@ -1,13 +1,27 @@
+import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BookOpen, Info, Link as LinkIcon, NotebookTabs, Upload, Users } from 'lucide-react'
+import { BookOpen, Heart, Info, Link as LinkIcon, NotebookTabs, Upload, Users } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
-
-// import { useState } from 'react'
-// import { Menu, X, Contact } from 'lucide-react'
+import { SupportDialog } from './SupportDialog'
 
 export default function Header() {
-	// const [isOpen, setIsOpen] = useState(false)
+	const [supportOpen, setSupportOpen] = useState(false)
+
+	// Auto-show on first visit
+	useEffect(() => {
+		const dismissed = localStorage.getItem('support-dialog-dismissed')
+		if (!dismissed) {
+			setSupportOpen(true)
+		}
+	}, [])
+
+	const handleSupportOpenChange = (open: boolean) => {
+		setSupportOpen(open)
+		if (!open) {
+			localStorage.setItem('support-dialog-dismissed', Date.now().toString())
+		}
+	}
 
 	return (
 		<>
@@ -77,8 +91,16 @@ export default function Header() {
 					>
 						<Info className="w-5 h-5" />
 					</Link>
+					<button
+						onClick={() => setSupportOpen(true)}
+						className="flex items-center justify-center p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+						aria-label="Support"
+					>
+						<Heart className="w-5 h-5" />
+					</button>
 					<ThemeToggle />
 				</nav>
+				<SupportDialog open={supportOpen} onOpenChange={handleSupportOpenChange} />
 			</header>
 
 			{/* Expanding sidebar menu - commented out for now */}
