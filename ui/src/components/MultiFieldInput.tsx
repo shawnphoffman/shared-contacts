@@ -60,24 +60,14 @@ export function MultiFieldInput({
 			</div>
 			<FieldContent>
 				{fields.length === 0 ? (
-					<div className="text-sm text-muted-foreground py-2">No {label.toLowerCase()} added. Click "Add" to add one.</div>
+					<div className="text-sm text-muted-foreground py-2">No {label.toLowerCase()} added. Click &ldquo;Add&rdquo; to add one.</div>
 				) : (
-					<div className="space-y-2">
+					<div className="space-y-3">
 						{fields.map((field, index) => (
-							<div key={index} className="flex gap-2 items-start">
-								<div className="flex-1 grid grid-cols-[1fr_auto] gap-2">
-									{renderInput ? (
-										renderInput(field, index, value => updateField(index, { value }))
-									) : (
-										<Input
-											type={inputType}
-											value={field.value}
-											onChange={e => updateField(index, { value: e.target.value })}
-											placeholder={placeholder}
-										/>
-									)}
+							<div key={index} className="rounded-lg border bg-muted/30 p-3 space-y-2">
+								<div className="flex gap-2 items-center">
 									<Select value={field.type || defaultType} onValueChange={value => updateField(index, { type: value })}>
-										<SelectTrigger className="w-[120px]">
+										<SelectTrigger className="w-[100px] sm:w-[120px] h-8 text-xs">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -88,17 +78,28 @@ export function MultiFieldInput({
 											))}
 										</SelectContent>
 									</Select>
+									<div className="flex-1" />
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => removeField(index)}
+										className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2"
+										title="Remove"
+									>
+										<span className="text-sm">Remove</span>
+									</Button>
 								</div>
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									onClick={() => removeField(index)}
-									className="text-destructive hover:text-destructive hover:bg-destructive/10"
-									title="Remove"
-								>
-									<span className="text-lg leading-none">×</span>
-								</Button>
+								{renderInput ? (
+									renderInput(field, index, value => updateField(index, { value }))
+								) : (
+									<Input
+										type={inputType}
+										value={field.value}
+										onChange={e => updateField(index, { value: e.target.value })}
+										placeholder={placeholder}
+									/>
+								)}
 							</div>
 						))}
 					</div>

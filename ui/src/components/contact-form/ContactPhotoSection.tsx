@@ -1,6 +1,7 @@
+import { useRef } from 'react'
+import { Camera, Trash2, User } from 'lucide-react'
 import Cropper from 'react-easy-crop'
 import { Button } from '../ui/button'
-import { Input } from '../ui/input'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
 
 interface ContactPhotoSectionProps {
@@ -39,26 +40,42 @@ export function ContactPhotoSection({
 	onCropSave,
 	onCropCancel,
 }: ContactPhotoSectionProps) {
+	const fileInputRef = useRef<HTMLInputElement>(null)
+	const hasPhoto = photoPreviewUrl || (showExistingPhoto && existingPhotoUrl)
+
 	return (
 		<>
-			<div className="flex items-center gap-4">
-				<div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+			<div className="flex flex-col items-center gap-3">
+				<button
+					type="button"
+					onClick={() => fileInputRef.current?.click()}
+					className="group relative aspect-square w-28 rounded-full overflow-hidden bg-muted border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				>
 					{photoPreviewUrl ? (
 						<img src={photoPreviewUrl} alt="Contact" className="h-full w-full object-cover" />
 					) : showExistingPhoto && existingPhotoUrl ? (
-						<img src={existingPhotoUrl} alt="Contact" className="h-full w-full object-cover" onError={() => onShowExistingPhotoChange(false)} />
+						<img
+							src={existingPhotoUrl}
+							alt="Contact"
+							className="h-full w-full object-cover"
+							onError={() => onShowExistingPhotoChange(false)}
+						/>
 					) : (
-						<span className="text-sm text-gray-400">No Photo</span>
+						<div className="flex h-full w-full items-center justify-center">
+							<User className="size-10 text-muted-foreground/50" />
+						</div>
 					)}
-				</div>
-				<div className="flex flex-col gap-2">
-					<Input type="file" accept="image/*" onChange={onPhotoFileChange} />
-					{(photoPreviewUrl || (showExistingPhoto && existingPhotoUrl)) && (
-						<Button type="button" variant="outline" onClick={onRemovePhoto}>
-							Remove photo
-						</Button>
-					)}
-				</div>
+					<div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+						<Camera className="size-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+					</div>
+				</button>
+				<input ref={fileInputRef} type="file" accept="image/*" onChange={onPhotoFileChange} className="hidden" />
+				{hasPhoto && (
+					<Button type="button" variant="ghost" size="sm" onClick={onRemovePhoto} className="text-muted-foreground">
+						<Trash2 className="size-3.5 mr-1.5" />
+						Remove photo
+					</Button>
+				)}
 			</div>
 
 			<Dialog open={isCropOpen} onOpenChange={open => !open && onCropCancel()}>
@@ -66,13 +83,14 @@ export function ContactPhotoSection({
 					<DialogHeader>
 						<DialogTitle>Crop Photo</DialogTitle>
 					</DialogHeader>
-					<div className="relative h-80 w-full bg-black/80">
+					<div className="relative aspect-square w-full bg-black/80">
 						{cropSource && (
 							<Cropper
 								image={cropSource}
 								crop={crop}
 								zoom={zoom}
 								aspect={1}
+								cropShape="round"
 								onCropChange={onCropChange}
 								onZoomChange={onZoomChange}
 								onCropComplete={onCropComplete}
@@ -80,7 +98,7 @@ export function ContactPhotoSection({
 						)}
 					</div>
 					<div className="flex items-center gap-3">
-						<span className="text-sm text-gray-500">Zoom</span>
+						<span className="text-sm text-muted-foreground">Zoom</span>
 						<input
 							type="range"
 							min={1}

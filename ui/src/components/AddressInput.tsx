@@ -298,15 +298,14 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
 				onChange={e => updateField('street', e.target.value)}
 				className={error ? 'border-red-500' : ''}
 			/>
-			<div className="grid grid-cols-4 gap-2">
-				<Input
-					name="address-city"
-					autoComplete="address-level2"
-					placeholder="City"
-					value={structured.city}
-					onChange={e => updateField('city', e.target.value)}
-					className="col-span-2"
-				/>
+			<Input
+				name="address-city"
+				autoComplete="address-level2"
+				placeholder="City"
+				value={structured.city}
+				onChange={e => updateField('city', e.target.value)}
+			/>
+			<div className="grid grid-cols-2 gap-2">
 				<Input
 					name="address-state"
 					autoComplete="address-level1"

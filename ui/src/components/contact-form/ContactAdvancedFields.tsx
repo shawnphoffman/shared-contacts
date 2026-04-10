@@ -74,7 +74,7 @@ export function ContactAdvancedFields({
 				shouldShowAdvancedField(hasNameSuffix) ||
 				shouldShowAdvancedField(hasMiddleName) ||
 				shouldShowAdvancedField(hasMaidenName)) && (
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					{shouldShowAdvancedField(hasNamePrefix) && (
 						<Field>
 							<FieldLabel htmlFor="name_prefix">Name Prefix</FieldLabel>
@@ -139,7 +139,7 @@ export function ContactAdvancedFields({
 				shouldShowAdvancedField(hasMailer) ||
 				shouldShowAdvancedField(hasTimeZone) ||
 				shouldShowAdvancedField(hasGeo)) && (
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					{shouldShowAdvancedField(hasRole) && (
 						<Field>
 							<FieldLabel htmlFor="role">Role</FieldLabel>
@@ -197,7 +197,7 @@ export function ContactAdvancedFields({
 				shouldShowAdvancedField(hasRevision) ||
 				shouldShowAdvancedField(hasSortString) ||
 				shouldShowAdvancedField(hasClass)) && (
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					{shouldShowAdvancedField(hasAgent) && (
 						<Field>
 							<FieldLabel htmlFor="agent">Agent</FieldLabel>
@@ -264,7 +264,7 @@ export function ContactAdvancedFields({
 			)}
 
 			{(shouldShowAdvancedField(hasOrgUnits) || shouldShowAdvancedField(hasCategories)) && (
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					{shouldShowAdvancedField(hasOrgUnits) && (
 						<Field>
 							<FieldLabel htmlFor="org_units">Organization Units</FieldLabel>
