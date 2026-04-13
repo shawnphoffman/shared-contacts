@@ -6,20 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.23.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.0...v0.23.1) (2026-04-13)
+## [0.23.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.1...v0.23.2) (2026-04-13)
 
 ### Bug Fixes
 
-* **sync:** sync stale composite user password hashes on startup ([c64a83d](https://github.com/shawnphoffman/shared-contacts/commit/c64a83d245dd262eebda7ef9b43226e1a7004088))
-* **ui:** correct mobileconfig port and remove hardcoded principal path ([cf73897](https://github.com/shawnphoffman/shared-contacts/commit/cf7389735cd41768f98cabbdbabe539e266871c1))
+* **radicale:** disable built-in web UI to reduce attack surface ([34b64db](https://github.com/shawnphoffman/shared-contacts/commit/34b64db97ed8ebc14cdc1ebcdb7571c3ec39086d))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.23.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.1...v0.23.2)
+
+- 🐛 Fix(radicale): disable built-in web UI to reduce attack surface [`34b64db`](https://github.com/shawnphoffman/shared-contacts/commit/34b64db97ed8ebc14cdc1ebcdb7571c3ec39086d)
+
 #### [v0.23.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.0...v0.23.1)
 
+> 13 April 2026
+
 - 🐛 Fix(ui): correct mobileconfig port and remove hardcoded principal path [`cf73897`](https://github.com/shawnphoffman/shared-contacts/commit/cf7389735cd41768f98cabbdbabe539e266871c1)
+- 🔧 Chore: release v0.23.1 [`5a5bbe5`](https://github.com/shawnphoffman/shared-contacts/commit/5a5bbe5185842e3fc8ab786caa5ad96414d9527c)
 - 🐛 Fix(sync): sync stale composite user password hashes on startup [`c64a83d`](https://github.com/shawnphoffman/shared-contacts/commit/c64a83d245dd262eebda7ef9b43226e1a7004088)
 - 🔧 Chore(ui): disable import/first eslint rule in test files [`445b72d`](https://github.com/shawnphoffman/shared-contacts/commit/445b72d6dc3136264bb2ae38ea0b66b2c33a4373)
 
