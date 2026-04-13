@@ -215,7 +215,9 @@ export async function createUser(username: string, password: string): Promise<vo
 }
 
 /**
- * Update a user's password
+ * Update a user's password.
+ * Also propagates the new hash to all composite users (username-bookId)
+ * so CardDAV clients using composite usernames stay authenticated.
  */
 export async function updateUserPassword(username: string, password: string): Promise<void> {
 	return htpasswdLock.withLock(async () => {
@@ -237,8 +239,9 @@ export async function updateUserPassword(username: string, password: string): Pr
 			}
 		}
 
-		// Replace the user's line
+		// Replace the base user's line AND all composite users for this base user
 		const lines = content.split('\n')
+		let compositeCount = 0
 		const updatedLines = lines.map(line => {
 			const trimmed = line.trim()
 			if (trimmed && !trimmed.startsWith('#')) {
@@ -246,11 +249,21 @@ export async function updateUserPassword(username: string, password: string): Pr
 				if (lineUsername === username) {
 					return `${username}:${hash}`
 				}
+				// Also update composite users belonging to this base user
+				const parsed = parseCompositeUsername(lineUsername ?? '')
+				if (parsed && parsed.username === username) {
+					compositeCount++
+					return `${lineUsername}:${hash}`
+				}
 			}
 			return line
 		})
 
 		await atomicWriteFile(USERS_FILE, updatedLines.join('\n') + '\n', 'utf-8')
+
+		if (compositeCount > 0) {
+			logger.info({ username, compositeCount }, 'Propagated password update to composite users')
+		}
 	})
 }
 
