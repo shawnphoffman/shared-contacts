@@ -38,6 +38,7 @@ import { Route as ApiContactsBulkBooksRouteImport } from './routes/api/contacts.
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
 import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/address-books.memberships'
 import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-books.$id'
+import { Route as ApiRadicaleUsersUsernamePasswordRouteImport } from './routes/api/radicale-users.$username.password'
 import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
 
@@ -188,6 +189,12 @@ const ApiAddressBooksIdRoute = ApiAddressBooksIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAddressBooksRoute,
 } as any)
+const ApiRadicaleUsersUsernamePasswordRoute =
+  ApiRadicaleUsersUsernamePasswordRouteImport.update({
+    id: '/password',
+    path: '/password',
+    getParentRoute: () => ApiRadicaleUsersUsernameRoute,
+  } as any)
 const ApiRadicaleUsersUsernameBackfillRoute =
   ApiRadicaleUsersUsernameBackfillRouteImport.update({
     id: '/backfill',
@@ -232,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
+  '/api/radicale-users/$username/password': typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -265,6 +273,7 @@ export interface FileRoutesByTo {
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
+  '/api/radicale-users/$username/password': typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -299,6 +308,7 @@ export interface FileRoutesById {
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
+  '/api/radicale-users/$username/password': typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
     | '/api/radicale-users/$username/backfill'
+    | '/api/radicale-users/$username/password'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
     | '/api/radicale-users/$username/backfill'
+    | '/api/radicale-users/$username/password'
   id:
     | '__root__'
     | '/'
@@ -400,6 +412,7 @@ export interface FileRouteTypes {
     | '/api/radicale-users/$username'
     | '/api/contacts/$id/photo'
     | '/api/radicale-users/$username/backfill'
+    | '/api/radicale-users/$username/password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -628,6 +641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAddressBooksIdRouteImport
       parentRoute: typeof ApiAddressBooksRoute
     }
+    '/api/radicale-users/$username/password': {
+      id: '/api/radicale-users/$username/password'
+      path: '/password'
+      fullPath: '/api/radicale-users/$username/password'
+      preLoaderRoute: typeof ApiRadicaleUsersUsernamePasswordRouteImport
+      parentRoute: typeof ApiRadicaleUsersUsernameRoute
+    }
     '/api/radicale-users/$username/backfill': {
       id: '/api/radicale-users/$username/backfill'
       path: '/backfill'
@@ -699,12 +719,15 @@ const ApiContactsRouteWithChildren = ApiContactsRoute._addFileChildren(
 
 interface ApiRadicaleUsersUsernameRouteChildren {
   ApiRadicaleUsersUsernameBackfillRoute: typeof ApiRadicaleUsersUsernameBackfillRoute
+  ApiRadicaleUsersUsernamePasswordRoute: typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 
 const ApiRadicaleUsersUsernameRouteChildren: ApiRadicaleUsersUsernameRouteChildren =
   {
     ApiRadicaleUsersUsernameBackfillRoute:
       ApiRadicaleUsersUsernameBackfillRoute,
+    ApiRadicaleUsersUsernamePasswordRoute:
+      ApiRadicaleUsersUsernamePasswordRoute,
   }
 
 const ApiRadicaleUsersUsernameRouteWithChildren =
@@ -746,12 +769,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

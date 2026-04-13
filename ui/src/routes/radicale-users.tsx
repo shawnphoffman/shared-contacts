@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { BookOpen, Edit, Plus, RefreshCw, Trash2, Users } from 'lucide-react'
+import { BookOpen, Edit, Eye, EyeOff, Plus, RefreshCw, Trash2, Users } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Checkbox } from '../components/ui/checkbox'
 import { Item } from '@/components/ui/item'
+import { CopyButton } from '../lib/carddav'
 
 export const Route = createFileRoute('/radicale-users')({
 	component: RadicaleUsersPage,
@@ -82,6 +83,16 @@ async function backfillSharedContacts(username: string): Promise<void> {
 	}
 }
 
+async function fetchUserPassword(username: string): Promise<string> {
+	const response = await fetch(`/api/radicale-users/${encodeURIComponent(username)}/password`)
+	if (!response.ok) {
+		const error = await response.json()
+		throw new Error(error.error || 'Failed to fetch password')
+	}
+	const data = await response.json()
+	return data.password
+}
+
 async function fetchAddressBooks(): Promise<Array<AddressBook>> {
 	const response = await fetch('/api/address-books')
 	if (!response.ok) {
@@ -120,11 +131,15 @@ function RadicaleUsersPage() {
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 	const [isBooksDialogOpen, setIsBooksDialogOpen] = useState(false)
+	const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
 	const [selectedUser, setSelectedUser] = useState<string | null>(null)
 	const [formData, setFormData] = useState({ username: '', password: '' })
 	const [error, setError] = useState<string | null>(null)
 	const [backfillMessage, setBackfillMessage] = useState<string | null>(null)
 	const [selectedBookIds, setSelectedBookIds] = useState<Array<string>>([])
+	const [viewedPassword, setViewedPassword] = useState<string | null>(null)
+	const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+	const [isPasswordLoading, setIsPasswordLoading] = useState(false)
 
 	const { data: users = [], isLoading } = useQuery({
 		queryKey: ['radicale-users'],
@@ -259,6 +274,23 @@ function RadicaleUsersPage() {
 		setIsDeleteDialogOpen(true)
 	}
 
+	const openPasswordDialog = async (username: string) => {
+		setSelectedUser(username)
+		setError(null)
+		setViewedPassword(null)
+		setIsPasswordVisible(false)
+		setIsPasswordLoading(true)
+		setIsPasswordDialogOpen(true)
+		try {
+			const password = await fetchUserPassword(username)
+			setViewedPassword(password)
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to fetch password')
+		} finally {
+			setIsPasswordLoading(false)
+		}
+	}
+
 	const openBooksDialog = async (username: string) => {
 		setSelectedUser(username)
 		setError(null)
@@ -339,6 +371,10 @@ function RadicaleUsersPage() {
 									<TableCell className="font-medium">{user.username}</TableCell>
 									<TableCell className="text-right">
 										<div className="flex flex-col sm:flex-row justify-end gap-2">
+											<Button variant="outline" size="sm" onClick={() => openPasswordDialog(user.username)}>
+												<Eye className="w-4 h-4 mr-1" />
+												Password
+											</Button>
 											<Button variant="outline" size="sm" onClick={() => openBooksDialog(user.username)}>
 												<BookOpen className="w-4 h-4 mr-1" />
 												Books
@@ -548,6 +584,59 @@ function RadicaleUsersPage() {
 						</Button>
 						<Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
 							{deleteMutation.isPending ? 'Deleting...' : 'Delete User'}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* View Password Dialog */}
+			<Dialog
+				open={isPasswordDialogOpen}
+				onOpenChange={open => {
+					setIsPasswordDialogOpen(open)
+					if (!open) {
+						setSelectedUser(null)
+						setViewedPassword(null)
+						setIsPasswordVisible(false)
+						setError(null)
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Password for {selectedUser}</DialogTitle>
+						<DialogDescription>This is the CardDAV password stored for this user.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 py-4">
+						{isPasswordLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
+						{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+						{viewedPassword && (
+							<div className="flex items-center gap-2">
+								<Input readOnly value={isPasswordVisible ? viewedPassword : '••••••••••••'} className="font-mono" />
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={() => setIsPasswordVisible(prev => !prev)}
+									title={isPasswordVisible ? 'Hide password' : 'Show password'}
+								>
+									{isPasswordVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+								</Button>
+								<CopyButton text={viewedPassword} label="password" />
+							</div>
+						)}
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setIsPasswordDialogOpen(false)
+								setSelectedUser(null)
+								setViewedPassword(null)
+								setIsPasswordVisible(false)
+								setError(null)
+							}}
+						>
+							Close
 						</Button>
 					</DialogFooter>
 				</DialogContent>

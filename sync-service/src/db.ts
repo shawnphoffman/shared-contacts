@@ -498,6 +498,43 @@ export async function getContactSyncMetadata(id: string): Promise<{
 	return result.rows[0] || null
 }
 
+// ── Encrypted password storage ─────────────────────────────────────
+
+/**
+ * Store (or update) an encrypted password for a user.
+ */
+export async function storeEncryptedPassword(username: string, encrypted: string): Promise<void> {
+	const pool = getPool()
+	await pool.query(
+		`INSERT INTO user_encrypted_passwords (username, encrypted, updated_at)
+		 VALUES ($1, $2, NOW())
+		 ON CONFLICT (username) DO UPDATE SET encrypted = $2, updated_at = NOW()`,
+		[username, encrypted]
+	)
+}
+
+/**
+ * Retrieve the encrypted password blob for a user. Returns null if not stored.
+ */
+export async function getEncryptedPassword(username: string): Promise<string | null> {
+	if (!(await tableExists('user_encrypted_passwords'))) return null
+	const pool = getPool()
+	const result = await pool.query(
+		'SELECT encrypted FROM user_encrypted_passwords WHERE username = $1',
+		[username]
+	)
+	return result.rows[0]?.encrypted ?? null
+}
+
+/**
+ * Delete the encrypted password for a user.
+ */
+export async function deleteEncryptedPassword(username: string): Promise<void> {
+	if (!(await tableExists('user_encrypted_passwords'))) return
+	const pool = getPool()
+	await pool.query('DELETE FROM user_encrypted_passwords WHERE username = $1', [username])
+}
+
 export async function closePool(): Promise<void> {
 	if (pool) {
 		await pool.end()
