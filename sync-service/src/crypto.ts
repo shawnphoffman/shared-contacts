@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import { logger } from './logger'
 
 const ALGORITHM = 'aes-256-gcm'
@@ -19,7 +19,6 @@ function getKey(): Buffer | null {
 	}
 
 	// Hash the passphrase to get exactly 32 bytes
-	const { createHash } = require('node:crypto')
 	return createHash('sha256').update(raw).digest()
 }
 
