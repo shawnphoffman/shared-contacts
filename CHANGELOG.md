@@ -6,18 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.23.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.1...v0.23.2) (2026-04-13)
+## [0.24.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.2...v0.24.0) (2026-04-13)
+
+### Features
+
+* add encrypted-at-rest password storage with admin view UI ([cd45929](https://github.com/shawnphoffman/shared-contacts/commit/cd4592902711add6f9f758a5ff4af2ceaaa667bb))
 
 ### Bug Fixes
 
-* **radicale:** disable built-in web UI to reduce attack surface ([34b64db](https://github.com/shawnphoffman/shared-contacts/commit/34b64db97ed8ebc14cdc1ebcdb7571c3ec39086d))
+* **sync:** replace require() with static import in crypto module ([440891f](https://github.com/shawnphoffman/shared-contacts/commit/440891f367dbe66db98f3866e4689d10c2be612c))
+* **ui:** correct import order in radicale-users page ([92b5e20](https://github.com/shawnphoffman/shared-contacts/commit/92b5e203cd641edcda2781be1e1915d6dfc9c0b5))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.24.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.2...v0.24.0)
+
+- ✨ Feature: add encrypted-at-rest password storage with admin view UI [`cd45929`](https://github.com/shawnphoffman/shared-contacts/commit/cd4592902711add6f9f758a5ff4af2ceaaa667bb)
+- 🐛 Fix(sync): replace require() with static import in crypto module [`440891f`](https://github.com/shawnphoffman/shared-contacts/commit/440891f367dbe66db98f3866e4689d10c2be612c)
+- 🐛 Fix(ui): correct import order in radicale-users page [`92b5e20`](https://github.com/shawnphoffman/shared-contacts/commit/92b5e203cd641edcda2781be1e1915d6dfc9c0b5)
+
 #### [v0.23.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.1...v0.23.2)
 
+> 13 April 2026
+
+- 🔧 Chore: release v0.23.2 [`bb84572`](https://github.com/shawnphoffman/shared-contacts/commit/bb84572a650a99d9dda78577d9ce3ec1b1ca6e72)
 - 🐛 Fix(radicale): disable built-in web UI to reduce attack surface [`34b64db`](https://github.com/shawnphoffman/shared-contacts/commit/34b64db97ed8ebc14cdc1ebcdb7571c3ec39086d)
 
 #### [v0.23.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.0...v0.23.1)
