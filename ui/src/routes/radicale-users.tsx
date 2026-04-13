@@ -8,8 +8,8 @@ import { Field, FieldContent, FieldLabel } from '../components/ui/field'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Checkbox } from '../components/ui/checkbox'
-import { Item } from '@/components/ui/item'
 import { CopyButton } from '../lib/carddav'
+import { Item } from '@/components/ui/item'
 
 export const Route = createFileRoute('/radicale-users')({
 	component: RadicaleUsersPage,
