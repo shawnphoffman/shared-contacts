@@ -251,6 +251,27 @@ export async function getContactByVcardId(vcardId: string): Promise<Contact | nu
 	return parseContactRow(result.rows[0])
 }
 
+/**
+ * Find a contact by vcard_id including soft-deleted rows.
+ * Used during sync to detect and restore soft-deleted contacts that
+ * reappear in Radicale (the unique constraint on vcard_id prevents a
+ * new INSERT while the soft-deleted row still exists).
+ */
+export async function getContactByVcardIdIncludingDeleted(vcardId: string): Promise<Contact | null> {
+	const pool = getPool()
+	const result = await pool.query('SELECT * FROM contacts WHERE vcard_id = $1', [vcardId])
+	if (!result.rows[0]) return null
+	return parseContactRow(result.rows[0])
+}
+
+/**
+ * Restore a soft-deleted contact (clear deleted_at).
+ */
+export async function restoreContact(id: string): Promise<void> {
+	const pool = getPool()
+	await pool.query('UPDATE contacts SET deleted_at = NULL WHERE id = $1', [id])
+}
+
 export async function createContact(contact: Partial<Contact>): Promise<Contact> {
 	const pool = getPool()
 	const result = await pool.query(

@@ -8,7 +8,8 @@ import {
 	deleteContact,
 	getAllContacts,
 	getContactAddressBookEntries,
-	getContactByVcardId,
+	getContactByVcardIdIncludingDeleted,
+	restoreContact,
 	setContactAddressBooks,
 	updateContact,
 	updateSyncMetadata,
@@ -379,8 +380,15 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					const errorCode = (error as { code?: string }).code
 					const constraint = (error as { constraint?: string }).constraint
 					if (errorCode === '23505' && constraint === 'contacts_vcard_id_key') {
-						const duplicateContact = await getContactByVcardId(vcardId)
+						// The vcard_id already exists — could be a soft-deleted row or a
+						// race condition.  Search including soft-deleted rows so we can
+						// restore and update instead of crashing.
+						const duplicateContact = await getContactByVcardIdIncludingDeleted(vcardId)
 						if (duplicateContact) {
+							if (duplicateContact.deleted_at) {
+								await restoreContact(duplicateContact.id)
+								logger.info({ vcardId }, 'Restored soft-deleted contact during sync')
+							}
 							const updatedContact = await updateContact(duplicateContact.id, contactData)
 							dbContactsByVcardId.set(vcardId, updatedContact)
 							await updateSyncMetadata(duplicateContact.id, {
