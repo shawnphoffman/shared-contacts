@@ -10,14 +10,13 @@ function getCardDAVBaseUrlFromRequest(request: Request): string {
 		return envBase
 	}
 
+	// When no PUBLIC_CARDDAV_URL is configured, derive from the incoming request.
+	// Use the request's own origin (protocol + host) so that the profile works
+	// behind a reverse proxy on standard ports (443 for HTTPS, 80 for HTTP).
+	// Do NOT hardcode the internal Radicale port (5232) — mobile devices connect
+	// through the proxy, not directly.
 	const url = new URL(request.url)
-
-	// Prefer proxy-style URL semantics, similar to getProxyCardDAVBaseUrl on the client:
-	// protocol + '//' + hostname + ':5232'
-	const protocol = url.protocol
-	const hostname = url.hostname
-
-	return `${protocol}//${hostname}:5232`
+	return url.origin
 }
 
 function xmlEscape(value: string): string {
@@ -62,9 +61,7 @@ export const Route = createFileRoute('/api/mobileconfig')({
 					const port = baseUrlObj.port ? Number(baseUrlObj.port) : baseUrlObj.protocol === 'https:' ? 443 : 80
 					const useSSL = baseUrlObj.protocol === 'https:'
 
-					// Composite username and principal URL must match what the UI shows.
 					const compositeUsername = `${username}-${bookId}`
-					const principalPath = `/${encodeURIComponent(compositeUsername)}/`
 
 					const organization = process.env.MOBILECONFIG_ORG || process.env.MOBILECONFIG_ORG_NAME || 'Shared Contacts'
 					const shortBookId = bookId.replace(/-/g, '').slice(0, 8) || bookId
@@ -103,8 +100,6 @@ export const Route = createFileRoute('/api/mobileconfig')({
       <integer>${port}</integer>
       <key>CardDAVUseSSL</key>
       <${useSSL ? 'true' : 'false'}/>
-      <key>CardDAVPrincipalURL</key>
-      <string>${xmlEscape(principalPath)}</string>
       <key>CardDAVUsername</key>
       <string>${xmlEscape(compositeUsername)}</string>
     </dict>
