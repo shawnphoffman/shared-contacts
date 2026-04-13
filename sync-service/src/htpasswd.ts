@@ -452,7 +452,16 @@ export async function ensureAllCompositeUsersExist(): Promise<void> {
 						logger.error({ err: error, compositeUsername }, 'Failed to ensure composite user')
 					}
 				} else {
-					// User exists, but ensure directory and props exist
+					// User exists — ensure password hash matches base user
+					const baseHash = await getUserHash(user.username)
+					const compositeHash = await getUserHash(compositeUsername)
+					if (baseHash && compositeHash && baseHash !== compositeHash) {
+						await setUserHash(compositeUsername, baseHash)
+						ensuredCount++
+						logger.info({ compositeUsername }, 'Synced composite user password hash to match base user')
+					}
+
+					// Ensure directory and props exist
 					const compositePath = path.join(RADICALE_STORAGE_PATH, 'collection-root', compositeUsername)
 					try {
 						await ensureDirectoryExists(compositePath)
