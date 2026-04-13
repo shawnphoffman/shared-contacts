@@ -6,26 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.23.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.22.0...v0.23.0) (2026-04-13)
-
-### Features
-
-* **ui:** add contact filter chips and view-contacts button on books page ([8e7843c](https://github.com/shawnphoffman/shared-contacts/commit/8e7843c0ce3f0923e0f9487ab654a0d7bb3837d7))
-* **ui:** redesign contact form with sectioned cards and mobile-friendly layout ([01b1a5b](https://github.com/shawnphoffman/shared-contacts/commit/01b1a5b2d7e30a72e34082d37f62ec6c97261143))
+## [0.23.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.0...v0.23.1) (2026-04-13)
 
 ### Bug Fixes
 
-* **sync:** propagate password updates to composite CardDAV users ([1c7641f](https://github.com/shawnphoffman/shared-contacts/commit/1c7641fc2a1e06d08672a53c2ca4e4dbe7e80ff3))
+* **sync:** sync stale composite user password hashes on startup ([c64a83d](https://github.com/shawnphoffman/shared-contacts/commit/c64a83d245dd262eebda7ef9b43226e1a7004088))
+* **ui:** correct mobileconfig port and remove hardcoded principal path ([cf73897](https://github.com/shawnphoffman/shared-contacts/commit/cf7389735cd41768f98cabbdbabe539e266871c1))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.23.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.0...v0.23.1)
+
+- 🐛 Fix(ui): correct mobileconfig port and remove hardcoded principal path [`cf73897`](https://github.com/shawnphoffman/shared-contacts/commit/cf7389735cd41768f98cabbdbabe539e266871c1)
+- 🐛 Fix(sync): sync stale composite user password hashes on startup [`c64a83d`](https://github.com/shawnphoffman/shared-contacts/commit/c64a83d245dd262eebda7ef9b43226e1a7004088)
+- 🔧 Chore(ui): disable import/first eslint rule in test files [`445b72d`](https://github.com/shawnphoffman/shared-contacts/commit/445b72d6dc3136264bb2ae38ea0b66b2c33a4373)
+
 #### [v0.23.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.22.0...v0.23.0)
+
+> 13 April 2026
 
 - ✨ Feature(ui): redesign contact form with sectioned cards and mobile-friendly layout [`01b1a5b`](https://github.com/shawnphoffman/shared-contacts/commit/01b1a5b2d7e30a72e34082d37f62ec6c97261143)
 - ✅ Test(sync): add htpasswd unit tests for password propagation [`a5f93ab`](https://github.com/shawnphoffman/shared-contacts/commit/a5f93ab13a86b7620d0fe11e1910aa39091bb329)
 - ✨ Feature(ui): add contact filter chips and view-contacts button on books page [`8e7843c`](https://github.com/shawnphoffman/shared-contacts/commit/8e7843c0ce3f0923e0f9487ab654a0d7bb3837d7)
+- 🔧 Chore: release v0.23.0 [`22176c6`](https://github.com/shawnphoffman/shared-contacts/commit/22176c639ae1aa095a2e2669fb339b728d97b80c)
 - 🐛 Fix(sync): propagate password updates to composite CardDAV users [`1c7641f`](https://github.com/shawnphoffman/shared-contacts/commit/1c7641fc2a1e06d08672a53c2ca4e4dbe7e80ff3)
 
 #### [v0.22.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.21.0...v0.22.0)
