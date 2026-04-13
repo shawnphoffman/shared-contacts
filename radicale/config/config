@@ -15,6 +15,9 @@ file = /config/rights
 type = multifilesystem
 filesystem_folder = /data/collections
 
+[web]
+type = none
+
 [logging]
 level = debug
 
