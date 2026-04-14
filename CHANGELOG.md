@@ -5,19 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.24.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.0...v0.24.1) (2026-04-13)
 
-### Bug Fixes
+## [0.25.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.1...v0.25.0) (2026-04-14)
 
-- **sync:** restore soft-deleted contacts instead of crashing on duplicate vcard_id ([690ec5f](https://github.com/shawnphoffman/shared-contacts/commit/690ec5f31d2f4ce03297cbb7bc34bd1e86fb6c2c))
+### Features
+
+* **ui:** add help page, export dialog, 3-way filters, bulk user create, and carddav config redesign ([8d7b3c2](https://github.com/shawnphoffman/shared-contacts/commit/8d7b3c2442a9ec595d5198a4c944695915b91f07))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.25.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.1...v0.25.0)
+
+- ✨ Feature(ui): add help page, export dialog, 3-way filters, bulk user create, and carddav config redesign [`8d7b3c2`](https://github.com/shawnphoffman/shared-contacts/commit/8d7b3c2442a9ec595d5198a4c944695915b91f07)
+- 🔧 Chore: format codebase with prettier [`ba640e0`](https://github.com/shawnphoffman/shared-contacts/commit/ba640e01018ba9cc23924172bd6955558dd33ecd)
+
 #### [v0.24.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.0...v0.24.1)
 
+> 13 April 2026
+
 - 🐛 Fix(sync): restore soft-deleted contacts instead of crashing on duplicate vcard_id [`690ec5f`](https://github.com/shawnphoffman/shared-contacts/commit/690ec5f31d2f4ce03297cbb7bc34bd1e86fb6c2c)
+- 🔧 Chore: release v0.24.1 [`ed71ea4`](https://github.com/shawnphoffman/shared-contacts/commit/ed71ea419ad42230512c41c604650e7570f45aa8)
 
 #### [v0.24.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.23.2...v0.24.0)
 
