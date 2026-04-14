@@ -16,7 +16,7 @@ services:
     networks:
       - shared-contacts-network
     healthcheck:
-      test: [ 'CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sharedcontacts}' ]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sharedcontacts}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,9 +43,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    entrypoint: [ '/init-radicale.sh' ]
+    entrypoint: ['/init-radicale.sh']
     healthcheck:
-      test: [ 'CMD', 'python3', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:5232/.web')" ]
+      test: ['CMD', 'python3', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:5232/.web')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -72,7 +72,13 @@ services:
       radicale:
         condition: service_healthy
     healthcheck:
-      test: [ 'CMD', 'node', '-e', "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" ]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/ready', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))",
+        ]
       interval: 5s
       timeout: 3s
       retries: 10

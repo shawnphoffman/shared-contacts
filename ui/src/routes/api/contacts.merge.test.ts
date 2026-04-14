@@ -72,9 +72,7 @@ describe('POST /api/contacts/merge', () => {
 			data: { contactIds: ['id-1', 'id-2'] },
 		} as never)
 		// Return only one contact (id-2 missing)
-		vi.mocked(getContactsByIds).mockResolvedValue([
-			{ id: 'id-1', full_name: 'Alice', created_at: new Date('2024-01-01') },
-		] as never)
+		vi.mocked(getContactsByIds).mockResolvedValue([{ id: 'id-1', full_name: 'Alice', created_at: new Date('2024-01-01') }] as never)
 
 		const handlers = await getHandler()
 		const request = new Request('http://localhost/api/contacts/merge', {

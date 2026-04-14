@@ -114,9 +114,7 @@ function TrashPage() {
 						Trash
 					</h1>
 					<p className="text-muted-foreground mt-1">
-						{contacts.length === 0
-							? 'No deleted contacts'
-							: `${contacts.length} deleted contact${contacts.length === 1 ? '' : 's'}`}
+						{contacts.length === 0 ? 'No deleted contacts' : `${contacts.length} deleted contact${contacts.length === 1 ? '' : 's'}`}
 					</p>
 				</div>
 				{contacts.length > 0 && (
@@ -137,9 +135,7 @@ function TrashPage() {
 
 			{contacts.length === 0 ? (
 				<Card>
-					<CardContent className="py-12 text-center text-muted-foreground">
-						Trash is empty. Deleted contacts will appear here.
-					</CardContent>
+					<CardContent className="py-12 text-center text-muted-foreground">Trash is empty. Deleted contacts will appear here.</CardContent>
 				</Card>
 			) : (
 				<div className="rounded-md border">
@@ -153,15 +149,11 @@ function TrashPage() {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{contacts.map((contact) => (
+							{contacts.map(contact => (
 								<TableRow key={contact.id}>
 									<TableCell className="font-medium">{getDisplayName(contact)}</TableCell>
-									<TableCell className="hidden sm:table-cell text-muted-foreground">
-										{contact.email || '—'}
-									</TableCell>
-									<TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-										{formatDate(contact.deleted_at)}
-									</TableCell>
+									<TableCell className="hidden sm:table-cell text-muted-foreground">{contact.email || '—'}</TableCell>
+									<TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(contact.deleted_at)}</TableCell>
 									<TableCell className="text-right">
 										<div className="flex justify-end gap-2">
 											<Button

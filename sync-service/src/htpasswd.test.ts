@@ -10,25 +10,17 @@ vi.mock('./logger', () => ({
 	logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }))
 
-import {
-	getCompositeUsername,
-	parseCompositeUsername,
-	isCompositeUsername,
-} from './htpasswd'
+import { getCompositeUsername, parseCompositeUsername, isCompositeUsername } from './htpasswd'
 
 // ─── Pure function tests ───────────────────────────────────────────────────────
 
 describe('getCompositeUsername', () => {
 	it('joins username and bookId with a hyphen', () => {
-		expect(getCompositeUsername('shawn', '7f68f4c5-2d66-498d-b9d7-538bba770483')).toBe(
-			'shawn-7f68f4c5-2d66-498d-b9d7-538bba770483'
-		)
+		expect(getCompositeUsername('shawn', '7f68f4c5-2d66-498d-b9d7-538bba770483')).toBe('shawn-7f68f4c5-2d66-498d-b9d7-538bba770483')
 	})
 
 	it('works with multi-part usernames', () => {
-		expect(getCompositeUsername('mary-jane', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe(
-			'mary-jane-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
-		)
+		expect(getCompositeUsername('mary-jane', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe('mary-jane-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
 	})
 })
 
@@ -149,35 +141,21 @@ describe('password propagation to composite users', () => {
 	})
 
 	it('does not affect read-only users', () => {
-		const content = [
-			'shawn:$2b$10$oldhash',
-			'ro-7f68f4c5-2d66-498d-b9d7-538bba770483:$2b$10$readonly_hash',
-			'',
-		].join('\n')
+		const content = ['shawn:$2b$10$oldhash', 'ro-7f68f4c5-2d66-498d-b9d7-538bba770483:$2b$10$readonly_hash', ''].join('\n')
 
 		const result = simulatePasswordUpdate(content, 'shawn', '$2b$10$newhash')
 		const lines = result.split('\n').filter(l => l.trim())
 
-		expect(lines).toEqual([
-			'shawn:$2b$10$newhash',
-			'ro-7f68f4c5-2d66-498d-b9d7-538bba770483:$2b$10$readonly_hash',
-		])
+		expect(lines).toEqual(['shawn:$2b$10$newhash', 'ro-7f68f4c5-2d66-498d-b9d7-538bba770483:$2b$10$readonly_hash'])
 	})
 
 	it('handles user with no composite users', () => {
-		const content = [
-			'shawn:$2b$10$oldhash',
-			'madison:$2b$10$oldhash_madison',
-			'',
-		].join('\n')
+		const content = ['shawn:$2b$10$oldhash', 'madison:$2b$10$oldhash_madison', ''].join('\n')
 
 		const result = simulatePasswordUpdate(content, 'shawn', '$2b$10$newhash')
 		const lines = result.split('\n').filter(l => l.trim())
 
-		expect(lines).toEqual([
-			'shawn:$2b$10$newhash',
-			'madison:$2b$10$oldhash_madison',
-		])
+		expect(lines).toEqual(['shawn:$2b$10$newhash', 'madison:$2b$10$oldhash_madison'])
 	})
 
 	it('preserves comments and blank lines', () => {
@@ -192,13 +170,7 @@ describe('password propagation to composite users', () => {
 		const result = simulatePasswordUpdate(content, 'shawn', '$2b$10$newhash')
 
 		expect(result).toBe(
-			[
-				'# This is a comment',
-				'shawn:$2b$10$newhash',
-				'',
-				'shawn-7f68f4c5-2d66-498d-b9d7-538bba770483:$2b$10$newhash',
-				'',
-			].join('\n')
+			['# This is a comment', 'shawn:$2b$10$newhash', '', 'shawn-7f68f4c5-2d66-498d-b9d7-538bba770483:$2b$10$newhash', ''].join('\n')
 		)
 	})
 

@@ -12,13 +12,7 @@ export function MobileHeader() {
 	return (
 		<header className="flex items-center gap-3 border-b border-border bg-background p-3 md:hidden">
 			<Sheet open={open} onOpenChange={setOpen}>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="size-9"
-					onClick={() => setOpen(true)}
-					aria-label="Open menu"
-				>
+				<Button variant="ghost" size="icon" className="size-9" onClick={() => setOpen(true)} aria-label="Open menu">
 					<Menu className="size-5" />
 				</Button>
 				<SheetContent className="p-0">

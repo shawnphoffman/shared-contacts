@@ -123,7 +123,7 @@ export function zodError(error: { issues: Array<{ message: string; path: Array<P
 	return json(
 		{
 			error: 'Validation failed',
-			issues: error.issues.map((i) => ({ path: i.path.map(String).join('.'), message: i.message })),
+			issues: error.issues.map(i => ({ path: i.path.map(String).join('.'), message: i.message })),
 		},
 		{ status: 400 }
 	)

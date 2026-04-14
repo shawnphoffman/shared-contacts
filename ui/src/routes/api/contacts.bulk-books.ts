@@ -16,7 +16,7 @@ export const Route = createFileRoute('/api/contacts/bulk-books')({
 					const { contact_ids: contactIds, add_to_book_ids: addToBookIds, remove_from_book_ids: removeFromBookIds } = parsed.data
 
 					const currentMap = await getBulkContactAddressBookIds(contactIds)
-					const assignments = contactIds.map((contactId) => {
+					const assignments = contactIds.map(contactId => {
 						const current = new Set(currentMap.get(contactId) || [])
 						for (const id of addToBookIds) current.add(id)
 						for (const id of removeFromBookIds) current.delete(id)

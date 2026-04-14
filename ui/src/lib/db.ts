@@ -115,15 +115,23 @@ export interface Contact {
  * or as raw JSON strings depending on the driver configuration.
  */
 const JSONB_FIELDS = [
-	'phones', 'emails', 'addresses', 'urls', 'org_units',
-	'categories', 'labels', 'logos', 'sounds', 'keys', 'custom_fields',
+	'phones',
+	'emails',
+	'addresses',
+	'urls',
+	'org_units',
+	'categories',
+	'labels',
+	'logos',
+	'sounds',
+	'keys',
+	'custom_fields',
 ] as const
 
 export function parseContactRow<T extends Record<string, unknown>>(row: T): T {
 	for (const field of JSONB_FIELDS) {
 		if (field in row && row[field]) {
-			(row as Record<string, unknown>)[field] =
-				typeof row[field] === 'string' ? JSON.parse(row[field]) : row[field]
+			;(row as Record<string, unknown>)[field] = typeof row[field] === 'string' ? JSON.parse(row[field]) : row[field]
 		}
 	}
 	return row
@@ -293,10 +301,7 @@ export async function updateAddressBook(
 	}
 
 	values.push(id)
-	const result = await dbPool.query(
-		`UPDATE address_books SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-		values
-	)
+	const result = await dbPool.query(`UPDATE address_books SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`, values)
 	return result.rows[0]
 }
 
@@ -404,7 +409,10 @@ export async function getAllContactsPaginated({
 
 	const [countResult, dataResult] = await Promise.all([
 		dbPool.query('SELECT COUNT(*) FROM contacts WHERE deleted_at IS NULL'),
-		dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NULL ORDER BY full_name, created_at DESC LIMIT $1 OFFSET $2', [clampedLimit, clampedOffset]),
+		dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NULL ORDER BY full_name, created_at DESC LIMIT $1 OFFSET $2', [
+			clampedLimit,
+			clampedOffset,
+		]),
 	])
 
 	const total = parseInt(countResult.rows[0].count, 10)
@@ -437,10 +445,9 @@ export async function getBulkContactAddressBookIds(contactIds: Array<string>): P
 	const hasTable = await tableExists('contact_address_books')
 	if (!hasTable) return new Map()
 	const dbPool = getPool()
-	const result = await dbPool.query(
-		'SELECT contact_id, address_book_id FROM contact_address_books WHERE contact_id = ANY($1::uuid[])',
-		[contactIds],
-	)
+	const result = await dbPool.query('SELECT contact_id, address_book_id FROM contact_address_books WHERE contact_id = ANY($1::uuid[])', [
+		contactIds,
+	])
 	const map = new Map<string, Array<string>>()
 	for (const row of result.rows) {
 		const existing = map.get(row.contact_id) || []
@@ -450,14 +457,12 @@ export async function getBulkContactAddressBookIds(contactIds: Array<string>): P
 	return map
 }
 
-export async function bulkSetContactAddressBooks(
-	assignments: Array<{ contactId: string; bookIds: Array<string> }>,
-): Promise<void> {
+export async function bulkSetContactAddressBooks(assignments: Array<{ contactId: string; bookIds: Array<string> }>): Promise<void> {
 	if (assignments.length === 0) return
 	const hasTable = await tableExists('contact_address_books')
 	if (!hasTable) return
 	const dbPool = getPool()
-	const contactIds = assignments.map((a) => a.contactId)
+	const contactIds = assignments.map(a => a.contactId)
 
 	const client = await dbPool.connect()
 	try {
@@ -469,7 +474,7 @@ export async function bulkSetContactAddressBooks(
 					`INSERT INTO contact_address_books (contact_id, address_book_id)
 					 SELECT $1, UNNEST($2::uuid[])
 					 ON CONFLICT DO NOTHING`,
-					[contactId, bookIds],
+					[contactId, bookIds]
 				)
 			}
 		}
@@ -514,13 +519,18 @@ export async function findDuplicateContact(fullName: string | null, email: strin
 
 	// Try name + phone combination
 	if (fullName && phone) {
-		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND phone = $2 AND deleted_at IS NULL LIMIT 1', [fullName, phone])
+		const result = await dbPool.query(
+			'SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND phone = $2 AND deleted_at IS NULL LIMIT 1',
+			[fullName, phone]
+		)
 		if (result.rows[0]) return result.rows[0]
 	}
 
 	// Try just name (if it's a unique name)
 	if (fullName && fullName !== 'Unnamed Contact') {
-		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND deleted_at IS NULL LIMIT 1', [fullName])
+		const result = await dbPool.query('SELECT * FROM contacts WHERE LOWER(full_name) = LOWER($1) AND deleted_at IS NULL LIMIT 1', [
+			fullName,
+		])
 		if (result.rows[0]) return result.rows[0]
 	}
 

@@ -107,11 +107,11 @@ export function parseCSV(csvText: string): Array<Record<string, string>> {
 		.replace(/\r\n/g, '\n')
 		.replace(/\r/g, '\n')
 		.split('\n')
-		.filter((line) => line.trim())
+		.filter(line => line.trim())
 	if (lines.length === 0) return []
 
 	// Parse header
-	const headers = parseCSVLine(lines[0]).map((h) => h.trim())
+	const headers = parseCSVLine(lines[0]).map(h => h.trim())
 	const rows: Array<Record<string, string>> = []
 
 	// Parse data rows
@@ -214,8 +214,6 @@ export function escapeCsvField(value: string | null | undefined): string {
 
 export function contactsToCsv(contacts: Array<Contact>): string {
 	const header = CSV_COLUMNS.join(',')
-	const rows = contacts.map((contact) =>
-		CSV_COLUMNS.map((col) => escapeCsvField(contact[col as keyof Contact] as string)).join(','),
-	)
+	const rows = contacts.map(contact => CSV_COLUMNS.map(col => escapeCsvField(contact[col as keyof Contact] as string)).join(','))
 	return [header, ...rows].join('\r\n')
 }

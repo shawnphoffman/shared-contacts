@@ -208,84 +208,80 @@ function AboutPage() {
 							</p>
 							<Separator />
 							<p>For issues, feature requests, or contributions, please visit the GitHub repository.</p>
-								<a
-									href="https://github.com/shawnphoffman/shared-contacts"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="inline-flex items-center gap-2 text-foreground hover:underline"
-								>
-									<Github className="w-4 h-4" />
-									shawnphoffman/shared-contacts
-									<ExternalLink className="w-3 h-3" />
-								</a>
+							<a
+								href="https://github.com/shawnphoffman/shared-contacts"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-2 text-foreground hover:underline"
+							>
+								<Github className="w-4 h-4" />
+								shawnphoffman/shared-contacts
+								<ExternalLink className="w-3 h-3" />
+							</a>
 						</div>
 					</CardContent>
 				</Card>
 
-					{/* Support */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2">
-								<Heart className="w-5 h-5 text-orange-500 fill-orange-500" />
-								Support
-							</CardTitle>
-							<CardDescription>Shared Contacts is free and open source</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<a
-								href="https://www.pcta.org/donate/"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors group"
-							>
-								<div>
-									<div className="font-medium">Pacific Crest Trail Association</div>
-									<div className="text-sm text-muted-foreground">
-										Protecting the PCT from Mexico to Canada
-									</div>
-								</div>
-								<ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-							</a>
-
-							<Separator />
-
-							<div className="space-y-2">
-								<div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-									Support the Developer
-								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-									<a
-										href="https://ko-fi.com/shawnhoffman"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="flex items-center justify-center gap-2 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-sm font-medium"
-									>
-										Ko-fi
-										<ExternalLink className="w-3 h-3" />
-									</a>
-									<a
-										href="https://buymeacoffee.com/shawnhoffman"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="flex items-center justify-center gap-2 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-sm font-medium"
-									>
-										Buy Me a Coffee
-										<ExternalLink className="w-3 h-3" />
-									</a>
-									<a
-										href="https://github.com/sponsors/shawnphoffman"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="flex items-center justify-center gap-2 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-sm font-medium"
-									>
-										GitHub Sponsors
-										<ExternalLink className="w-3 h-3" />
-									</a>
-								</div>
+				{/* Support */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<Heart className="w-5 h-5 text-orange-500 fill-orange-500" />
+							Support
+						</CardTitle>
+						<CardDescription>Shared Contacts is free and open source</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<a
+							href="https://www.pcta.org/donate/"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors group"
+						>
+							<div>
+								<div className="font-medium">Pacific Crest Trail Association</div>
+								<div className="text-sm text-muted-foreground">Protecting the PCT from Mexico to Canada</div>
 							</div>
-						</CardContent>
-					</Card>
-				</div>
+							<ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+						</a>
+
+						<Separator />
+
+						<div className="space-y-2">
+							<div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Support the Developer</div>
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+								<a
+									href="https://ko-fi.com/shawnhoffman"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center justify-center gap-2 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-sm font-medium"
+								>
+									Ko-fi
+									<ExternalLink className="w-3 h-3" />
+								</a>
+								<a
+									href="https://buymeacoffee.com/shawnhoffman"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center justify-center gap-2 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-sm font-medium"
+								>
+									Buy Me a Coffee
+									<ExternalLink className="w-3 h-3" />
+								</a>
+								<a
+									href="https://github.com/sponsors/shawnphoffman"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center justify-center gap-2 p-3 rounded-lg border border-border hover:bg-accent transition-colors text-sm font-medium"
+								>
+									GitHub Sponsors
+									<ExternalLink className="w-3 h-3" />
+								</a>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 			</div>
-		)
+		</div>
+	)
 }

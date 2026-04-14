@@ -3,14 +3,7 @@ import { parseVCard, generateVCard, parseName } from './vcard'
 
 describe('parseVCard', () => {
 	it('parses a minimal vCard 3.0', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'N:Doe;John;;;',
-			'UID:test-uid-123',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'N:Doe;John;;;', 'UID:test-uid-123', 'END:VCARD'].join('\r\n')
 
 		const result = parseVCard(vcard)
 		expect(result.fn).toBe('John Doe')
@@ -57,13 +50,9 @@ describe('parseVCard', () => {
 	})
 
 	it('parses structured addresses', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'ADR;TYPE=HOME:;;123 Main St;Springfield;IL;62704;US',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'ADR;TYPE=HOME:;;123 Main St;Springfield;IL;62704;US', 'END:VCARD'].join(
+			'\r\n'
+		)
 
 		const result = parseVCard(vcard)
 		expect(result.addresses).toHaveLength(1)
@@ -86,13 +75,7 @@ describe('parseVCard', () => {
 	})
 
 	it('parses organization with units', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'ORG:Acme Corp;Engineering;Backend',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'ORG:Acme Corp;Engineering;Backend', 'END:VCARD'].join('\r\n')
 
 		const result = parseVCard(vcard)
 		expect(result.org).toBe('Acme Corp')
@@ -100,26 +83,14 @@ describe('parseVCard', () => {
 	})
 
 	it('parses categories', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'CATEGORIES:Family,Friends,VIP',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'CATEGORIES:Family,Friends,VIP', 'END:VCARD'].join('\r\n')
 
 		const result = parseVCard(vcard)
 		expect(result.categories).toEqual(['Family', 'Friends', 'VIP'])
 	})
 
 	it('parses birthday', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'BDAY:19900115',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'BDAY:19900115', 'END:VCARD'].join('\r\n')
 
 		const result = parseVCard(vcard)
 		expect(result.bday).toBe('19900115')
@@ -142,26 +113,14 @@ describe('parseVCard', () => {
 	})
 
 	it('handles escaped newlines in notes', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'NOTE:Line one\\nLine two\\nLine three',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'NOTE:Line one\\nLine two\\nLine three', 'END:VCARD'].join('\r\n')
 
 		const result = parseVCard(vcard)
 		expect(result.note).toBe('Line one\nLine two\nLine three')
 	})
 
 	it('parses photo data', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'PHOTO;ENCODING=b;TYPE=JPEG:dGVzdA==',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'PHOTO;ENCODING=b;TYPE=JPEG:dGVzdA==', 'END:VCARD'].join('\r\n')
 
 		const result = parseVCard(vcard)
 		expect(result.photo).toBeDefined()
@@ -169,12 +128,7 @@ describe('parseVCard', () => {
 	})
 
 	it('handles empty/missing fields gracefully', () => {
-		const vcard = [
-			'BEGIN:VCARD',
-			'VERSION:3.0',
-			'FN:John Doe',
-			'END:VCARD',
-		].join('\r\n')
+		const vcard = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:John Doe', 'END:VCARD'].join('\r\n')
 
 		const result = parseVCard(vcard)
 		expect(result.fn).toBe('John Doe')

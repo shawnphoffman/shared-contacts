@@ -7,7 +7,7 @@ import { contactsToCsv } from '../../lib/csv'
 import type { Contact } from '../../lib/db'
 
 function contactsToVcf(contacts: Array<Contact>): string {
-	return contacts.map((contact) => generateVCard(contact)).join('\r\n')
+	return contacts.map(contact => generateVCard(contact)).join('\r\n')
 }
 
 export const Route = createFileRoute('/api/contacts/export')({
@@ -19,10 +19,7 @@ export const Route = createFileRoute('/api/contacts/export')({
 					const format = url.searchParams.get('format')?.toLowerCase()
 
 					if (!format || !['csv', 'vcf'].includes(format)) {
-						return json(
-							{ error: 'Missing or invalid format parameter. Use ?format=csv or ?format=vcf' },
-							{ status: 400 },
-						)
+						return json({ error: 'Missing or invalid format parameter. Use ?format=csv or ?format=vcf' }, { status: 400 })
 					}
 
 					const contacts = await getAllContacts()

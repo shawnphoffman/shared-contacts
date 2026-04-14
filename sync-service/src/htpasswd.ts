@@ -105,7 +105,10 @@ export async function backfillSharedContactsForUser(username: string): Promise<v
 	await ensurePrincipalPropsForUser(username)
 
 	const books = await getAddressBooks()
-	const userBooks = books.length > 0 ? await getAddressBooksForUser(username) : [{ id: '', name: 'Shared Contacts', slug: 'shared-contacts', is_public: true }]
+	const userBooks =
+		books.length > 0
+			? await getAddressBooksForUser(username)
+			: [{ id: '', name: 'Shared Contacts', slug: 'shared-contacts', is_public: true }]
 
 	for (const book of userBooks) {
 		const userPath = getAddressBookPathForUser(username, book.id)
@@ -442,9 +445,7 @@ export async function ensureAllCompositeUsersExist(): Promise<void> {
 	if (books.length === 0) return
 
 	const allUsers = await getUsers()
-	const baseUsers = allUsers.filter(
-		user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username)
-	)
+	const baseUsers = allUsers.filter(user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username))
 
 	let ensuredCount = 0
 	for (const user of baseUsers) {
@@ -523,9 +524,7 @@ async function cleanupOldNestedDirectories(): Promise<void> {
 	if (books.length === 0) return
 
 	const allUsers = await getUsers()
-	const baseUsers = allUsers.filter(
-		user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username)
-	)
+	const baseUsers = allUsers.filter(user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username))
 
 	let cleanedCount = 0
 	for (const user of baseUsers) {
@@ -542,13 +541,13 @@ async function cleanupOldNestedDirectories(): Promise<void> {
 				for (const entry of entries) {
 					// Skip .Radicale.props
 					if (entry === '.Radicale.props') continue
-					
+
 					const entryPath = path.join(principalPath, entry)
 					try {
 						const stats = await stat(entryPath)
 						// Only process directories
 						if (!stats.isDirectory()) continue
-						
+
 						// Check if this looks like a book ID directory
 						// Book IDs are UUIDs, so check if entry matches UUID format
 						const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

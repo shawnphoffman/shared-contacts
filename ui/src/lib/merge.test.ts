@@ -300,10 +300,7 @@ describe('detectDuplicates', () => {
 	})
 
 	it('returns empty when no duplicates', () => {
-		const contacts = [
-			makeContact({ email: 'a@b.com', full_name: 'Alice' }),
-			makeContact({ email: 'c@d.com', full_name: 'Bob' }),
-		]
+		const contacts = [makeContact({ email: 'a@b.com', full_name: 'Alice' }), makeContact({ email: 'c@d.com', full_name: 'Bob' })]
 		expect(detectDuplicates(contacts)).toEqual([])
 	})
 
@@ -329,20 +326,14 @@ describe('detectDuplicates', () => {
 	})
 
 	it('groups contacts by exact name', () => {
-		const contacts = [
-			makeContact({ full_name: 'John Smith' }),
-			makeContact({ full_name: 'john smith' }),
-		]
+		const contacts = [makeContact({ full_name: 'John Smith' }), makeContact({ full_name: 'john smith' })]
 		const groups = detectDuplicates(contacts)
 		expect(groups).toHaveLength(1)
 		expect(groups[0].matchType).toBe('name')
 	})
 
 	it('groups contacts by fuzzy name match', () => {
-		const contacts = [
-			makeContact({ full_name: 'Robert Smith' }),
-			makeContact({ full_name: 'Bob Smith' }),
-		]
+		const contacts = [makeContact({ full_name: 'Robert Smith' }), makeContact({ full_name: 'Bob Smith' })]
 		const groups = detectDuplicates(contacts)
 		expect(groups).toHaveLength(1)
 		expect(groups[0].matchType).toBe('fuzzy_name')

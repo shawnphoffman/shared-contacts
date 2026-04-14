@@ -14,12 +14,7 @@ import { getUsers } from '../htpasswd'
 import { logger } from '../logger'
 import { FILE_WATCHER_DEBOUNCE_MS } from './constants'
 import { getAddressBooksForSync } from './address-books'
-import {
-	getAddressBookPath,
-	getAddressBookPathForUser,
-	ensureDirectoryExists,
-	extractBookPathSegmentFromPath,
-} from './radicale-fs'
+import { getAddressBookPath, getAddressBookPathForUser, ensureDirectoryExists, extractBookPathSegmentFromPath } from './radicale-fs'
 import { syncRadicaleToDb } from './radicale-to-db'
 
 /**

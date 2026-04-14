@@ -97,9 +97,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						{/* Main content area */}
 						<div className="flex flex-1 flex-col overflow-hidden">
 							<MobileHeader />
-							<main className="flex-1 overflow-y-auto">
-								{children}
-							</main>
+							<main className="flex-1 overflow-y-auto">{children}</main>
 						</div>
 					</div>
 					<Toaster />

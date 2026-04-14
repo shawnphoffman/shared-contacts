@@ -152,12 +152,7 @@ export function ContactAdvancedFields({
 						<Field>
 							<FieldLabel htmlFor="mailer">Mailer</FieldLabel>
 							<FieldContent>
-								<Input
-									id="mailer"
-									name="mailer"
-									value={formData.mailer}
-									onChange={e => onFormDataChange({ mailer: e.target.value })}
-								/>
+								<Input id="mailer" name="mailer" value={formData.mailer} onChange={e => onFormDataChange({ mailer: e.target.value })} />
 							</FieldContent>
 						</Field>
 					)}
@@ -210,12 +205,7 @@ export function ContactAdvancedFields({
 						<Field>
 							<FieldLabel htmlFor="prod_id">Product ID</FieldLabel>
 							<FieldContent>
-								<Input
-									id="prod_id"
-									name="prod_id"
-									value={formData.prod_id}
-									onChange={e => onFormDataChange({ prod_id: e.target.value })}
-								/>
+								<Input id="prod_id" name="prod_id" value={formData.prod_id} onChange={e => onFormDataChange({ prod_id: e.target.value })} />
 							</FieldContent>
 						</Field>
 					)}

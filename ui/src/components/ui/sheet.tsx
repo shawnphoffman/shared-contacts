@@ -35,11 +35,7 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<typeof Dialo
 	)
 }
 
-function SheetContent({
-	className,
-	children,
-	...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+function SheetContent({ className, children, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
 	return (
 		<SheetPortal>
 			<SheetOverlay />
@@ -77,20 +73,7 @@ function SheetTitle({ className, ...props }: React.ComponentProps<typeof DialogP
 }
 
 function SheetDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {
-	return (
-		<DialogPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground text-sm', className)} {...props} />
-	)
+	return <DialogPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground text-sm', className)} {...props} />
 }
 
-export {
-	Sheet,
-	SheetClose,
-	SheetContent,
-	SheetDescription,
-	SheetFooter,
-	SheetHeader,
-	SheetOverlay,
-	SheetPortal,
-	SheetTitle,
-	SheetTrigger,
-}
+export { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetPortal, SheetTitle, SheetTrigger }

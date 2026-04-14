@@ -41,10 +41,7 @@ async function truncateAll() {
 }
 
 async function createTestAddressBook(name = 'Test Book', slug = 'test-book') {
-	const result = await pool.query(
-		'INSERT INTO address_books (name, slug, is_public) VALUES ($1, $2, true) RETURNING *',
-		[name, slug]
-	)
+	const result = await pool.query('INSERT INTO address_books (name, slug, is_public) VALUES ($1, $2, true) RETURNING *', [name, slug])
 	return result.rows[0]
 }
 
@@ -62,18 +59,15 @@ async function createTestContact(overrides: Record<string, unknown> = {}) {
 	const values = Object.values(data)
 	const placeholders = keys.map((_, i) => `$${i + 1}`)
 
-	const result = await pool.query(
-		`INSERT INTO contacts (${keys.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING *`,
-		values
-	)
+	const result = await pool.query(`INSERT INTO contacts (${keys.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING *`, values)
 	return result.rows[0]
 }
 
 async function assignContactToBook(contactId: string, bookId: string) {
-	await pool.query(
-		'INSERT INTO contact_address_books (contact_id, address_book_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-		[contactId, bookId]
-	)
+	await pool.query('INSERT INTO contact_address_books (contact_id, address_book_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [
+		contactId,
+		bookId,
+	])
 }
 
 // ---------------------------------------------------------------------------
@@ -105,7 +99,8 @@ beforeAll(async () => {
 	const appliedSet = new Set(applied.rows.map((r: { name: string }) => r.name))
 
 	// Apply pending migrations in order
-	const files = fs.readdirSync(migrationsDir)
+	const files = fs
+		.readdirSync(migrationsDir)
 		.filter(f => f.endsWith('.sql'))
 		.sort()
 
@@ -157,10 +152,7 @@ describe('database contact operations', () => {
 		const contact = await createTestContact()
 		await assignContactToBook(contact.id, book.id)
 
-		const result = await pool.query(
-			'SELECT * FROM contact_address_books WHERE contact_id = $1',
-			[contact.id]
-		)
+		const result = await pool.query('SELECT * FROM contact_address_books WHERE contact_id = $1', [contact.id])
 		expect(result.rows).toHaveLength(1)
 		expect(result.rows[0].address_book_id).toBe(book.id)
 	})
@@ -172,19 +164,13 @@ describe('database contact operations', () => {
 
 		await pool.query('DELETE FROM contacts WHERE id = $1', [contact.id])
 
-		const cabResult = await pool.query(
-			'SELECT * FROM contact_address_books WHERE contact_id = $1',
-			[contact.id]
-		)
+		const cabResult = await pool.query('SELECT * FROM contact_address_books WHERE contact_id = $1', [contact.id])
 		expect(cabResult.rows).toHaveLength(0)
 	})
 
 	it('updates contact fields', async () => {
 		const contact = await createTestContact()
-		await pool.query(
-			'UPDATE contacts SET full_name = $1, organization = $2 WHERE id = $3',
-			['Updated Name', 'Acme Corp', contact.id]
-		)
+		await pool.query('UPDATE contacts SET full_name = $1, organization = $2 WHERE id = $3', ['Updated Name', 'Acme Corp', contact.id])
 
 		const result = await pool.query('SELECT * FROM contacts WHERE id = $1', [contact.id])
 		expect(result.rows[0].full_name).toBe('Updated Name')
@@ -211,15 +197,18 @@ describe('database contact operations', () => {
 // ---------------------------------------------------------------------------
 describe('vcard round-trip', () => {
 	it('generates and parses a vcard preserving core fields', () => {
-		const vcardData = generateVCard({}, {
-			full_name: 'John Smith',
-			first_name: 'John',
-			last_name: 'Smith',
-			email: 'john@example.com',
-			phone: '+15551234567',
-			organization: 'Acme Corp',
-			job_title: 'Engineer',
-		})
+		const vcardData = generateVCard(
+			{},
+			{
+				full_name: 'John Smith',
+				first_name: 'John',
+				last_name: 'Smith',
+				email: 'john@example.com',
+				phone: '+15551234567',
+				organization: 'Acme Corp',
+				job_title: 'Engineer',
+			}
+		)
 		expect(vcardData).toContain('BEGIN:VCARD')
 		expect(vcardData).toContain('FN:John Smith')
 
@@ -229,17 +218,20 @@ describe('vcard round-trip', () => {
 	})
 
 	it('round-trips multiple phones and emails', () => {
-		const vcardData = generateVCard({}, {
-			full_name: 'Multi Contact',
-			phones: [
-				{ value: '+15551234567', type: 'CELL' },
-				{ value: '+15559876543', type: 'WORK' },
-			],
-			emails: [
-				{ value: 'home@test.com', type: 'HOME' },
-				{ value: 'work@test.com', type: 'WORK' },
-			],
-		})
+		const vcardData = generateVCard(
+			{},
+			{
+				full_name: 'Multi Contact',
+				phones: [
+					{ value: '+15551234567', type: 'CELL' },
+					{ value: '+15559876543', type: 'WORK' },
+				],
+				emails: [
+					{ value: 'home@test.com', type: 'HOME' },
+					{ value: 'work@test.com', type: 'WORK' },
+				],
+			}
+		)
 		const parsed = parseVCard(vcardData)
 
 		expect(parsed.tels).toHaveLength(2)
@@ -255,12 +247,15 @@ describe('radicale storage file operations', () => {
 		const collectionPath = path.join(STORAGE_PATH, 'collection-root', 'test-book')
 		fs.mkdirSync(collectionPath, { recursive: true })
 
-		const vcardData = generateVCard({}, {
-			full_name: 'File Test',
-			first_name: 'File',
-			last_name: 'Test',
-			email: 'file@test.com',
-		})
+		const vcardData = generateVCard(
+			{},
+			{
+				full_name: 'File Test',
+				first_name: 'File',
+				last_name: 'Test',
+				email: 'file@test.com',
+			}
+		)
 
 		const vcfPath = path.join(collectionPath, 'test-contact.vcf')
 		fs.writeFileSync(vcfPath, vcardData, 'utf-8')
@@ -338,10 +333,7 @@ describe('address book operations', () => {
 		await assignContactToBook(contact.id, book1.id)
 		await assignContactToBook(contact.id, book2.id)
 
-		const result = await pool.query(
-			'SELECT address_book_id FROM contact_address_books WHERE contact_id = $1',
-			[contact.id]
-		)
+		const result = await pool.query('SELECT address_book_id FROM contact_address_books WHERE contact_id = $1', [contact.id])
 		expect(result.rows).toHaveLength(2)
 	})
 })
@@ -355,15 +347,9 @@ describe('sync metadata', () => {
 
 		// Simulate sync to radicale
 		const now = new Date()
-		await pool.query(
-			'UPDATE contacts SET last_synced_to_radicale_at = $1, sync_source = $2 WHERE id = $3',
-			[now, 'api', contact.id]
-		)
+		await pool.query('UPDATE contacts SET last_synced_to_radicale_at = $1, sync_source = $2 WHERE id = $3', [now, 'api', contact.id])
 
-		const result = await pool.query(
-			'SELECT last_synced_to_radicale_at, sync_source FROM contacts WHERE id = $1',
-			[contact.id]
-		)
+		const result = await pool.query('SELECT last_synced_to_radicale_at, sync_source FROM contacts WHERE id = $1', [contact.id])
 		expect(result.rows[0].last_synced_to_radicale_at).toBeTruthy()
 		expect(result.rows[0].sync_source).toBe('api')
 	})
@@ -378,9 +364,7 @@ describe('sync metadata', () => {
 			sync_source: 'api',
 		})
 
-		const result = await pool.query(
-			'SELECT * FROM contacts WHERE last_synced_to_radicale_at IS NULL'
-		)
+		const result = await pool.query('SELECT * FROM contacts WHERE last_synced_to_radicale_at IS NULL')
 		expect(result.rows).toHaveLength(1)
 		expect(result.rows[0].full_name).toBe('Test Contact')
 	})

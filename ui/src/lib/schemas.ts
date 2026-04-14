@@ -84,14 +84,15 @@ export const MergeContactsSchema = z.object({
 	contactIds: z.array(z.string()).min(2, 'At least 2 contacts are required to merge'),
 })
 
-export const BulkBooksSchema = z.object({
-	contact_ids: z.array(z.string()).min(1, 'contact_ids must be a non-empty array'),
-	add_to_book_ids: z.array(z.string()).optional().default([]),
-	remove_from_book_ids: z.array(z.string()).optional().default([]),
-}).refine(
-	(data) => data.add_to_book_ids.length > 0 || data.remove_from_book_ids.length > 0,
-	{ message: 'Provide at least one of add_to_book_ids or remove_from_book_ids' }
-)
+export const BulkBooksSchema = z
+	.object({
+		contact_ids: z.array(z.string()).min(1, 'contact_ids must be a non-empty array'),
+		add_to_book_ids: z.array(z.string()).optional().default([]),
+		remove_from_book_ids: z.array(z.string()).optional().default([]),
+	})
+	.refine(data => data.add_to_book_ids.length > 0 || data.remove_from_book_ids.length > 0, {
+		message: 'Provide at least one of add_to_book_ids or remove_from_book_ids',
+	})
 
 // ---------------------------------------------------------------------------
 // Address books

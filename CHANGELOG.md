@@ -5,12 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [0.24.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.0...v0.24.1) (2026-04-13)
 
 ### Bug Fixes
 
-* **sync:** restore soft-deleted contacts instead of crashing on duplicate vcard_id ([690ec5f](https://github.com/shawnphoffman/shared-contacts/commit/690ec5f31d2f4ce03297cbb7bc34bd1e86fb6c2c))
+- **sync:** restore soft-deleted contacts instead of crashing on duplicate vcard_id ([690ec5f](https://github.com/shawnphoffman/shared-contacts/commit/690ec5f31d2f4ce03297cbb7bc34bd1e86fb6c2c))
 
 ### Changelog
 

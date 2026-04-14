@@ -21,8 +21,8 @@ export const Route = createFileRoute('/api/contacts/merge')({
 					// Fetch all contacts in a single query
 					const contacts = await getContactsByIds(contactIds)
 					if (contacts.length !== contactIds.length) {
-						const foundIds = new Set(contacts.map((c) => c.id))
-						const missingId = contactIds.find((id) => !foundIds.has(id))
+						const foundIds = new Set(contacts.map(c => c.id))
+						const missingId = contactIds.find(id => !foundIds.has(id))
 						return json({ error: `Contact with id ${missingId} not found` }, { status: 404 })
 					}
 

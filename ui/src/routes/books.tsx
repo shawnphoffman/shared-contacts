@@ -98,15 +98,7 @@ export const Route = createFileRoute('/books')({
 
 // ── Edit Dialog ────────────────────────────────────────────────────
 
-function EditBookDialog({
-	book,
-	open,
-	onOpenChange,
-}: {
-	book: AddressBook | null
-	open: boolean
-	onOpenChange: (open: boolean) => void
-}) {
+function EditBookDialog({ book, open, onOpenChange }: { book: AddressBook | null; open: boolean; onOpenChange: (open: boolean) => void }) {
 	const queryClient = useQueryClient()
 	const [nameDraft, setNameDraft] = useState('')
 	const [isPublic, setIsPublic] = useState(true)
@@ -302,8 +294,7 @@ function ConnectionDetailsDialog({
 						Connection Details — {book.name}
 					</DialogTitle>
 					<DialogDescription>
-						CardDAV subscription URLs for users assigned to this book. Use the composite username and URL when configuring
-						CardDAV clients.
+						CardDAV subscription URLs for users assigned to this book. Use the composite username and URL when configuring CardDAV clients.
 					</DialogDescription>
 				</DialogHeader>
 				<div className="max-h-[70vh] overflow-y-auto">
@@ -572,15 +563,7 @@ function BooksPage() {
 
 // ── Table Row ──────────────────────────────────────────────────────
 
-function BookRow({
-	book,
-	onEdit,
-	onConnectionDetails,
-}: {
-	book: AddressBook
-	onEdit: () => void
-	onConnectionDetails: () => void
-}) {
+function BookRow({ book, onEdit, onConnectionDetails }: { book: AddressBook; onEdit: () => void; onConnectionDetails: () => void }) {
 	const { data: details } = useQuery({
 		queryKey: ['address-book', book.id],
 		queryFn: () => fetchAddressBook(book.id),

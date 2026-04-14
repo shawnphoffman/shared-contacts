@@ -60,9 +60,7 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 		logger.warn({ err }, 'Could not read htpasswd for composite users migration')
 	}
 
-	const baseUsers = allUsers.filter(
-		user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username)
-	)
+	const baseUsers = allUsers.filter(user => !user.username.startsWith('ro-') && !isCompositeUsername(user.username))
 
 	if (baseUsers.length === 0) {
 		await pool.query('INSERT INTO composite_users_migration_done (done_at) VALUES (NOW())')
@@ -83,7 +81,7 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 
 			for (const bookId of allBookIds) {
 				const compositeUsername = getCompositeUsername(user.username, bookId)
-				
+
 				// Check if composite user already exists
 				let compositeExists = false
 				try {
@@ -93,7 +91,7 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 					logger.warn({ err, compositeUsername }, 'Could not check if composite user exists')
 					// Continue anyway - createCompositeUser will handle it
 				}
-				
+
 				if (!compositeExists) {
 					try {
 						// Create composite user (will copy files from master if needed)
@@ -109,19 +107,19 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 				// Migrate files from old path to new path if old path exists
 				const oldPath = path.join(rootPath, user.username, bookId)
 				const newPath = path.join(rootPath, compositeUsername)
-				
+
 				if (fs.existsSync(oldPath) && fs.existsSync(newPath)) {
 					// Both paths exist - migrate files from old to new
 					try {
 						const oldFiles = fs.readdirSync(oldPath)
 						let migratedFiles = 0
-						
+
 						for (const file of oldFiles) {
 							if (file === '.Radicale.props') continue // Props file is already created by createCompositeUser
-							
+
 							const oldFilePath = path.join(oldPath, file)
 							const newFilePath = path.join(newPath, file)
-							
+
 							// Only copy if file doesn't exist in new location
 							if (!fs.existsSync(newFilePath)) {
 								if (fs.statSync(oldFilePath).isFile()) {
@@ -130,7 +128,7 @@ export async function runCompositeUsersMigrationIfNeeded(): Promise<void> {
 								}
 							}
 						}
-						
+
 						if (migratedFiles > 0) {
 							migratedCount += migratedFiles
 							logger.info({ migratedFiles, username: user.username, bookId, compositeUsername }, 'Migrated files to composite user')

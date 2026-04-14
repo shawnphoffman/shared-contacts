@@ -96,15 +96,23 @@ export interface Contact {
  * or as raw JSON strings depending on the driver configuration.
  */
 const JSONB_FIELDS = [
-	'phones', 'emails', 'addresses', 'urls', 'org_units',
-	'categories', 'labels', 'logos', 'sounds', 'keys', 'custom_fields',
+	'phones',
+	'emails',
+	'addresses',
+	'urls',
+	'org_units',
+	'categories',
+	'labels',
+	'logos',
+	'sounds',
+	'keys',
+	'custom_fields',
 ] as const
 
 export function parseContactRow<T extends Record<string, unknown>>(row: T): T {
 	for (const field of JSONB_FIELDS) {
 		if (field in row && row[field]) {
-			(row as Record<string, unknown>)[field] =
-				typeof row[field] === 'string' ? JSON.parse(row[field] as string) : row[field]
+			;(row as Record<string, unknown>)[field] = typeof row[field] === 'string' ? JSON.parse(row[field] as string) : row[field]
 		}
 	}
 	return row
@@ -214,10 +222,10 @@ export async function getExplicitAddressBookIdsForUser(username: string): Promis
 export async function setUserAddressBooks(username: string, addressBookIds: Array<string>): Promise<void> {
 	if (!(await tableExists('user_address_books'))) return
 	const pool = getPool()
-	
+
 	// Get previous assignments before updating
 	const previousIds = await getExplicitAddressBookIdsForUser(username)
-	
+
 	await pool.query('DELETE FROM user_address_books WHERE username = $1', [username])
 	if (addressBookIds.length === 0) {
 		// Sync composite users: delete all composite users for this base user
@@ -540,10 +548,7 @@ export async function storeEncryptedPassword(username: string, encrypted: string
 export async function getEncryptedPassword(username: string): Promise<string | null> {
 	if (!(await tableExists('user_encrypted_passwords'))) return null
 	const pool = getPool()
-	const result = await pool.query(
-		'SELECT encrypted FROM user_encrypted_passwords WHERE username = $1',
-		[username]
-	)
+	const result = await pool.query('SELECT encrypted FROM user_encrypted_passwords WHERE username = $1', [username])
 	return result.rows[0]?.encrypted ?? null
 }
 

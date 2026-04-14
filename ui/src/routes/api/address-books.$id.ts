@@ -3,12 +3,7 @@ import bcrypt from 'bcrypt'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import {
-	getAddressBook,
-	getAddressBookReadonly,
-	setAddressBookReadonly,
-	updateAddressBook,
-} from '../../lib/db'
+import { getAddressBook, getAddressBookReadonly, setAddressBookReadonly, updateAddressBook } from '../../lib/db'
 import { zodError } from '../../lib/contact-helpers'
 import { UpdateAddressBookSchema } from '../../lib/schemas'
 
@@ -54,10 +49,7 @@ export const Route = createFileRoute('/api/address-books/$id')({
 					if (parsed.data.readonly_enabled !== undefined) {
 						if (parsed.data.readonly_enabled) {
 							const password = parsed.data.readonly_password != null ? String(parsed.data.readonly_password).trim() : ''
-							const hash =
-								password !== ''
-									? await bcrypt.hash(password, 10)
-									: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10)
+							const hash = password !== '' ? await bcrypt.hash(password, 10) : await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10)
 							await setAddressBookReadonly(params.id, hash)
 						} else {
 							await setAddressBookReadonly(params.id, null)
