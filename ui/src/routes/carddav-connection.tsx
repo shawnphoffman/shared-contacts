@@ -1,11 +1,9 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Lock, Server, User } from 'lucide-react'
-import { Fragment } from 'react'
 import { Button } from '../components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Separator } from '../components/ui/separator'
 import {
 	CopyButton,
@@ -178,121 +176,95 @@ function CardDAVConnectionPage() {
 
 			{/* User Connection Details */}
 			{users.length > 0 && addressBooks.length > 0 ? (
-				<Card>
-					<CardHeader>
-						<CardTitle>Connection Details by User and Book</CardTitle>
-						<CardDescription className="space-y-2">
-							<p>
-								Assign books to users on the Users page. Each address book gets its own CardDAV account using composite usernames (
-								<code>username-bookid</code>). This avoids Apple Contacts limitations where only one book per account is shown. Use the
-								composite username and Server Path <code>/username-bookid/</code> (e.g.,{' '}
-								<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>) when adding accounts in CardDAV clients.
-							</p>
-							<p className="text-xs sm:text-[13px] text-muted-foreground">
-								The <span className="font-medium">Download profile</span> button generates an iOS/macOS <code>.mobileconfig</code> profile
-								for that user and book. It pre-fills the server, path, and composite username but{' '}
-								<span className="font-semibold">never includes the password</span> &mdash; the device will prompt for it during
-								installation. For best results, open this page in Safari on the target device and tap the button directly.
-							</p>
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="rounded-md border">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Username</TableHead>
-										<TableHead>Subscription URL</TableHead>
-										<TableHead className="w-[100px]">Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{addressBooks.map(book => {
-										// Filter users: only show base users assigned to this book
-										// (Composite users are filtered out by the API, so users list only contains base users)
-										const usersForBook = users.filter(user => {
-											// Handle read-only subscription users
-											if (user.username.startsWith('ro-')) {
-												const bookIdFromRo = user.username.slice(3)
-												return book.id === bookIdFromRo && book.readonly_enabled === true
-											}
-											// Check if base user is assigned to this book
-											const assignments = assignmentsData?.assignments ?? {}
-											const userBookIds = assignments[user.username] ?? []
-											return userBookIds.includes(book.id) || book.is_public
-										})
-										if (usersForBook.length === 0) return null
+				<>
+					<div>
+						<h2 className="text-xl font-semibold mb-1">Connection Details by User and Book</h2>
+						<p className="text-sm text-muted-foreground">
+							Each address book gets its own CardDAV account using composite usernames (<code>username-bookid</code>). This avoids Apple
+							Contacts limitations where only one book per account is shown.
+						</p>
+						<p className="text-xs text-muted-foreground mt-1">
+							The <span className="font-medium">Download profile</span> button generates an iOS/macOS <code>.mobileconfig</code> profile
+							that pre-fills the server, path, and composite username but <span className="font-semibold">never includes the password</span>{' '}
+							&mdash; the device will prompt for it during installation.
+						</p>
+					</div>
+					{addressBooks.map(book => {
+						const usersForBook = users.filter(user => {
+							if (user.username.startsWith('ro-')) {
+								const bookIdFromRo = user.username.slice(3)
+								return book.id === bookIdFromRo && book.readonly_enabled === true
+							}
+							const assignments = assignmentsData?.assignments ?? {}
+							const userBookIds = assignments[user.username] ?? []
+							return userBookIds.includes(book.id) || book.is_public
+						})
+						if (usersForBook.length === 0) return null
+						return (
+							<Card key={book.id}>
+								<CardHeader>
+									<CardTitle>{book.name}</CardTitle>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									{usersForBook.map((user, index) => {
+										const compositeUsername = `${user.username}-${book.id}`
+										const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
+										const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
+										const urlsAreSame = directUrl === proxyUrl
 										return (
-											<Fragment key={book.id}>
-												<TableRow className="bg-muted/50 hover:bg-muted/50">
-													<TableCell colSpan={3} className="font-medium py-2.5 text-foreground">
-														{book.name}
-													</TableCell>
-												</TableRow>
-												{usersForBook.map(user => {
-													const compositeUsername = `${user.username}-${book.id}`
-													const directUrl = getCardDAVUrl(user.username, book.id, directBaseUrl)
-													const proxyUrl = getCardDAVUrl(user.username, book.id, proxyBaseUrl)
-													const urlsAreSame = directUrl === proxyUrl
-													return (
-														<TableRow key={`${user.username}-${book.id}`}>
-															<TableCell className="font-medium max-w-48 truncate">
-																<div className="space-y-1">
-																	<div className="text-xs text-muted-foreground">{user.username}</div>
-																	<div className="font-mono text-xs truncate">{compositeUsername}</div>
+											<div key={user.username}>
+												{index > 0 && <Separator className="mb-4" />}
+												<div className="space-y-3">
+													{/* User info */}
+													<div>
+														<div className="text-sm text-muted-foreground">{user.username}</div>
+														<div className="font-mono text-sm font-medium">{compositeUsername}</div>
+													</div>
+													{/* Subscription URLs */}
+													<div className="space-y-2">
+														{urlsAreSame ? (
+															<div className="flex items-start gap-2">
+																<code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs break-all">{directUrl}</code>
+																<CopyButton text={directUrl} label="URL" />
+															</div>
+														) : (
+															<>
+																<div>
+																	<div className="text-[11px] uppercase text-muted-foreground mb-1">Direct</div>
+																	<div className="flex items-start gap-2">
+																		<code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs break-all">{directUrl}</code>
+																		<CopyButton text={directUrl} label="Direct URL" />
+																	</div>
 																</div>
-															</TableCell>
-															<TableCell>
-																<div className="space-y-2">
-																	{urlsAreSame ? (
-																		<div>
-																			<div className="text-[11px] uppercase text-muted-foreground">URL</div>
-																			<code className="text-xs break-all">{directUrl}</code>
-																		</div>
-																	) : (
-																		<>
-																			<div>
-																				<div className="text-[11px] uppercase text-muted-foreground">Direct</div>
-																				<code className="text-xs break-all">{directUrl}</code>
-																			</div>
-																			<div>
-																				<div className="text-[11px] uppercase text-muted-foreground">Proxy</div>
-																				<code className="text-xs break-all">{proxyUrl}</code>
-																			</div>
-																		</>
-																	)}
+																<div>
+																	<div className="text-[11px] uppercase text-muted-foreground mb-1">Proxy</div>
+																	<div className="flex items-start gap-2">
+																		<code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs break-all">{proxyUrl}</code>
+																		<CopyButton text={proxyUrl} label="Proxy URL" />
+																	</div>
 																</div>
-															</TableCell>
-															<TableCell>
-																<div className="flex flex-col gap-2">
-																	{urlsAreSame ? (
-																		<CopyButton text={directUrl} label="Subscription URL" />
-																	) : (
-																		<>
-																			<CopyButton text={directUrl} label="Direct Subscription URL" />
-																			<CopyButton text={proxyUrl} label="Proxy Subscription URL" />
-																		</>
-																	)}
-																	<Button
-																		variant="outline"
-																		size="sm"
-																		onClick={() => handleDownloadMobileconfig(user.username, book.id, book.name)}
-																	>
-																		Download profile
-																	</Button>
-																</div>
-															</TableCell>
-														</TableRow>
-													)
-												})}
-											</Fragment>
+															</>
+														)}
+													</div>
+													{/* Actions */}
+													<div>
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => handleDownloadMobileconfig(user.username, book.id, book.name)}
+														>
+															Download profile
+														</Button>
+													</div>
+												</div>
+											</div>
 										)
 									})}
-								</TableBody>
-							</Table>
-						</div>
-					</CardContent>
-				</Card>
+								</CardContent>
+							</Card>
+						)
+					})}
+				</>
 			) : users.length > 0 && addressBooks.length === 0 ? (
 				<Card>
 					<CardHeader>
@@ -316,7 +288,7 @@ function CardDAVConnectionPage() {
 							You need to create at least one user before you can sync contacts. Users are managed separately from web UI accounts.
 						</div>
 						<Button asChild>
-							<Link to="/radicale-users">Go to Users</Link>
+							<Link to="/books">Go to Books</Link>
 						</Button>
 					</CardContent>
 				</Card>

@@ -1,16 +1,6 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import {
-	BookOpen,
-	ContactRound,
-	Heart,
-	Info,
-	Link as LinkIcon,
-	NotebookTabs,
-	Trash2,
-	Upload,
-	Users,
-} from 'lucide-react'
+import { BookOpen, ContactRound, Heart, HelpCircle, Info, Link as LinkIcon, NotebookTabs, Trash2, Upload, Users } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 import { SupportDialog } from './SupportDialog'
@@ -42,9 +32,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 			<nav className="flex-1 overflow-y-auto px-3 py-4">
 				{/* Contacts */}
 				<div className="mb-4">
-					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
-						Contacts
-					</p>
+					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">Contacts</p>
 					<Link
 						to="/"
 						search={{ book: undefined }}
@@ -56,21 +44,11 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 						<ContactRound className="size-4 shrink-0" />
 						All Contacts
 					</Link>
-					<Link
-						to="/import"
-						className={navLinkClass}
-						activeProps={{ className: navLinkActiveClass }}
-						onClick={onNavigate}
-					>
+					<Link to="/import" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Upload className="size-4 shrink-0" />
 						Import
 					</Link>
-					<Link
-						to="/trash"
-						className={navLinkClass}
-						activeProps={{ className: navLinkActiveClass }}
-						onClick={onNavigate}
-					>
+					<Link to="/trash" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Trash2 className="size-4 shrink-0" />
 						Deleted
 					</Link>
@@ -78,46 +56,28 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 
 				{/* Address Books */}
 				<div className="mb-4">
-					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
-						Address Books
-					</p>
-					<Link
-						to="/books"
-						className={navLinkClass}
-						activeProps={{ className: navLinkActiveClass }}
-						onClick={onNavigate}
-					>
+					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">Address Books</p>
+					<Link to="/books" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<BookOpen className="size-4 shrink-0" />
 						All Books
 					</Link>
-					<Link
-						to="/radicale-users"
-						className={navLinkClass}
-						activeProps={{ className: navLinkActiveClass }}
-						onClick={onNavigate}
-					>
+					<Link to="/radicale-users" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Users className="size-4 shrink-0" />
 						Book Users
 					</Link>
-					<Link
-						to="/carddav-connection"
-						className={navLinkClass}
-						activeProps={{ className: navLinkActiveClass }}
-						onClick={onNavigate}
-					>
+					<Link to="/carddav-connection" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<LinkIcon className="size-4 shrink-0" />
 						CardDAV Config
 					</Link>
 				</div>
 
-				{/* About */}
+				{/* Help & About */}
 				<div>
-					<Link
-						to="/about"
-						className={navLinkClass}
-						activeProps={{ className: navLinkActiveClass }}
-						onClick={onNavigate}
-					>
+					<Link to="/help" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
+						<HelpCircle className="size-4 shrink-0" />
+						Help
+					</Link>
+					<Link to="/about" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Info className="size-4 shrink-0" />
 						About
 					</Link>

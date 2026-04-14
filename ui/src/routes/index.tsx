@@ -1,7 +1,23 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, BookOpen, Briefcase, Calendar, Download, Mail, Phone, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	BookOpen,
+	Briefcase,
+	Calendar,
+	Download,
+	FileDown,
+	Mail,
+	Phone,
+	Plus,
+	RefreshCw,
+	Search,
+	Trash2,
+	X,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatPhoneNumber } from '../lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
@@ -37,14 +53,15 @@ async function fetchContacts(): Promise<Array<Contact>> {
 	return response.json()
 }
 
-type FieldFilter = 'hasEmail' | 'hasPhone' | 'hasBirthday' | 'hasOrganization' | 'noBook'
+type FieldFilterKey = 'email' | 'phone' | 'birthday' | 'organization' | 'book'
+type FieldFilterState = 'off' | 'has' | 'missing'
 
-const FIELD_FILTERS: Array<{ id: FieldFilter; label: string; icon: typeof Mail }> = [
-	{ id: 'hasEmail', label: 'Has Email', icon: Mail },
-	{ id: 'hasPhone', label: 'Has Phone', icon: Phone },
-	{ id: 'hasBirthday', label: 'Has Birthday', icon: Calendar },
-	{ id: 'hasOrganization', label: 'Has Org', icon: Briefcase },
-	{ id: 'noBook', label: 'No Book', icon: BookOpen },
+const FIELD_FILTERS: Array<{ id: FieldFilterKey; hasLabel: string; missingLabel: string; icon: typeof Mail }> = [
+	{ id: 'email', hasLabel: 'Has Email', missingLabel: 'No Email', icon: Mail },
+	{ id: 'phone', hasLabel: 'Has Phone', missingLabel: 'No Phone', icon: Phone },
+	{ id: 'birthday', hasLabel: 'Has Birthday', missingLabel: 'No Birthday', icon: Calendar },
+	{ id: 'organization', hasLabel: 'Has Org', missingLabel: 'No Org', icon: Briefcase },
+	{ id: 'book', hasLabel: 'Has Book', missingLabel: 'No Book', icon: BookOpen },
 ]
 
 function ContactsIndexPage() {
@@ -59,7 +76,8 @@ function ContactsIndexPage() {
 	const [isBulkBooksSubmitting, setIsBulkBooksSubmitting] = useState(false)
 	const [addressBooks, setAddressBooks] = useState<Array<{ id: string; name: string }>>([])
 	const [selectedBookId, setSelectedBookId] = useState<string>(bookFromUrl ?? 'all')
-	const [activeFilters, setActiveFilters] = useState<Set<FieldFilter>>(new Set())
+	const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false)
+	const [activeFilters, setActiveFilters] = useState<Map<FieldFilterKey, FieldFilterState>>(new Map())
 	const showBookCount = addressBooks.length > 1
 
 	// Sync URL param → dropdown when navigating with ?book=
@@ -377,17 +395,19 @@ function ContactsIndexPage() {
 
 	const [sorting, setSorting] = useState<SortingState>([])
 
-	const toggleFilter = useCallback((filter: FieldFilter) => {
+	const toggleFilter = useCallback((filter: FieldFilterKey) => {
 		setActiveFilters(prev => {
-			const next = new Set(prev)
-			if (next.has(filter)) next.delete(filter)
-			else next.add(filter)
+			const next = new Map(prev)
+			const current = next.get(filter) ?? 'off'
+			if (current === 'off') next.set(filter, 'has')
+			else if (current === 'has') next.set(filter, 'missing')
+			else next.delete(filter)
 			return next
 		})
 	}, [])
 
 	const clearAllFilters = useCallback(() => {
-		setActiveFilters(new Set())
+		setActiveFilters(new Map())
 		setSelectedBookId('all')
 		setSearchQuery('')
 		navigate({ to: '/', search: { book: undefined }, replace: true })
@@ -412,20 +432,16 @@ function ContactsIndexPage() {
 			result = result.filter(contact => contact.address_books?.some(book => book.id === selectedBookId))
 		}
 
-		if (activeFilters.has('hasEmail')) {
-			result = result.filter(c => c.email)
-		}
-		if (activeFilters.has('hasPhone')) {
-			result = result.filter(c => c.phone)
-		}
-		if (activeFilters.has('hasBirthday')) {
-			result = result.filter(c => c.birthday)
-		}
-		if (activeFilters.has('hasOrganization')) {
-			result = result.filter(c => c.organization)
-		}
-		if (activeFilters.has('noBook')) {
-			result = result.filter(c => !c.address_books || c.address_books.length === 0)
+		for (const [key, state] of activeFilters) {
+			if (state === 'off') continue
+			if (key === 'email') result = result.filter(c => (state === 'has' ? !!c.email : !c.email))
+			if (key === 'phone') result = result.filter(c => (state === 'has' ? !!c.phone : !c.phone))
+			if (key === 'birthday') result = result.filter(c => (state === 'has' ? !!c.birthday : !c.birthday))
+			if (key === 'organization') result = result.filter(c => (state === 'has' ? !!c.organization : !c.organization))
+			if (key === 'book')
+				result = result.filter(c =>
+					state === 'has' ? c.address_books && c.address_books.length > 0 : !c.address_books || c.address_books.length === 0
+				)
 		}
 
 		return result
@@ -602,53 +618,56 @@ function ContactsIndexPage() {
 						/>
 					</div>
 					<div className="flex flex-row gap-2">
-						{addressBooks.length > 0 && (
-							<select
-								value={selectedBookId}
-								onChange={e => handleBookChange(e.target.value)}
-								className="h-9 px-2 rounded-md border border-input bg-background text-sm flex-1"
-								aria-label="Filter by address book"
-							>
-								<option value="all">All Books</option>
-								{addressBooks.map(book => (
-									<option key={book.id} value={book.id}>
-										{book.name}
-									</option>
-								))}
-							</select>
-						)}
 						<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
 							<RefreshCw className="size-4" />
 						</Button>
-						<Button variant="outline" asChild>
-							<a href="/api/contacts/export?format=csv" download="contacts.csv">
-								<Download className="size-4 mr-1" />
-								CSV
-							</a>
-						</Button>
-						<Button variant="outline" asChild>
-							<a href="/api/contacts/export?format=vcf" download="contacts.vcf">
-								<Download className="size-4 mr-1" />
-								vCard
-							</a>
+						<Button variant="outline" onClick={() => setIsDownloadDialogOpen(true)}>
+							<Download className="size-4" />
+							Export
 						</Button>
 					</div>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
-					{FIELD_FILTERS.map(({ id, label, icon: Icon }) => (
-						<button
-							key={id}
-							onClick={() => toggleFilter(id)}
-							className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-								activeFilters.has(id)
-									? 'border-primary bg-primary text-primary-foreground'
-									: 'border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-							}`}
+					{addressBooks.length > 0 && (
+						<select
+							value={selectedBookId}
+							onChange={e => handleBookChange(e.target.value)}
+							className="h-7 pl-2 pr-6 rounded-full border border-input bg-background text-xs font-medium appearance-none"
+							style={{
+								backgroundImage:
+									"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+								backgroundRepeat: 'no-repeat',
+								backgroundPosition: 'right 6px center',
+							}}
+							aria-label="Filter by address book"
 						>
-							<Icon className="size-3" />
-							{label}
-						</button>
-					))}
+							<option value="all">All Books</option>
+							{addressBooks.map(book => (
+								<option key={book.id} value={book.id}>
+									{book.name}
+								</option>
+							))}
+						</select>
+					)}
+					{FIELD_FILTERS.map(({ id, hasLabel, missingLabel, icon: Icon }) => {
+						const state = activeFilters.get(id) ?? 'off'
+						return (
+							<button
+								key={id}
+								onClick={() => toggleFilter(id)}
+								className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+									state === 'has'
+										? 'border-primary bg-primary text-primary-foreground'
+										: state === 'missing'
+											? 'border-destructive bg-destructive text-white'
+											: 'border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+								}`}
+							>
+								<Icon className="size-3" />
+								{state === 'missing' ? missingLabel : hasLabel}
+							</button>
+						)
+					})}
 					{(activeFilters.size > 0 || selectedBookId !== 'all' || searchQuery) && (
 						<button
 							onClick={clearAllFilters}
@@ -742,6 +761,35 @@ function ContactsIndexPage() {
 					</Table>
 				</div>
 			)}
+
+			<Dialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
+				<DialogContent className="max-w-sm">
+					<DialogHeader>
+						<DialogTitle>Export Contacts</DialogTitle>
+						<DialogDescription>Download all contacts in your preferred format.</DialogDescription>
+					</DialogHeader>
+					<div className="flex flex-col gap-3 py-2">
+						<Button variant="outline" className="justify-start h-auto py-3" asChild>
+							<a href="/api/contacts/export?format=csv" download="contacts.csv" onClick={() => setIsDownloadDialogOpen(false)}>
+								<FileDown className="size-5 mr-3" />
+								<div className="text-left">
+									<div className="font-medium">CSV</div>
+									<div className="text-xs text-muted-foreground font-normal">Spreadsheet-compatible format</div>
+								</div>
+							</a>
+						</Button>
+						<Button variant="outline" className="justify-start h-auto py-3" asChild>
+							<a href="/api/contacts/export?format=vcf" download="contacts.vcf" onClick={() => setIsDownloadDialogOpen(false)}>
+								<FileDown className="size-5 mr-3" />
+								<div className="text-left">
+									<div className="font-medium">vCard (VCF)</div>
+									<div className="text-xs text-muted-foreground font-normal">Standard contact exchange format</div>
+								</div>
+							</a>
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
 
 			<Dialog open={isBulkBooksDialogOpen} onOpenChange={setIsBulkBooksDialogOpen}>
 				<DialogContent>

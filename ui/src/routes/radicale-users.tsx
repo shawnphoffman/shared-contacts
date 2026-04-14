@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { BookOpen, Edit, Eye, EyeOff, Plus, RefreshCw, Trash2, Users } from 'lucide-react'
+import { BookOpen, Edit, Eye, EyeOff, Plus, RefreshCw, Trash2, Users, UsersRound } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import { Textarea } from '../components/ui/textarea'
 import { Checkbox } from '../components/ui/checkbox'
 import { CopyButton } from '../lib/carddav'
 import { Item } from '@/components/ui/item'
@@ -140,6 +141,11 @@ function RadicaleUsersPage() {
 	const [viewedPassword, setViewedPassword] = useState<string | null>(null)
 	const [isPasswordVisible, setIsPasswordVisible] = useState(false)
 	const [isPasswordLoading, setIsPasswordLoading] = useState(false)
+	const [isBulkCreateDialogOpen, setIsBulkCreateDialogOpen] = useState(false)
+	const [bulkCreateInput, setBulkCreateInput] = useState('')
+	const [bulkCreatePassword, setBulkCreatePassword] = useState('')
+	const [bulkCreateResults, setBulkCreateResults] = useState<Array<{ username: string; status: 'success' | 'error'; message?: string }>>([])
+	const [isBulkCreating, setIsBulkCreating] = useState(false)
 
 	const { data: users = [], isLoading } = useQuery({
 		queryKey: ['radicale-users'],
@@ -303,6 +309,51 @@ function RadicaleUsersPage() {
 		}
 	}
 
+	const handleBulkCreate = async () => {
+		if (!bulkCreateInput.trim() || !bulkCreatePassword.trim()) {
+			setError('Usernames and password are required')
+			return
+		}
+		setIsBulkCreating(true)
+		setError(null)
+		setBulkCreateResults([])
+
+		const usernames = bulkCreateInput
+			.split(/[,\n]+/)
+			.map(u => u.trim())
+			.filter(u => u.length > 0)
+
+		if (usernames.length === 0) {
+			setError('No valid usernames found')
+			setIsBulkCreating(false)
+			return
+		}
+
+		const results: Array<{ username: string; status: 'success' | 'error'; message?: string }> = []
+		for (const username of usernames) {
+			try {
+				await createUser(username, bulkCreatePassword)
+				results.push({ username, status: 'success' })
+			} catch (err) {
+				results.push({ username, status: 'error', message: err instanceof Error ? err.message : 'Failed' })
+			}
+		}
+
+		setBulkCreateResults(results)
+		setIsBulkCreating(false)
+		queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
+
+		const allSuccess = results.every(r => r.status === 'success')
+		if (allSuccess) {
+			setTimeout(() => {
+				setIsBulkCreateDialogOpen(false)
+				setBulkCreateInput('')
+				setBulkCreatePassword('')
+				setBulkCreateResults([])
+			}, 1500)
+		}
+	}
+
 	if (isLoading) {
 		return (
 			<div className="container mx-auto p-6">
@@ -319,10 +370,25 @@ function RadicaleUsersPage() {
 					<Users className="w-8 h-8" />
 					<h1 className="text-3xl font-bold">Radicale Users</h1>
 				</div>
-				<Button onClick={() => setIsCreateDialogOpen(true)}>
-					<Plus className="w-4 h-4 mr-1" />
-					New User
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						onClick={() => {
+							setBulkCreateInput('')
+							setBulkCreatePassword('')
+							setBulkCreateResults([])
+							setError(null)
+							setIsBulkCreateDialogOpen(true)
+						}}
+					>
+						<UsersRound className="w-4 h-4 mr-1" />
+						Bulk Create
+					</Button>
+					<Button onClick={() => setIsCreateDialogOpen(true)}>
+						<Plus className="w-4 h-4 mr-1" />
+						New User
+					</Button>
+				</div>
 			</div>
 
 			<div className="text-muted-foreground">
@@ -584,6 +650,74 @@ function RadicaleUsersPage() {
 						</Button>
 						<Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
 							{deleteMutation.isPending ? 'Deleting...' : 'Delete User'}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Bulk Create Users Dialog */}
+			<Dialog open={isBulkCreateDialogOpen} onOpenChange={setIsBulkCreateDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Bulk Create Users</DialogTitle>
+						<DialogDescription>
+							Create multiple Radicale users at once. Enter one username per line or separate with commas. All users will share the same
+							initial password.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 py-4">
+						<Field>
+							<FieldLabel htmlFor="bulk-usernames">Usernames</FieldLabel>
+							<FieldContent>
+								<Textarea
+									id="bulk-usernames"
+									value={bulkCreateInput}
+									onChange={e => setBulkCreateInput(e.target.value)}
+									placeholder={'alice\nbob\ncharlie'}
+									rows={5}
+								/>
+							</FieldContent>
+						</Field>
+						<Field>
+							<FieldLabel htmlFor="bulk-password">Password (shared)</FieldLabel>
+							<FieldContent>
+								<Input
+									id="bulk-password"
+									type="password"
+									value={bulkCreatePassword}
+									onChange={e => setBulkCreatePassword(e.target.value)}
+									placeholder="Enter password for all users"
+								/>
+							</FieldContent>
+						</Field>
+						{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+						{bulkCreateResults.length > 0 && (
+							<div className="space-y-1">
+								{bulkCreateResults.map((result, i) => (
+									<div
+										key={i}
+										className={`text-sm flex items-center gap-2 ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}
+									>
+										<span>{result.status === 'success' ? '✓' : '✗'}</span>
+										<span className="font-medium">{result.username}</span>
+										{result.message && <span className="text-muted-foreground">— {result.message}</span>}
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setIsBulkCreateDialogOpen(false)
+								setError(null)
+							}}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleBulkCreate} disabled={isBulkCreating}>
+							{isBulkCreating ? 'Creating...' : 'Create Users'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
