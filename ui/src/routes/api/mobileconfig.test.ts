@@ -3,13 +3,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../../lib/db', () => ({
 	getAddressBook: vi.fn(),
 	getAddressBookReadonly: vi.fn(),
+	getAddressBooks: vi.fn(),
+	getAppSetting: vi.fn(),
+	getUserAddressBookIds: vi.fn(),
 }))
 
 vi.mock('../../lib/logger', () => ({
 	logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }))
 
-import { getAddressBook, getAddressBookReadonly } from '../../lib/db'
+vi.mock('../../lib/mobileconfig-signer', () => ({
+	signMobileconfig: vi.fn(async (xml: string) => ({
+		body: Buffer.from(xml, 'utf-8'),
+		signed: false,
+		contentType: 'application/x-apple-aspen-config; charset=utf-8',
+	})),
+}))
+
+import { getAddressBook, getAddressBookReadonly, getAddressBooks, getAppSetting, getUserAddressBookIds } from '../../lib/db'
 
 const getHandler = async () => {
 	const mod = await import('./mobileconfig')
@@ -25,6 +36,7 @@ function makeRequest(url: string): Request {
 }
 
 const BOOK_ID = 'a1bc7deb-afe8-48a4-8501-e4ea6413e6ba'
+const BOOK_ID_2 = 'b2cd8efc-bfe9-59b5-9612-f5fb7524f7cb'
 const USERNAME = 'shawn'
 
 describe('mobileconfig handler', () => {
@@ -32,6 +44,9 @@ describe('mobileconfig handler', () => {
 		vi.resetAllMocks()
 		vi.unstubAllEnvs()
 		vi.mocked(getAddressBook).mockResolvedValue({ id: BOOK_ID, name: 'Family' } as never)
+		vi.mocked(getAppSetting).mockResolvedValue(null)
+		vi.mocked(getAddressBooks).mockResolvedValue([] as never)
+		vi.mocked(getUserAddressBookIds).mockResolvedValue([] as never)
 	})
 
 	it('returns 400 when username is missing', async () => {
@@ -139,6 +154,90 @@ describe('mobileconfig handler', () => {
 				request: makeRequest(`http://localhost:3030/api/mobileconfig?username=ro-${BOOK_ID}&bookId=${BOOK_ID}`),
 			})
 			expect(res.status).toBe(200)
+		})
+	})
+
+	describe('organization resolution', () => {
+		async function getPlist(requestUrl: string): Promise<string> {
+			const handler = await getHandler()
+			const res = await handler({ request: makeRequest(requestUrl) })
+			expect(res.status).toBe(200)
+			return res.text()
+		}
+
+		it('app_settings row wins over env vars', async () => {
+			vi.mocked(getAppSetting).mockResolvedValue('Hoffman Shared Contacts')
+			vi.stubEnv('MOBILECONFIG_ORG', 'EnvBrand')
+			const plist = await getPlist(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&bookId=${BOOK_ID}`)
+			expect(plist).toContain('<string>Hoffman Shared Contacts</string>')
+			expect(plist).not.toContain('<string>EnvBrand</string>')
+		})
+
+		it('MOBILECONFIG_ORG env var is used when DB row is unset', async () => {
+			vi.stubEnv('MOBILECONFIG_ORG', 'EnvBrand')
+			const plist = await getPlist(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&bookId=${BOOK_ID}`)
+			expect(plist).toContain('<string>EnvBrand</string>')
+			expect(plist).toContain('<string>EnvBrand: Family</string>')
+		})
+
+		it('falls back to "Shared Contacts" default', async () => {
+			const plist = await getPlist(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&bookId=${BOOK_ID}`)
+			expect(plist).toContain('<string>Shared Contacts</string>')
+		})
+	})
+
+	describe('combined mode', () => {
+		async function getHandlerResponse(requestUrl: string): Promise<Response> {
+			const handler = await getHandler()
+			return handler({ request: makeRequest(requestUrl) })
+		}
+
+		it('returns 400 for combined request with no accessible books', async () => {
+			vi.mocked(getAddressBooks).mockResolvedValue([] as never)
+			vi.mocked(getUserAddressBookIds).mockResolvedValue([] as never)
+			const res = await getHandlerResponse(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&combined=1`)
+			expect(res.status).toBe(404)
+		})
+
+		it('rejects combined mode for ro- users', async () => {
+			const res = await getHandlerResponse(`http://localhost:3030/api/mobileconfig?username=ro-${BOOK_ID}&combined=1`)
+			expect(res.status).toBe(400)
+		})
+
+		it('includes every assigned book + public books in a single plist', async () => {
+			vi.mocked(getAddressBooks).mockResolvedValue([
+				{ id: BOOK_ID, name: 'Family', is_public: false },
+				{ id: BOOK_ID_2, name: 'Friends', is_public: true },
+				{ id: 'c3de9fcd-cffa-6ac6-a723-06fc8635g8dc', name: 'Hidden', is_public: false },
+			] as never)
+			vi.mocked(getUserAddressBookIds).mockResolvedValue([BOOK_ID] as never)
+
+			const res = await getHandlerResponse(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&combined=1`)
+			expect(res.status).toBe(200)
+			const plist = await res.text()
+
+			expect(plist).toContain(`<string>${USERNAME}-${BOOK_ID}</string>`)
+			expect(plist).toContain(`<string>${USERNAME}-${BOOK_ID_2}</string>`)
+			expect(plist).not.toContain('c3de9fcd-cffa-6ac6-a723-06fc8635g8dc')
+		})
+
+		it('uses a stable top-level PayloadIdentifier across calls', async () => {
+			vi.mocked(getAddressBooks).mockResolvedValue([{ id: BOOK_ID, name: 'Family', is_public: true }] as never)
+			vi.mocked(getUserAddressBookIds).mockResolvedValue([] as never)
+
+			const url = `http://localhost:3030/api/mobileconfig?username=${USERNAME}&combined=1`
+			const first = await (await getHandlerResponse(url)).text()
+			const second = await (await getHandlerResponse(url)).text()
+
+			const extractTopLevelId = (plist: string): string => {
+				const match = plist.match(/<key>PayloadIdentifier<\/key>\s*<string>([^<]*bundle[^<]*)<\/string>/)
+				return match?.[1] ?? ''
+			}
+			const idFirst = extractTopLevelId(first)
+			const idSecond = extractTopLevelId(second)
+			expect(idFirst).toBeTruthy()
+			expect(idFirst).toBe(idSecond)
+			expect(idFirst).toContain('bundle')
 		})
 	})
 })

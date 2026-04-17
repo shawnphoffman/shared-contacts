@@ -47,8 +47,9 @@ USER root
 
 # Install Node.js 22 (for ui) and Node.js 20 (for sync-service)
 # We'll use Node 22 for both since it's backward compatible
-# Also install netcat for health checks in entrypoint script
-RUN apk add --no-cache nodejs npm netcat-openbsd && \
+# Also install netcat for health checks in entrypoint script and openssl
+# for optional .mobileconfig signing (openssl smime -sign).
+RUN apk add --no-cache nodejs npm netcat-openbsd openssl && \
 	rm -rf /var/cache/apk/*
 
 # Create directories for services

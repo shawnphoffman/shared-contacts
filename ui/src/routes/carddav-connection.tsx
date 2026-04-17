@@ -1,9 +1,13 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { Lock, Server, User } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Lock, Server, Tag, User } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
 import { Separator } from '../components/ui/separator'
 import {
 	CopyButton,
@@ -15,6 +19,7 @@ import {
 	getDirectUIBaseUrl,
 	getProxyCardDAVBaseUrl,
 	getProxyUIBaseUrl,
+	handleDownloadCombinedMobileconfig,
 	handleDownloadMobileconfig,
 } from '../lib/carddav'
 
@@ -30,6 +35,10 @@ interface AddressBook {
 	readonly_enabled?: boolean
 }
 
+interface AppSettings {
+	mobileconfig_org: string | null
+}
+
 async function fetchAddressBooks(): Promise<Array<AddressBook>> {
 	const response = await fetch('/api/address-books?readonly=1')
 	if (!response.ok) {
@@ -38,7 +47,27 @@ async function fetchAddressBooks(): Promise<Array<AddressBook>> {
 	return response.json()
 }
 
+async function fetchAppSettings(): Promise<AppSettings> {
+	const response = await fetch('/api/settings')
+	if (!response.ok) {
+		throw new Error('Failed to fetch settings')
+	}
+	return response.json()
+}
+
+async function updateAppSettings(updates: Partial<AppSettings>): Promise<void> {
+	const response = await fetch('/api/settings', {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(updates),
+	})
+	if (!response.ok) {
+		throw new Error('Failed to update settings')
+	}
+}
+
 function CardDAVConnectionPage() {
+	const queryClient = useQueryClient()
 	const { data: users = [], isLoading: usersLoading } = useQuery({
 		queryKey: ['radicale-users'],
 		queryFn: fetchUsers,
@@ -55,6 +84,29 @@ function CardDAVConnectionPage() {
 		queryKey: ['runtime-config'],
 		queryFn: fetchRuntimeConfig,
 	})
+	const { data: appSettings } = useQuery({
+		queryKey: ['app-settings'],
+		queryFn: fetchAppSettings,
+	})
+
+	const [orgDraft, setOrgDraft] = useState('')
+	useEffect(() => {
+		if (appSettings) {
+			setOrgDraft(appSettings.mobileconfig_org ?? '')
+		}
+	}, [appSettings])
+
+	const saveOrgMutation = useMutation({
+		mutationFn: (value: string) => updateAppSettings({ mobileconfig_org: value.trim() === '' ? null : value.trim() }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['app-settings'] })
+			toast.success('Profile brand saved')
+		},
+		onError: () => {
+			toast.error('Failed to save profile brand')
+		},
+	})
+
 	const isLoading = usersLoading || booksLoading || assignmentsLoading
 
 	const directBaseUrl = getDirectCardDAVBaseUrl()
@@ -173,6 +225,87 @@ function CardDAVConnectionPage() {
 					</div>
 				</CardContent>
 			</Card>
+
+			{/* iOS / macOS Profile Brand */}
+			<Card>
+				<CardHeader>
+					<div className="flex items-center gap-2">
+						<Tag className="w-5 h-5" />
+						<CardTitle>iOS / macOS Profile Brand</CardTitle>
+					</div>
+					<CardDescription>
+						Label shown on downloaded <code>.mobileconfig</code> profiles in <strong>Settings → General → VPN &amp; Device Management</strong>{' '}
+						and as the section header in Contacts. Applies to newly-downloaded profiles; already-installed profiles keep their original
+						label.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<form
+						className="flex flex-col gap-2 sm:flex-row sm:items-end"
+						onSubmit={e => {
+							e.preventDefault()
+							saveOrgMutation.mutate(orgDraft)
+						}}
+					>
+						<div className="flex-1">
+							<Label htmlFor="mobileconfig-org" className="text-sm">
+								Organization / Brand
+							</Label>
+							<Input
+								id="mobileconfig-org"
+								value={orgDraft}
+								placeholder="Shared Contacts"
+								onChange={e => setOrgDraft(e.target.value)}
+								maxLength={120}
+							/>
+							<p className="mt-1 text-xs text-muted-foreground">
+								Falls back to the <code>MOBILECONFIG_ORG</code> env var, then to &ldquo;Shared Contacts&rdquo; when empty.
+							</p>
+						</div>
+						<Button type="submit" disabled={saveOrgMutation.isPending || orgDraft === (appSettings?.mobileconfig_org ?? '')}>
+							{saveOrgMutation.isPending ? 'Saving…' : 'Save'}
+						</Button>
+					</form>
+				</CardContent>
+			</Card>
+
+			{/* Combined Profiles */}
+			{users.length > 0 && addressBooks.length > 0 ? (
+				<Card>
+					<CardHeader>
+						<CardTitle>Combined iOS / macOS Profiles</CardTitle>
+						<CardDescription>
+							One <code>.mobileconfig</code> per user containing every address book they can access. Installs as a{' '}
+							<strong>single entry</strong> in <em>Settings → General → VPN &amp; Device Management</em> instead of one entry per book.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-2">
+						{users
+							.filter(user => {
+								if (user.username.startsWith('ro-')) return false
+								const assignments = assignmentsData?.assignments ?? {}
+								const userBookIds = assignments[user.username] ?? []
+								return addressBooks.some(book => userBookIds.includes(book.id) || book.is_public)
+							})
+							.map(user => (
+								<div
+									key={user.username}
+									className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between"
+								>
+									<div className="text-sm">
+										<div className="font-medium">{user.username}</div>
+										<div className="text-xs text-muted-foreground">
+											All accessible books combined into one profile.
+										</div>
+									</div>
+									<Button variant="outline" size="sm" onClick={() => handleDownloadCombinedMobileconfig(user.username)}>
+										Download combined profile
+									</Button>
+								</div>
+							))}
+					</CardContent>
+				</Card>
+			) : null}
 
 			{/* User Connection Details */}
 			{users.length > 0 && addressBooks.length > 0 ? (

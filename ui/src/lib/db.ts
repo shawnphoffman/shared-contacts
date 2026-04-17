@@ -365,6 +365,32 @@ export async function setContactAddressBooks(contactId: string, addressBookIds: 
 	)
 }
 
+export async function getAppSetting(key: string): Promise<string | null> {
+	if (!(await tableExists('app_settings'))) return null
+	const dbPool = getPool()
+	const result = await dbPool.query('SELECT value FROM app_settings WHERE key = $1', [key])
+	const row = result.rows[0]
+	if (!row) return null
+	return row.value ?? null
+}
+
+export async function setAppSetting(key: string, value: string | null): Promise<void> {
+	if (!(await tableExists('app_settings'))) return
+	const dbPool = getPool()
+	if (value === null) {
+		await dbPool.query('DELETE FROM app_settings WHERE key = $1', [key])
+		return
+	}
+	await dbPool.query(
+		`
+    INSERT INTO app_settings (key, value)
+    VALUES ($1, $2)
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+  `,
+		[key, value]
+	)
+}
+
 export async function getUserAddressBookIds(username: string): Promise<Array<string>> {
 	const hasUserAddressBooks = await tableExists('user_address_books')
 	if (!hasUserAddressBooks) return []

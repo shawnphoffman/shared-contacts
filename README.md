@@ -72,21 +72,24 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 
 ## Mobileconfig profiles and signing
 
-You can generate `.mobileconfig` profiles from the CardDAV Connection page to simplify setting up iOS and macOS clients. Each profile configures a single CardDAV account for a specific `(user, address book)` pair using a composite username (`username-bookid`). Profiles are generated dynamically and are **not signed** by default.
+You can generate `.mobileconfig` profiles from the CardDAV Connection page to simplify setting up iOS and macOS clients. Two download options are available per user:
 
-In a production deployment, you may want profiles to be signed so devices show a trusted issuer and tampering is harder. A future version of this project will support optional signing controlled by environment variables:
+- **Download profile** (per book): installs a single CardDAV account. Appears as its own entry in _Settings → General → VPN & Device Management_.
+- **Download combined profile** (per user): bundles every address book the user can access into a single profile that installs as **one entry** in Settings. Each book still shows as its own section in the Contacts app (an Apple CardDAV limitation).
+
+All profiles share the organization / brand string configured on the CardDAV Connection page (falls back to the `MOBILECONFIG_ORG` env var, then to `"Shared Contacts"`). Payload identifiers and UUIDs are deterministic per `(user, book)` so reinstalling replaces the existing profile rather than creating duplicates.
+
+Profiles are unsigned by default. In production you may want them signed so devices show a trusted issuer and tampering is harder. Signing is controlled by environment variables:
 
 - `MOBILECONFIG_SIGNING_ENABLED=true|false`: turns signing on or off (defaults to `false`)
 - `MOBILECONFIG_SIGNING_CERT_PATH`: path to a PEM-encoded signing certificate
 - `MOBILECONFIG_SIGNING_KEY_PATH`: path to the corresponding private key (PEM)
 - `MOBILECONFIG_SIGNING_CHAIN_PATH` (optional): path to intermediate certificates for the chain
+- `MOBILECONFIG_SIGNING_KEY_PASSPHRASE` (optional): passphrase for the private key
 
-When enabled, the server will generate the unsigned `.mobileconfig` profile, then sign it before returning it. The signing implementation will likely use either:
+When enabled, the server builds the XML payload, then signs it with `openssl smime -sign -outform DER` as a subprocess and returns the DER-encoded CMS envelope. If signing is enabled but the cert or key is missing/unreadable, the server logs a warning and falls back to returning the unsigned XML rather than erroring out, so generation is never blocked by misconfiguration.
 
-- An OpenSSL subprocess (e.g. `openssl smime -sign ... -outform der`) for a simple, battle-tested integration
-- Or a Node PKCS#7/CMS library to produce the signed payload in-process
-
-Certificates and keys should be provided via Docker secrets or mounted volumes, **never baked into the image**. `PayloadOrganization` and `PayloadIdentifier` values in the profile will be aligned with the certificate subject so devices show a consistent “signed by” organization.
+Self-signed certificates work but iOS will label the profile as "Unverified". For a "Verified" badge, use a publicly-trusted code signing or client certificate chain. Provide certs and keys via Docker secrets or mounted volumes, **never baked into the image**.
 
 ## License
 
