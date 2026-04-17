@@ -6,20 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.25.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.1...v0.25.0) (2026-04-14)
+## [0.26.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.25.0...v0.26.0) (2026-04-17)
 
 ### Features
 
-* **ui:** add help page, export dialog, 3-way filters, bulk user create, and carddav config redesign ([8d7b3c2](https://github.com/shawnphoffman/shared-contacts/commit/8d7b3c2442a9ec595d5198a4c944695915b91f07))
+* **mobileconfig:** configurable brand, combined per-user profiles, signing ([cbe2e29](https://github.com/shawnphoffman/shared-contacts/commit/cbe2e29c29592618ac46a975d94ccb96ab8b200d))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.26.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.25.0...v0.26.0)
+
+- ✨ Feature(mobileconfig): configurable brand, combined per-user profiles, signing [`cbe2e29`](https://github.com/shawnphoffman/shared-contacts/commit/cbe2e29c29592618ac46a975d94ccb96ab8b200d)
+
 #### [v0.25.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.1...v0.25.0)
+
+> 14 April 2026
 
 - ✨ Feature(ui): add help page, export dialog, 3-way filters, bulk user create, and carddav config redesign [`8d7b3c2`](https://github.com/shawnphoffman/shared-contacts/commit/8d7b3c2442a9ec595d5198a4c944695915b91f07)
 - 🔧 Chore: format codebase with prettier [`ba640e0`](https://github.com/shawnphoffman/shared-contacts/commit/ba640e01018ba9cc23924172bd6955558dd33ecd)
+- 🔧 Chore: release v0.25.0 [`b72cbdd`](https://github.com/shawnphoffman/shared-contacts/commit/b72cbdd67f31dc0d0df9ec12d8bce29e70b85e8f)
 
 #### [v0.24.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.24.0...v0.24.1)
 
