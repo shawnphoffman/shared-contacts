@@ -234,9 +234,10 @@ function CardDAVConnectionPage() {
 						<CardTitle>iOS / macOS Profile Brand</CardTitle>
 					</div>
 					<CardDescription>
-						Label shown on downloaded <code>.mobileconfig</code> profiles in <strong>Settings → General → VPN &amp; Device Management</strong>{' '}
-						and as the section header in Contacts. Applies to newly-downloaded profiles; already-installed profiles keep their original
-						label.
+						Used as a space-separated prefix on each address book&rsquo;s label in the Contacts Groups picker (e.g. setting this to{' '}
+						<code>👥</code> turns &ldquo;Hoffman Extended&rdquo; into &ldquo;👥 Hoffman Extended&rdquo;), and as the profile label in{' '}
+						<strong>Settings → General → VPN &amp; Device Management</strong>. Applies to newly-downloaded profiles; already-installed
+						profiles keep their original label.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -294,9 +295,7 @@ function CardDAVConnectionPage() {
 								>
 									<div className="text-sm">
 										<div className="font-medium">{user.username}</div>
-										<div className="text-xs text-muted-foreground">
-											All accessible books combined into one profile.
-										</div>
+										<div className="text-xs text-muted-foreground">All accessible books combined into one profile.</div>
 									</div>
 									<Button variant="outline" size="sm" onClick={() => handleDownloadCombinedMobileconfig(user.username)}>
 										Download combined profile

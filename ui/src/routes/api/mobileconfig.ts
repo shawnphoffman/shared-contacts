@@ -2,13 +2,7 @@ import { createHash } from 'node:crypto'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import {
-	getAddressBook,
-	getAddressBookReadonly,
-	getAddressBooks,
-	getAppSetting,
-	getUserAddressBookIds,
-} from '../../lib/db'
+import { getAddressBook, getAddressBookReadonly, getAddressBooks, getAppSetting, getUserAddressBookIds } from '../../lib/db'
 import { signMobileconfig } from '../../lib/mobileconfig-signer'
 
 function getCardDAVBaseUrlFromRequest(request: Request): string {
@@ -74,12 +68,20 @@ interface BuildOptions {
 	books: Array<BookPayloadInput>
 }
 
-function buildCarddavPayload(book: BookPayloadInput, topLevelIdentifier: string, hostName: string, port: number, useSSL: boolean, organization: string): string {
+function buildCarddavPayload(
+	book: BookPayloadInput,
+	topLevelIdentifier: string,
+	hostName: string,
+	port: number,
+	useSSL: boolean,
+	organization: string
+): string {
 	const shortBookId = book.bookId.replace(/-/g, '').slice(0, 8) || book.bookId
 	const innerIdentifier = `${topLevelIdentifier}.${shortBookId}`
 	const innerUUID = deterministicUUID(UUID_NAMESPACE, innerIdentifier)
 	const compositeUsername = `${book.username}-${book.bookId}`
-	const accountDisplayName = `${organization} (${book.bookName})`
+	const prefix = organization.trim()
+	const accountDisplayName = prefix ? `${prefix} ${book.bookName}` : book.bookName
 
 	return `    <dict>
       <key>PayloadType</key>
@@ -143,9 +145,7 @@ async function resolveBooksForUser(username: string): Promise<Array<{ id: string
 		return []
 	}
 	const assignedIds = new Set(await getUserAddressBookIds(username))
-	return allBooks
-		.filter(book => assignedIds.has(book.id) || book.is_public)
-		.map(book => ({ id: book.id, name: book.name }))
+	return allBooks.filter(book => assignedIds.has(book.id) || book.is_public).map(book => ({ id: book.id, name: book.name }))
 }
 
 export const Route = createFileRoute('/api/mobileconfig')({

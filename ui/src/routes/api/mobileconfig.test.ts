@@ -180,6 +180,13 @@ describe('mobileconfig handler', () => {
 			expect(plist).toContain('<string>EnvBrand: Family</string>')
 		})
 
+		it('uses org as a space-separated prefix on the per-account display name', async () => {
+			vi.mocked(getAppSetting).mockResolvedValue('👥')
+			const plist = await getPlist(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&bookId=${BOOK_ID}`)
+			expect(plist).toContain('<string>👥 Family</string>')
+			expect(plist).not.toContain('<string>👥 (Family)</string>')
+		})
+
 		it('falls back to "Shared Contacts" default', async () => {
 			const plist = await getPlist(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&bookId=${BOOK_ID}`)
 			expect(plist).toContain('<string>Shared Contacts</string>')
