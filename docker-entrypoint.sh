@@ -42,20 +42,41 @@ wait_for_service() {
     return 1
 }
 
-# Function to cleanup on exit
+# Stop all known children, first politely then forcefully. Returns once every
+# child we started has exited.
+stop_all_children() {
+    # Send SIGTERM to any still-running children.
+    for pid in $RADICALE_PID $SYNC_PID $UI_PID; do
+        [ -n "$pid" ] && kill -TERM "$pid" 2>/dev/null || true
+    done
+
+    # Give them up to ~10s to exit gracefully.
+    attempt=0
+    while [ $attempt -lt 10 ]; do
+        all_dead=1
+        for pid in $RADICALE_PID $SYNC_PID $UI_PID; do
+            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+                all_dead=0
+                break
+            fi
+        done
+        [ $all_dead -eq 1 ] && return 0
+        attempt=$((attempt + 1))
+        sleep 1
+    done
+
+    # Anything still running gets force-killed.
+    for pid in $RADICALE_PID $SYNC_PID $UI_PID; do
+        [ -n "$pid" ] && kill -KILL "$pid" 2>/dev/null || true
+    done
+}
+
+# Function to cleanup on exit — invoked by the SIGTERM/SIGINT trap when the
+# container itself is being stopped. Exits 0 so Docker doesn't treat this as
+# a crash.
 cleanup() {
     log "Shutting down services..."
-
-    # Kill all child processes
-    kill -TERM $RADICALE_PID 2>/dev/null || true
-    kill -TERM $SYNC_PID 2>/dev/null || true
-    kill -TERM $UI_PID 2>/dev/null || true
-
-    # Wait for processes to exit
-    wait $RADICALE_PID 2>/dev/null || true
-    wait $SYNC_PID 2>/dev/null || true
-    wait $UI_PID 2>/dev/null || true
-
+    stop_all_children
     log "All services stopped"
     exit 0
 }
@@ -82,6 +103,7 @@ RADICALE_PID=$!
 # Wait for Radicale to be ready
 if ! wait_for_service localhost 5232 "Radicale"; then
     error "Failed to start Radicale"
+    stop_all_children
     exit 1
 fi
 
@@ -94,6 +116,7 @@ SYNC_PID=$!
 # Wait for sync-service to be ready
 if ! wait_for_service localhost 3001 "sync-service"; then
     error "Failed to start sync-service"
+    stop_all_children
     exit 1
 fi
 
@@ -108,6 +131,7 @@ UI_PID=$!
 # Wait for UI to be ready
 if ! wait_for_service localhost 3030 "UI"; then
     error "Failed to start UI"
+    stop_all_children
     exit 1
 fi
 
@@ -116,5 +140,26 @@ log "Radicale (CardDAV): http://localhost:5232"
 log "Sync Service API: http://localhost:3001"
 log "Web UI: http://localhost:3030"
 
-# Keep the script running and wait for signals
-wait
+# Supervise children: if any of them exits, tear the others down and exit
+# non-zero so Docker's restart policy recreates the container. The old
+# behaviour was a bare `wait`, which blocked until ALL children exited — so
+# a single crashed service left PID 1 running forever and the container
+# stuck in an unhealthy state.
+while true; do
+    if ! kill -0 "$RADICALE_PID" 2>/dev/null; then
+        error "Radicale (pid=$RADICALE_PID) exited unexpectedly; restarting container"
+        stop_all_children
+        exit 1
+    fi
+    if ! kill -0 "$SYNC_PID" 2>/dev/null; then
+        error "sync-service (pid=$SYNC_PID) exited unexpectedly; restarting container"
+        stop_all_children
+        exit 1
+    fi
+    if ! kill -0 "$UI_PID" 2>/dev/null; then
+        error "UI (pid=$UI_PID) exited unexpectedly; restarting container"
+        stop_all_children
+        exit 1
+    fi
+    sleep 5
+done

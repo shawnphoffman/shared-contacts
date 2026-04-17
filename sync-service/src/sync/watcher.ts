@@ -89,7 +89,14 @@ export async function startWatchingRadicale(): Promise<void> {
 			logger.info({ file: files[0] }, 'vCard file changed, syncing Radicale → PostgreSQL...')
 		}
 
-		await syncRadicaleToDb(true) // Silent mode since we already logged above
+		try {
+			await syncRadicaleToDb(true) // Silent mode since we already logged above
+		} catch (err) {
+			// Swallow — rejecting here would surface as an unhandledRejection and
+			// kill the process. Periodic sync and the next file change will
+			// retry, so a transient DB outage resolves on its own.
+			logger.error({ err }, 'Watcher-triggered sync failed; will retry on next change or periodic tick')
+		}
 	}
 
 	const scheduleSync = (filePath: string) => {
@@ -115,43 +122,54 @@ export async function startWatchingRadicale(): Promise<void> {
 			scheduleSync(filePath)
 		})
 
-		watcher.on('unlink', async (filePath: string) => {
-			// Handle file deletion
-			// Extract vCard ID from filename (file is already deleted, so we can't read it)
-			const fileName = path.basename(filePath, path.extname(filePath))
-			const vcardId = fileName
+		watcher.on('unlink', (filePath: string) => {
+			// Chokidar ignores the returned promise; if we let it reject, Node
+			// sees an unhandledRejection and (per our process handlers) exits.
+			// Wrap so a transient DB error here just logs; scheduleSync() below
+			// will queue a recovery pass.
+			void (async () => {
+				try {
+					// Handle file deletion
+					// Extract vCard ID from filename (file is already deleted, so we can't read it)
+					const fileName = path.basename(filePath, path.extname(filePath))
+					const vcardId = fileName
 
-			if (vcardId) {
-				const contact = await getContactByVcardId(vcardId)
-				if (contact) {
-					const pathSegment = extractBookPathSegmentFromPath(filePath)
-					const book =
-						(pathSegment && (await getAddressBookById(pathSegment))) ||
-						(pathSegment && (await getAddressBookBySlug(pathSegment))) ||
-						(pathSegment === 'shared-contacts' ? await getDefaultAddressBook() : null)
+					if (vcardId) {
+						const contact = await getContactByVcardId(vcardId)
+						if (contact) {
+							const pathSegment = extractBookPathSegmentFromPath(filePath)
+							const book =
+								(pathSegment && (await getAddressBookById(pathSegment))) ||
+								(pathSegment && (await getAddressBookBySlug(pathSegment))) ||
+								(pathSegment === 'shared-contacts' ? await getDefaultAddressBook() : null)
 
-					if (book && hasAddressBooks) {
-						const currentBookIds = new Set(await getContactAddressBookIds(contact.id))
-						if (currentBookIds.has(book.id)) {
-							currentBookIds.delete(book.id)
-							await setContactAddressBooks(contact.id, Array.from(currentBookIds))
+							if (book && hasAddressBooks) {
+								const currentBookIds = new Set(await getContactAddressBookIds(contact.id))
+								if (currentBookIds.has(book.id)) {
+									currentBookIds.delete(book.id)
+									await setContactAddressBooks(contact.id, Array.from(currentBookIds))
+								}
+								if (currentBookIds.size === 0 && contact.sync_source === 'radicale') {
+									logger.info({ vcardId }, 'Deleting contact from DB (deleted from all address books)')
+									await deleteContact(contact.id)
+								} else if (contact.sync_source !== 'radicale') {
+									logger.info({ vcardId }, 'Contact deleted from Radicale but keeping in DB (will be recreated)')
+								}
+							} else if (contact.sync_source === 'radicale') {
+								logger.info({ vcardId }, 'Deleting contact from DB (deleted from Radicale)')
+								await deleteContact(contact.id)
+							} else {
+								logger.info({ vcardId }, 'Contact deleted from Radicale but keeping in DB (will be recreated)')
+							}
 						}
-						if (currentBookIds.size === 0 && contact.sync_source === 'radicale') {
-							logger.info({ vcardId }, 'Deleting contact from DB (deleted from all address books)')
-							await deleteContact(contact.id)
-						} else if (contact.sync_source !== 'radicale') {
-							logger.info({ vcardId }, 'Contact deleted from Radicale but keeping in DB (will be recreated)')
-						}
-					} else if (contact.sync_source === 'radicale') {
-						logger.info({ vcardId }, 'Deleting contact from DB (deleted from Radicale)')
-						await deleteContact(contact.id)
-					} else {
-						logger.info({ vcardId }, 'Contact deleted from Radicale but keeping in DB (will be recreated)')
 					}
+				} catch (err) {
+					logger.error({ err, filePath }, 'Error handling file deletion; full sync will reconcile')
+				} finally {
+					// Also trigger full sync to handle any other changes
+					scheduleSync(filePath)
 				}
-			}
-			// Also trigger full sync to handle any other changes
-			scheduleSync(filePath)
+			})()
 		})
 
 		watcher.on('error', (error: unknown) => {

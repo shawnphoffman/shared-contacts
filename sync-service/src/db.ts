@@ -1,4 +1,6 @@
 import { Pool } from 'pg'
+import { logger } from './logger'
+import { retry, isTransientDbError } from './retry'
 
 let pool: Pool | null = null
 
@@ -12,10 +14,41 @@ export function getPool(): Pool {
 			connectionString,
 			max: 20,
 			idleTimeoutMillis: 30000,
-			connectionTimeoutMillis: 2000,
+			connectionTimeoutMillis: 10000,
+		})
+		// Without this listener, a broken idle client (e.g. Postgres restarted or
+		// a network blip) emits an unhandled 'error' event that kills the Node
+		// process. The pool already removes the broken client on its own — our
+		// job is just to log so the loss is visible.
+		pool.on('error', err => {
+			logger.error({ err }, 'Idle pg client error; pool will drop this client')
 		})
 	}
 	return pool
+}
+
+/**
+ * Block until the database accepts a connection. Retries forever on transient
+ * errors (ECONNREFUSED while Postgres is still booting, admin shutdown during
+ * a restart, etc.) so the container doesn't die during a normal DB outage.
+ */
+export async function waitForDatabase(): Promise<void> {
+	await retry(
+		async () => {
+			const client = await getPool().connect()
+			try {
+				await client.query('SELECT 1')
+			} finally {
+				client.release()
+			}
+		},
+		{
+			label: 'waiting for database',
+			initialDelayMs: 1000,
+			maxDelayMs: 15000,
+			isRetryable: isTransientDbError,
+		}
+	)
 }
 
 export interface ContactField {

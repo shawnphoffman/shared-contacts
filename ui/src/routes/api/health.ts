@@ -7,7 +7,9 @@ export const Route = createFileRoute('/api/health')({
 		handlers: {
 			GET: async () => {
 				try {
-					const { data, status } = await proxyRequest('/ready')
+					// Tight timeout: the Docker healthcheck allows 10s total, so we
+					// must fail fast rather than hang on a stuck sync-service.
+					const { data, status } = await proxyRequest('/ready', { timeoutMs: 5_000 })
 					if (status !== 200) {
 						return Response.json({ status: 'not ready', syncService: data }, { status: 503 })
 					}
