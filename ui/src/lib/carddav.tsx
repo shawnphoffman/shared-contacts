@@ -135,6 +135,45 @@ export async function handleDownloadMobileconfig(username: string, bookId: strin
 	}
 }
 
+export async function handleDownloadCombinedMobileconfig(username: string) {
+	try {
+		const params = new URLSearchParams({ username, combined: '1' })
+		const response = await fetch(`/api/mobileconfig?${params.toString()}`)
+
+		if (!response.ok) {
+			let message = 'Failed to download profile'
+			try {
+				const data = await response.json()
+				if (data?.error) {
+					message = data.error
+				}
+			} catch {
+				// Ignore JSON parsing errors and use default message
+			}
+			toast.error(message)
+			return
+		}
+
+		const blob = await response.blob()
+		const url = window.URL.createObjectURL(blob)
+		const link = document.createElement('a')
+		const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_')
+
+		link.href = url
+		link.download = `shared-contacts-${safeUsername}-all.mobileconfig`
+
+		document.body.appendChild(link)
+		link.click()
+		link.remove()
+		window.URL.revokeObjectURL(url)
+
+		toast.success(`Combined profile for "${username}" is downloading`)
+	} catch (error) {
+		console.error('Error downloading combined mobileconfig profile:', error)
+		toast.error('Failed to download combined profile')
+	}
+}
+
 // ── Components ─────────────────────────────────────────────────────
 
 export function CopyButton({ text, label }: { text: string; label: string }) {
