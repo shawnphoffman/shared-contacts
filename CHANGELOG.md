@@ -6,24 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.27.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.26.0...v0.27.0) (2026-04-18)
-
-### Features
-
-* **mobileconfig:** use org as space-separated prefix on per-account labels ([e127cc5](https://github.com/shawnphoffman/shared-contacts/commit/e127cc5af55c3efd3428967e3a54c93904eea35e))
-
-### Bug Fixes
-
-* **sync:** recover from transient DB outages instead of crashing ([13621bc](https://github.com/shawnphoffman/shared-contacts/commit/13621bc4c007192440b7bdfca623d82d27c50e28))
+## [0.27.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.27.0...v0.27.1) (2026-04-18)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.27.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.27.0...v0.27.1)
+
 #### [v0.27.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.26.0...v0.27.0)
+
+> 18 April 2026
 
 - 🐛 Fix(sync): recover from transient DB outages instead of crashing [`13621bc`](https://github.com/shawnphoffman/shared-contacts/commit/13621bc4c007192440b7bdfca623d82d27c50e28)
 - ✨ Feature(mobileconfig): use org as space-separated prefix on per-account labels [`e127cc5`](https://github.com/shawnphoffman/shared-contacts/commit/e127cc5af55c3efd3428967e3a54c93904eea35e)
+- 🔧 Chore: release v0.27.0 [`4a78f5b`](https://github.com/shawnphoffman/shared-contacts/commit/4a78f5b33044f85d643aa03e5a9e1cb70e8e55f8)
 
 #### [v0.26.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.25.0...v0.26.0)
 
