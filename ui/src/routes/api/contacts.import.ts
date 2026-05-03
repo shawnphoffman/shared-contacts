@@ -4,12 +4,14 @@ import { logger } from '../../lib/logger'
 import { createContact, findDuplicateContact, getAddressBookBySlug, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { mapCSVRowToContact, parseCSV } from '../../lib/csv'
+import { actorFromRequest, recordHistory } from '../../lib/history'
 import type { Contact } from '../../lib/db'
 
 export const Route = createFileRoute('/api/contacts/import')({
 	server: {
 		handlers: {
 			POST: async ({ request }) => {
+				const meta = actorFromRequest(request)
 				try {
 					const defaultBook = await getAddressBookBySlug('shared-contacts')
 					const formData = await request.formData()
@@ -87,10 +89,23 @@ export const Route = createFileRoute('/api/contacts/import')({
 									vcard_data: vcardData,
 								}
 
-								await updateContact(existing.id, {
+								const updated = await updateContact(existing.id, {
 									...mergedData,
 									sync_source: 'api',
 									last_synced_to_radicale_at: null, // Force sync to Radicale
+								})
+								await recordHistory({
+									contactId: existing.id,
+									operation: 'update',
+									source: 'import',
+									actor: meta.actor,
+									actorType: meta.actorType,
+									userAgent: meta.userAgent,
+									clientIp: meta.clientIp,
+									summary: `Updated from CSV import: ${updated.full_name || updated.email || 'contact'}`,
+									previousState: existing,
+									newState: updated,
+									metadata: { csvRow: i + 2 },
 								})
 								results.updated++
 							} else {
@@ -105,6 +120,18 @@ export const Route = createFileRoute('/api/contacts/import')({
 								if (defaultBook) {
 									await setContactAddressBooks(created.id, [defaultBook.id])
 								}
+								await recordHistory({
+									contactId: created.id,
+									operation: 'create',
+									source: 'import',
+									actor: meta.actor,
+									actorType: meta.actorType,
+									userAgent: meta.userAgent,
+									clientIp: meta.clientIp,
+									summary: `Imported from CSV: ${created.full_name || created.email || 'contact'}`,
+									newState: created,
+									metadata: { csvRow: i + 2 },
+								})
 								results.success++
 							}
 						} catch (error) {

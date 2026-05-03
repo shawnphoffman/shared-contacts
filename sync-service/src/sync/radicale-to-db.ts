@@ -17,6 +17,7 @@ import {
 import { parseVCard } from '../vcard'
 import { getUsers, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from '../htpasswd'
 import { atomicWriteFileSync } from '../fs-utils'
+import { recordHistory } from '../history'
 import { logger } from '../logger'
 import { getAddressBooksForSync } from './address-books'
 import { calculateVCardHash, detectConflict, resolveConflict } from './conflict'
@@ -172,7 +173,18 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 		let skipped = 0
 		let conflicts = 0
 
-		for (const { book, vcardId, fileMtime, vcardContent } of latestFiles.values()) {
+		const extractUsernameFromPath = (filePath: string): { username: string | null; isMaster: boolean } => {
+			const parts = filePath.split(path.sep).filter(Boolean)
+			const rootIndex = parts.lastIndexOf('collection-root')
+			if (rootIndex === -1 || rootIndex + 1 >= parts.length) return { username: null, isMaster: true }
+			const first = parts[rootIndex + 1]
+			const isMaster = bookById.has(first)
+			if (isMaster) return { username: null, isMaster: true }
+			const parsed = parseCompositeUsername(first)
+			return { username: parsed ? parsed.username : first, isMaster: false }
+		}
+
+		for (const { book, vcardId, filePath, fileMtime, vcardContent } of latestFiles.values()) {
 			const vcardData = parseVCard(vcardContent)
 			const vcardHash = calculateVCardHash(vcardContent)
 			radicaleVCardIdsByBookId.get(book.id)?.add(vcardId)
@@ -344,6 +356,10 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				vcard_data: vcardContent,
 			}
 
+			const { username: pathUsername, isMaster: pathIsMaster } = extractUsernameFromPath(filePath)
+			const carddavActor = pathUsername
+			const carddavSource = pathIsMaster ? 'sync' : 'carddav'
+
 			if (existingContact) {
 				const updatedContact = await updateContact(existingContact.id, contactData)
 				dbContactsByVcardId.set(vcardId, updatedContact)
@@ -352,6 +368,17 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					vcard_hash: vcardHash,
 					radicale_file_mtime: fileMtime,
 					sync_source: 'radicale',
+				})
+				await recordHistory({
+					contactId: existingContact.id,
+					operation: 'update',
+					source: carddavSource,
+					actor: carddavActor,
+					actorType: carddavActor ? 'carddav-client' : 'system',
+					summary: `Updated via CardDAV: ${updatedContact.full_name || updatedContact.email || 'contact'}`,
+					previousState: existingContact,
+					newState: updatedContact,
+					metadata: { bookId: book.id, vcardId, fileMtime: fileMtime?.toISOString() },
 				})
 				updated++
 			} else {
@@ -364,6 +391,17 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 						vcard_hash: vcardHash,
 						radicale_file_mtime: fileMtime,
 						sync_source: 'radicale',
+					})
+
+					await recordHistory({
+						contactId: newContact.id,
+						operation: 'create',
+						source: carddavSource,
+						actor: carddavActor,
+						actorType: carddavActor ? 'carddav-client' : 'system',
+						summary: `Created via CardDAV: ${newContact.full_name || newContact.email || 'contact'}`,
+						newState: newContact,
+						metadata: { bookId: book.id, vcardId, fileMtime: fileMtime?.toISOString() },
 					})
 
 					const masterPath = getAddressBookPath(book.id)
@@ -441,6 +479,15 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			if (currentBookIds.size === 0 && contact.sync_source === 'radicale') {
 				logger.info({ vcardId: contact.vcard_id }, 'Deleting contact from DB (deleted from all address books)')
 				await deleteContact(contact.id)
+				await recordHistory({
+					contactId: contact.id,
+					operation: 'delete',
+					source: 'carddav',
+					actor: null,
+					actorType: 'carddav-client',
+					summary: `Deleted via CardDAV: ${contact.full_name || contact.email || 'contact'}`,
+					previousState: contact,
+				})
 			}
 		}
 

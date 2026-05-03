@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BookOpen, ContactRound, Heart, HelpCircle, Info, Link as LinkIcon, NotebookTabs, Trash2, Upload, Users } from 'lucide-react'
+import { BookOpen, ContactRound, Heart, HelpCircle, History, Info, Link as LinkIcon, NotebookTabs, Trash2, Upload, Users } from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 import { SupportDialog } from './SupportDialog'
@@ -51,6 +51,16 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 					<Link to="/trash" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Trash2 className="size-4 shrink-0" />
 						Deleted
+					</Link>
+					<Link
+						to="/history"
+						search={{ contactId: undefined }}
+						className={navLinkClass}
+						activeProps={{ className: navLinkActiveClass }}
+						onClick={onNavigate}
+					>
+						<History className="size-4 shrink-0" />
+						History
 					</Link>
 				</div>
 

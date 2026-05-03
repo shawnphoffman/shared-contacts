@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { deleteContact, getContactsByIds, setContactAddressBooks, updateContact } from '../../lib/db'
+import { deleteContact, getContactById, getContactsByIds, setContactAddressBooks, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { mergeContacts } from '../../lib/merge'
 import { sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { MergeContactsSchema } from '../../lib/schemas'
-import type { Contact } from '../../lib/db'
+import { actorFromRequest, recordHistory, snapshotContact } from '../../lib/history'
 
 export const Route = createFileRoute('/api/contacts/merge')({
 	server: {
@@ -58,6 +58,26 @@ export const Route = createFileRoute('/api/contacts/merge')({
 						await deleteContact(contact.id)
 						deletedIds.push(contact.id)
 					}
+
+					const primaryAfter = await getContactById(primaryContact.id)
+					const meta = actorFromRequest(request)
+					await recordHistory({
+						contactId: primaryContact.id,
+						operation: 'merge',
+						source: 'merge',
+						actor: meta.actor,
+						actorType: meta.actorType,
+						userAgent: meta.userAgent,
+						clientIp: meta.clientIp,
+						summary: `Merged ${contacts.length} contacts into ${primaryAfter?.full_name || primaryAfter?.email || 'contact'}`,
+						previousState: primaryContact,
+						newState: primaryAfter,
+						relatedContactIds: deletedIds,
+						metadata: {
+							consumedContacts: sorted.slice(1).map(c => snapshotContact(c)),
+							mergedBookIds: Array.from(mergedBookIds),
+						},
+					})
 
 					return json({
 						message: `Successfully merged ${contacts.length} contacts into ${primaryContact.full_name || primaryContact.email || 'contact'}`,

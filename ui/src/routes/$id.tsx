@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Briefcase, Building, Edit, Globe, Mail, MapPin, Phone, StickyNote, Trash2 } from 'lucide-react'
+import { Briefcase, Building, Edit, Globe, History, Mail, MapPin, Phone, StickyNote, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ContactForm } from '../components/ContactForm'
 import { formatAddressForDisplay, parseAddress } from '../components/AddressInput'
@@ -199,6 +199,10 @@ function ContactDetailPage() {
 					<Button variant="outline" onClick={() => setIsEditing(true)} className="flex-1">
 						<Edit className="size-4" />
 						Edit
+					</Button>
+					<Button variant="outline" onClick={() => navigate({ to: '/history', search: { contactId: id } })} className="flex-1">
+						<History className="size-4" />
+						History
 					</Button>
 					<Button variant="destructive" onClick={() => setShowDeleteDialog(true)} className="flex-1">
 						<Trash2 className="size-4" />

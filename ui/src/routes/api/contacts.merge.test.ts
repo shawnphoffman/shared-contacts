@@ -5,9 +5,16 @@ import { MergeContactsSchema } from '../../lib/schemas'
 
 vi.mock('../../lib/db', () => ({
 	getContactsByIds: vi.fn(),
+	getContactById: vi.fn(),
 	deleteContact: vi.fn(),
 	updateContact: vi.fn(),
 	setContactAddressBooks: vi.fn(),
+}))
+
+vi.mock('../../lib/history', () => ({
+	actorFromRequest: vi.fn().mockReturnValue({ actor: null, actorType: null, userAgent: null, clientIp: null, source: 'web' }),
+	recordHistory: vi.fn().mockResolvedValue(null),
+	snapshotContact: vi.fn((c: unknown) => c),
 }))
 
 vi.mock('../../lib/logger', () => ({

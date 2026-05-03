@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { deleteContact, getAllContacts, updateContact } from '../../lib/db'
+import { deleteContact, getAllContacts, getContactById, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
+import { actorFromRequest, recordHistory, snapshotContact } from '../../lib/history'
 import type { Contact } from '../../lib/db'
 
 /**
@@ -36,7 +37,8 @@ function mergeContacts(primary: Contact, duplicate: Contact): Partial<Contact> {
 export const Route = createFileRoute('/api/contacts/deduplicate')({
 	server: {
 		handlers: {
-			POST: async () => {
+			POST: async ({ request }) => {
+				const meta = actorFromRequest(request)
 				try {
 					const allContacts = await getAllContacts()
 
@@ -105,6 +107,22 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 								}
 
 								results.merged += duplicates.length
+
+								const primaryAfter = await getContactById(primary.id)
+								await recordHistory({
+									contactId: primary.id,
+									operation: 'merge',
+									source: 'dedup',
+									actor: meta.actor,
+									actorType: meta.actorType,
+									userAgent: meta.userAgent,
+									clientIp: meta.clientIp,
+									summary: `Auto-merged ${duplicates.length} duplicate(s) by email into ${primaryAfter?.full_name || primaryAfter?.email || 'contact'}`,
+									previousState: primary,
+									newState: primaryAfter,
+									relatedContactIds: duplicates.map(d => d.id),
+									metadata: { consumedContacts: duplicates.map(d => snapshotContact(d)), reason: 'email-duplicate' },
+								})
 							} catch (error) {
 								results.errors.push({
 									contact: primary.full_name || primary.email || 'Unknown',
@@ -156,6 +174,22 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 									}
 
 									results.merged += duplicates.length
+
+									const primaryAfter = await getContactById(primary.id)
+									await recordHistory({
+										contactId: primary.id,
+										operation: 'merge',
+										source: 'dedup',
+										actor: meta.actor,
+										actorType: meta.actorType,
+										userAgent: meta.userAgent,
+										clientIp: meta.clientIp,
+										summary: `Auto-merged ${duplicates.length} duplicate(s) by name+phone into ${primaryAfter?.full_name || 'contact'}`,
+										previousState: primary,
+										newState: primaryAfter,
+										relatedContactIds: duplicates.map(d => d.id),
+										metadata: { consumedContacts: duplicates.map(d => snapshotContact(d)), reason: 'name-phone-duplicate' },
+									})
 								} catch (error) {
 									results.errors.push({
 										contact: primary.full_name || 'Unknown',

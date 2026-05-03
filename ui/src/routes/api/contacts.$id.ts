@@ -6,6 +6,7 @@ import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
 import { decodePhotoPayloadForUpdate, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { UpdateContactSchema } from '../../lib/schemas'
+import { actorFromRequest, recordHistory } from '../../lib/history'
 import type { Contact } from '../../lib/db'
 
 export const Route = createFileRoute('/api/contacts/$id')({
@@ -122,13 +123,26 @@ export const Route = createFileRoute('/api/contacts/$id')({
 						await setContactAddressBooks(params.id, addressBookIds)
 					}
 					const contactWithBooks = await getContactById(params.id)
+					const meta = actorFromRequest(request)
+					await recordHistory({
+						contactId: params.id,
+						operation: 'update',
+						source: meta.source,
+						actor: meta.actor,
+						actorType: meta.actorType,
+						userAgent: meta.userAgent,
+						clientIp: meta.clientIp,
+						summary: `Updated ${contact.full_name || contact.email || 'contact'}`,
+						previousState: existingContact,
+						newState: contactWithBooks || contact,
+					})
 					return json(sanitizeContact(contactWithBooks || contact))
 				} catch (error) {
 					logger.error({ err: error }, 'Error updating contact')
 					return json({ error: 'Failed to update contact' }, { status: 500 })
 				}
 			},
-			DELETE: async ({ params }) => {
+			DELETE: async ({ params, request }) => {
 				try {
 					const contact = await getContactById(params.id)
 					if (!contact) {
@@ -137,6 +151,19 @@ export const Route = createFileRoute('/api/contacts/$id')({
 
 					// Delete from database
 					await deleteContact(params.id)
+
+					const meta = actorFromRequest(request)
+					await recordHistory({
+						contactId: params.id,
+						operation: 'delete',
+						source: meta.source,
+						actor: meta.actor,
+						actorType: meta.actorType,
+						userAgent: meta.userAgent,
+						clientIp: meta.clientIp,
+						summary: `Deleted ${contact.full_name || contact.email || 'contact'}`,
+						previousState: contact,
+					})
 
 					// Note: The sync service will handle deleting the vCard file from Radicale
 					// on the next sync cycle (every 5 seconds). For immediate deletion,

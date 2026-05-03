@@ -6,6 +6,7 @@ import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizePhoneNumber } from '../../lib/utils'
 import { decodePhotoPayload, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { CreateContactSchema } from '../../lib/schemas'
+import { actorFromRequest, recordHistory } from '../../lib/history'
 import type { Contact } from '../../lib/db'
 
 export const Route = createFileRoute('/api/contacts')({
@@ -124,6 +125,18 @@ export const Route = createFileRoute('/api/contacts')({
 						await setContactAddressBooks(contact.id, addressBookIds)
 					}
 					const contactWithBooks = await getContactById(contact.id)
+					const meta = actorFromRequest(request)
+					await recordHistory({
+						contactId: contact.id,
+						operation: 'create',
+						source: meta.source,
+						actor: meta.actor,
+						actorType: meta.actorType,
+						userAgent: meta.userAgent,
+						clientIp: meta.clientIp,
+						summary: `Created ${contact.full_name || contact.email || 'contact'}`,
+						newState: contactWithBooks || contact,
+					})
 					return json(sanitizeContact(contactWithBooks || contact), { status: 201 })
 				} catch (error) {
 					logger.error({ err: error }, 'Error creating contact')
