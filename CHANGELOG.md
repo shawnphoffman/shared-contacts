@@ -6,13 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.27.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.27.0...v0.27.1) (2026-04-18)
+## [0.28.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.27.1...v0.28.0) (2026-05-03)
+
+### Features
+
+* track contact changes and support undo ([d42c5e1](https://github.com/shawnphoffman/shared-contacts/commit/d42c5e1b252dafb429615eb9d248450901c591ec))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.28.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.27.1...v0.28.0)
+
+- ✨ Feature: track contact changes and support undo [`d42c5e1`](https://github.com/shawnphoffman/shared-contacts/commit/d42c5e1b252dafb429615eb9d248450901c591ec)
+
 #### [v0.27.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.27.0...v0.27.1)
+
+> 18 April 2026
+
+- 🔧 Chore: release v0.27.1 [`9838011`](https://github.com/shawnphoffman/shared-contacts/commit/98380118459c9ebb8875cc4cff182a0a20df842c)
 
 #### [v0.27.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.26.0...v0.27.0)
 
