@@ -26,6 +26,7 @@ import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Skeleton } from '../components/ui/skeleton'
+import { ContactAvatar } from '../components/ContactAvatar'
 import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
 import type { ColumnDef, SortingState } from '@tanstack/react-table'
@@ -207,9 +208,12 @@ function ContactsIndexPage() {
 					const contact = row.original
 					const { firstName } = getNameParts(contact)
 					return (
-						<div>
-							<div className="font-medium">{firstName || 'Unnamed Contact'}</div>
-							{contact.nickname && <div className="text-sm text-gray-500">{contact.nickname}</div>}
+						<div className="flex items-center gap-3">
+							<ContactAvatar contact={contact} className="h-8 w-8 text-xs" />
+							<div>
+								<div className="font-medium">{firstName || 'Unnamed Contact'}</div>
+								{contact.nickname && <div className="text-sm text-gray-500">{contact.nickname}</div>}
+							</div>
 						</div>
 					)
 				},

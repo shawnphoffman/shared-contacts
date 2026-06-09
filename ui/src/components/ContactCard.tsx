@@ -1,9 +1,8 @@
 import { Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
 import { Building, Mail, MapPin, Phone } from 'lucide-react'
 import { formatPhoneNumber } from '../lib/utils'
-import { getContactPhotoUrl } from '../lib/image'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { ContactAvatar } from './ContactAvatar'
 import { formatAddressForSingleLine, parseAddress } from './AddressInput'
 import type { Contact } from '../lib/db'
 
@@ -12,18 +11,7 @@ interface ContactCardProps {
 }
 
 export function ContactCard({ contact }: ContactCardProps) {
-	const [showPhoto, setShowPhoto] = useState(true)
 	const displayName = contact.full_name || 'Unnamed Contact'
-	const initials = displayName
-		.split(' ')
-		.filter(Boolean)
-		.slice(0, 2)
-		.map(part => part.charAt(0).toUpperCase())
-		.join('')
-
-	useEffect(() => {
-		setShowPhoto(true)
-	}, [contact.id, contact.photo_hash, contact.photo_updated_at])
 
 	const fallbackStreet = [contact.address_street, contact.address_extended].filter(Boolean).join(', ')
 
@@ -46,17 +34,7 @@ export function ContactCard({ contact }: ContactCardProps) {
 			<Card className="hover:shadow-lg transition-shadow cursor-pointer">
 				<CardHeader>
 					<div className="flex items-center gap-3">
-						<div className="h-12 w-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-sm text-gray-500">
-							{showPhoto && (
-								<img
-									src={getContactPhotoUrl(contact)}
-									alt={displayName}
-									className="h-full w-full object-cover"
-									onError={() => setShowPhoto(false)}
-								/>
-							)}
-							{!showPhoto && <span>{initials || '—'}</span>}
-						</div>
+						<ContactAvatar contact={contact} className="h-12 w-12 text-sm" />
 						<div className="space-y-1">
 							<CardTitle className="text-xl">
 								{displayName}
