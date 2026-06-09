@@ -134,8 +134,8 @@ function ContactsIndexPage() {
 				if (isMounted) {
 					setAddressBooks(Array.isArray(books) ? books : [])
 				}
-			} catch (error) {
-				console.error('Failed to load address books', error)
+			} catch (err) {
+				console.error('Failed to load address books', err)
 			}
 		}
 		loadAddressBooks()
@@ -546,8 +546,8 @@ function ContactsIndexPage() {
 			if (failed.length > 0) {
 				alert(`Failed to delete ${failed.length} contact${failed.length === 1 ? '' : 's'}.`)
 			}
-		} catch (error) {
-			console.error('Error deleting contacts:', error)
+		} catch (err) {
+			console.error('Error deleting contacts:', err)
 			alert('Failed to delete selected contacts.')
 		} finally {
 			setIsBulkDeleting(false)
