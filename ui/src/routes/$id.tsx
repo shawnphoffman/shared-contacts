@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Briefcase, Building, Edit, Globe, History, Mail, MapPin, Phone, StickyNote, Trash2 } from 'lucide-react'
+import { Cake, Edit, Globe, History, Mail, MapPin, Phone, StickyNote, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ContactForm } from '../components/ContactForm'
 import { formatAddressForDisplay, parseAddress } from '../components/AddressInput'
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { formatPhoneNumber } from '../lib/utils'
 import { getContactPhotoUrl } from '../lib/image'
+import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import type { ContactPayload } from '../components/ContactForm'
 import type { Contact } from '../lib/db'
 
@@ -61,6 +63,75 @@ async function deleteContact(id: string): Promise<void> {
 	}
 }
 
+/**
+ * Format a date-only birthday string ("YYYY-MM-DD") for display without
+ * timezone shifts. Years at or below 1700 (e.g. Apple's 1604 placeholder)
+ * are treated as "no year given" and omitted.
+ */
+function formatBirthday(value: string): string | null {
+	const trimmed = value.trim()
+	if (!trimmed) {
+		return null
+	}
+	const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+	if (!match) {
+		return trimmed
+	}
+	const year = Number(match[1])
+	const date = new Date(year, Number(match[2]) - 1, Number(match[3]))
+	if (Number.isNaN(date.getTime())) {
+		return trimmed
+	}
+	const hasYear = year > 1700
+	return date.toLocaleDateString('en-US', {
+		month: 'long',
+		day: 'numeric',
+		...(hasYear ? { year: 'numeric' } : {}),
+	})
+}
+
+function getAge(value: string): number | null {
+	const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
+	if (!match) {
+		return null
+	}
+	const year = Number(match[1])
+	if (year <= 1700) {
+		return null
+	}
+	const birth = new Date(year, Number(match[2]) - 1, Number(match[3]))
+	const now = new Date()
+	let age = now.getFullYear() - birth.getFullYear()
+	const monthDiff = now.getMonth() - birth.getMonth()
+	if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+		age--
+	}
+	return age >= 0 && age < 200 ? age : null
+}
+
+function InfoRow({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: ReactNode }) {
+	return (
+		<div className="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
+			<Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+			<div className="min-w-0 flex-1 space-y-1.5">
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+				<div className="text-sm text-foreground">{children}</div>
+			</div>
+		</div>
+	)
+}
+
+function FieldType({ type }: { type?: string }) {
+	if (!type) {
+		return null
+	}
+	return (
+		<span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground align-middle">
+			{type}
+		</span>
+	)
+}
+
 function ContactDetailPage() {
 	const { id } = Route.useParams()
 	const navigate = useNavigate()
@@ -102,7 +173,7 @@ function ContactDetailPage() {
 	if (isLoading) {
 		return (
 			<div className="container mx-auto p-6">
-				<div className="text-center">Loading contact...</div>
+				<div className="text-center text-muted-foreground">Loading contact...</div>
 			</div>
 		)
 	}
@@ -110,7 +181,7 @@ function ContactDetailPage() {
 	if (!contact) {
 		return (
 			<div className="container mx-auto p-6">
-				<div className="text-center">Contact not found</div>
+				<div className="text-center text-muted-foreground">Contact not found</div>
 			</div>
 		)
 	}
@@ -138,6 +209,8 @@ function ContactDetailPage() {
 		.map(part => part[0].toUpperCase())
 		.join('')
 
+	const subtitle = [contact.job_title, contact.organization].filter(Boolean).join(' · ')
+
 	const fallbackStructuredAddress = {
 		street: [contact.address_street, contact.address_extended].filter(Boolean).join(', '),
 		city: contact.address_city || '',
@@ -145,6 +218,21 @@ function ContactDetailPage() {
 		postal: contact.address_postal || '',
 		country: contact.address_country || '',
 	}
+
+	const emails = contact.emails?.filter(email => email.value.trim()) ?? []
+	const phones = contact.phones?.filter(phone => phone.value.trim()) ?? []
+	const urls = contact.urls?.filter(url => url.value.trim()) ?? []
+
+	// Pre-compute address display lines so we can skip entries that render
+	// nothing (e.g. an empty address that only carries a type label).
+	const addresses = (contact.addresses ?? [])
+		.map(address => ({ type: address.type, lines: formatAddressForDisplay(parseAddress(address.value || '')) }))
+		.filter(address => address.lines.length > 0)
+	const fallbackAddressLines =
+		addresses.length === 0 ? formatAddressForDisplay(contact.address ? parseAddress(contact.address) : fallbackStructuredAddress) : []
+
+	const birthdayDisplay = contact.birthday ? formatBirthday(contact.birthday) : null
+	const birthdayAge = contact.birthday ? getAge(contact.birthday) : null
 
 	const orgUnits = contact.org_units?.filter(Boolean) ?? []
 	const categories = contact.categories?.filter(Boolean) ?? []
@@ -178,11 +266,22 @@ function ContactDetailPage() {
 		customFields.length > 0
 	)
 
+	const hasContactInfo = Boolean(
+		emails.length ||
+		phones.length ||
+		addresses.length ||
+		fallbackAddressLines.length ||
+		urls.length ||
+		birthdayDisplay ||
+		contact.notes ||
+		hasAdvancedFields
+	)
+
 	return (
-		<div className="container mx-auto p-6 max-w-2xl flex flex-col gap-4">
-			<div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+		<div className="container mx-auto p-6 max-w-2xl flex flex-col gap-6">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex items-center gap-4">
-					<div className="h-20 w-20 shrink-0 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500 aspect-square">
+					<div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-xl font-medium text-muted-foreground ring-1 ring-border aspect-square">
 						{showPhoto && (
 							<img
 								src={getContactPhotoUrl(contact)}
@@ -193,9 +292,21 @@ function ContactDetailPage() {
 						)}
 						{!showPhoto && <span>{initials || '—'}</span>}
 					</div>
-					<h1 className="text-3xl font-bold">{displayName}</h1>
+					<div className="min-w-0">
+						<h1 className="truncate text-3xl font-bold leading-tight">{displayName}</h1>
+						{subtitle && <p className="mt-1 truncate text-muted-foreground">{subtitle}</p>}
+						{addressBooks.length > 0 && (
+							<div className="mt-2 flex flex-wrap gap-1.5">
+								{addressBooks.map(book => (
+									<span key={book.id} className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+										{book.name}
+									</span>
+								))}
+							</div>
+						)}
+					</div>
 				</div>
-				<div className="flex-row flex gap-2">
+				<div className="flex flex-row gap-2">
 					<Button variant="outline" onClick={() => setIsEditing(true)} className="flex-1">
 						<Edit className="size-4" />
 						Edit
@@ -210,299 +321,137 @@ function ContactDetailPage() {
 					</Button>
 				</div>
 			</div>
-			{addressBooks.length > 0 && (
-				<div className="flex flex-wrap gap-2">
-					{addressBooks.map(book => (
-						<span key={book.id} className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
-							{book.name}
-						</span>
-					))}
-				</div>
-			)}
 
 			<Card>
 				<CardHeader>
 					<CardTitle>Contact Information</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-4">
-					{((contact.emails && contact.emails.length > 0) || contact.email) && (
-						<div className="flex items-center gap-3">
-							<Mail className="w-5 h-5 text-gray-400" />
-							<div className="flex-1">
-								<p className="text-sm text-gray-500 mb-1">Email{contact.emails && contact.emails.length > 1 ? 's' : ''}</p>
-								<div className="space-y-1">
-									{contact.emails && contact.emails.length > 0
-										? contact.emails.map((email, index) => (
-												<div key={index}>
-													<a href={`mailto:${email.value}`} className="text-blue-600 hover:underline">
-														{email.value}
-														{email.type && <span className="text-gray-500 text-sm ml-2">({email.type})</span>}
-													</a>
-												</div>
-											))
-										: contact.email && (
-												<a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
-													{contact.email}
+				<CardContent>
+					{!hasContactInfo ? (
+						<p className="text-sm text-muted-foreground">No contact details have been added yet.</p>
+					) : (
+						<div className="divide-y divide-border">
+							{birthdayDisplay && (
+								<InfoRow icon={Cake} label="Birthday">
+									<span className="font-medium">{birthdayDisplay}</span>
+									{birthdayAge !== null && <span className="ml-2 text-muted-foreground">turns {birthdayAge + 1} this year</span>}
+								</InfoRow>
+							)}
+							{emails.length > 0 && (
+								<InfoRow icon={Mail} label={emails.length > 1 ? 'Emails' : 'Email'}>
+									<div className="space-y-1">
+										{emails.map((email, index) => (
+											<div key={index}>
+												<a href={`mailto:${email.value}`} className="text-primary hover:underline">
+													{email.value}
 												</a>
-											)}
-								</div>
-							</div>
-						</div>
-					)}
-					{((contact.phones && contact.phones.length > 0) || contact.phone) && (
-						<div className="flex items-center gap-3">
-							<Phone className="w-5 h-5 text-gray-400" />
-							<div className="flex-1">
-								<p className="text-sm text-gray-500 mb-1">Phone{contact.phones && contact.phones.length > 1 ? 's' : ''}</p>
-								<div className="space-y-1">
-									{contact.phones && contact.phones.length > 0
-										? contact.phones.map((phone, index) => (
-												<div key={index}>
-													<a href={`tel:${phone.value}`} className="text-blue-600 hover:underline">
-														{formatPhoneNumber(phone.value)}
-														{phone.type && <span className="text-gray-500 text-sm ml-2">({phone.type})</span>}
-													</a>
-												</div>
-											))
-										: contact.phone && (
-												<a href={`tel:${contact.phone}`} className="text-blue-600 hover:underline">
-													{formatPhoneNumber(contact.phone)}
+												<FieldType type={email.type} />
+											</div>
+										))}
+									</div>
+								</InfoRow>
+							)}
+							{phones.length > 0 && (
+								<InfoRow icon={Phone} label={phones.length > 1 ? 'Phones' : 'Phone'}>
+									<div className="space-y-1">
+										{phones.map((phone, index) => (
+											<div key={index}>
+												<a href={`tel:${phone.value}`} className="text-primary hover:underline">
+													{formatPhoneNumber(phone.value)}
 												</a>
-											)}
-								</div>
-							</div>
-						</div>
-					)}
-					{contact.organization && (
-						<div className="flex items-center gap-3">
-							<Building className="w-5 h-5 text-gray-400" />
-							<div>
-								<p className="text-sm text-gray-500">Organization</p>
-								<p>{contact.organization}</p>
-							</div>
-						</div>
-					)}
-					{contact.job_title && (
-						<div className="flex items-center gap-3">
-							<Briefcase className="w-5 h-5 text-gray-400" />
-							<div>
-								<p className="text-sm text-gray-500">Job Title</p>
-								<p>{contact.job_title}</p>
-							</div>
-						</div>
-					)}
-					{((contact.addresses && contact.addresses.length > 0) || contact.address) && (
-						<div className="flex items-center gap-3">
-							<MapPin className="w-5 h-5 text-gray-400" />
-							<div className="flex-1">
-								<p className="text-sm text-gray-500 mb-1">
-									Address
-									{contact.addresses && contact.addresses.length > 1 ? 'es' : ''}
-								</p>
-								<div className="space-y-1">
-									{contact.addresses && contact.addresses.length > 0
-										? contact.addresses.map((address, index) => (
-												<div key={index}>
-													<div className="space-y-1">
-														{formatAddressForDisplay(parseAddress(address.value || '')).map((line, lineIndex) => (
-															<p key={lineIndex}>{line}</p>
-														))}
-														{address.type && <p className="text-gray-500 text-sm">({address.type})</p>}
-													</div>
+												<FieldType type={phone.type} />
+											</div>
+										))}
+									</div>
+								</InfoRow>
+							)}
+							{(addresses.length > 0 || fallbackAddressLines.length > 0) && (
+								<InfoRow icon={MapPin} label={addresses.length > 1 ? 'Addresses' : 'Address'}>
+									<div className="space-y-3">
+										{addresses.length > 0 ? (
+											addresses.map((address, index) => (
+												<div key={index} className="not-italic leading-relaxed">
+													{address.lines.map((line, lineIndex) => (
+														<p key={lineIndex}>{line}</p>
+													))}
+													<FieldType type={address.type} />
 												</div>
 											))
-										: (() => {
-												const structured = contact.address ? parseAddress(contact.address) : fallbackStructuredAddress
-												const lines = formatAddressForDisplay(structured)
-												return lines.length > 0 ? (
-													<div className="space-y-1">
-														{lines.map((line, lineIndex) => (
-															<p key={lineIndex}>{line}</p>
-														))}
-													</div>
-												) : null
-											})()}
-								</div>
-							</div>
-						</div>
-					)}
-					{((contact.urls && contact.urls.length > 0) || contact.homepage) && (
-						<div className="flex items-center gap-3">
-							<Globe className="w-5 h-5 text-gray-400" />
-							<div className="flex-1">
-								<p className="text-sm text-gray-500 mb-1">URL{contact.urls && contact.urls.length > 1 ? 's' : ''}</p>
-								<div className="space-y-1">
-									{contact.urls && contact.urls.length > 0
-										? contact.urls.map((url, index) => (
-												<div key={index}>
-													<a href={url.value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-														{url.value}
-														{url.type && <span className="text-gray-500 text-sm ml-2">({url.type})</span>}
-													</a>
-												</div>
-											))
-										: contact.homepage && (
-												<a href={contact.homepage} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-													{contact.homepage}
+										) : (
+											<div className="leading-relaxed">
+												{fallbackAddressLines.map((line, lineIndex) => (
+													<p key={lineIndex}>{line}</p>
+												))}
+											</div>
+										)}
+									</div>
+								</InfoRow>
+							)}
+							{urls.length > 0 && (
+								<InfoRow icon={Globe} label={urls.length > 1 ? 'URLs' : 'URL'}>
+									<div className="space-y-1">
+										{urls.map((url, index) => (
+											<div key={index}>
+												<a href={url.value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+													{url.value}
 												</a>
-											)}
+												<FieldType type={url.type} />
+											</div>
+										))}
+									</div>
+								</InfoRow>
+							)}
+							{contact.notes && (
+								<InfoRow icon={StickyNote} label="Notes">
+									<p className="whitespace-pre-wrap leading-relaxed">{contact.notes}</p>
+								</InfoRow>
+							)}
+							{hasAdvancedFields && (
+								<div className="py-4 first:pt-0 last:pb-0">
+									<p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Advanced fields</p>
+									<dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+										{contact.name_prefix && <AdvancedField label="Name Prefix" value={contact.name_prefix} />}
+										{contact.middle_name && <AdvancedField label="Middle Name" value={contact.middle_name} />}
+										{contact.name_suffix && <AdvancedField label="Name Suffix" value={contact.name_suffix} />}
+										{contact.maiden_name && <AdvancedField label="Maiden Name" value={contact.maiden_name} />}
+										{contact.role && <AdvancedField label="Role" value={contact.role} />}
+										{contact.mailer && <AdvancedField label="Mailer" value={contact.mailer} />}
+										{contact.time_zone && <AdvancedField label="Time Zone" value={contact.time_zone} />}
+										{contact.geo && <AdvancedField label="Geo" value={contact.geo} />}
+										{contact.agent && <AdvancedField label="Agent" value={contact.agent} />}
+										{contact.prod_id && <AdvancedField label="Product ID" value={contact.prod_id} />}
+										{contact.revision && <AdvancedField label="Revision" value={contact.revision} />}
+										{contact.sort_string && <AdvancedField label="Sort String" value={contact.sort_string} />}
+										{contact.class && <AdvancedField label="Class" value={contact.class} />}
+										{orgUnits.length > 0 && <AdvancedField label="Organization Units" value={orgUnits.join(', ')} />}
+										{categories.length > 0 && <AdvancedField label="Categories" value={categories.join(', ')} />}
+										{labels.length > 0 && (
+											<AdvancedField
+												label="Labels"
+												value={labels.map(label => label.value + (label.type ? ` (${label.type})` : '')).join(', ')}
+											/>
+										)}
+										{logos.length > 0 && (
+											<AdvancedField
+												label="Logos"
+												value={logos.map(logo => logo.value + (logo.type ? ` (${logo.type})` : '')).join(', ')}
+											/>
+										)}
+										{sounds.length > 0 && (
+											<AdvancedField
+												label="Sounds"
+												value={sounds.map(sound => sound.value + (sound.type ? ` (${sound.type})` : '')).join(', ')}
+											/>
+										)}
+										{keys.length > 0 && (
+											<AdvancedField label="Keys" value={keys.map(key => key.value + (key.type ? ` (${key.type})` : '')).join(', ')} />
+										)}
+										{customFields.length > 0 && (
+											<AdvancedField label="Custom Fields" value={customFields.map(field => `${field.key}: ${field.value}`).join(', ')} />
+										)}
+									</dl>
 								</div>
-							</div>
-						</div>
-					)}
-					{contact.notes && (
-						<div className="flex items-start gap-3">
-							<StickyNote className="w-5 h-5 text-gray-400 mt-0.5" />
-							<div className="flex-1">
-								<p className="text-sm text-gray-500 mb-2">Notes</p>
-								<p className="whitespace-pre-wrap">{contact.notes}</p>
-							</div>
-						</div>
-					)}
-					{hasAdvancedFields && (
-						<div className="pt-4 border-t space-y-3">
-							<p className="text-sm font-medium text-gray-700">Advanced fields</p>
-							<div className="space-y-2 text-sm">
-								{contact.name_prefix && (
-									<div>
-										<span className="text-gray-500">Name Prefix:</span> {contact.name_prefix}
-									</div>
-								)}
-								{contact.middle_name && (
-									<div>
-										<span className="text-gray-500">Middle Name:</span> {contact.middle_name}
-									</div>
-								)}
-								{contact.name_suffix && (
-									<div>
-										<span className="text-gray-500">Name Suffix:</span> {contact.name_suffix}
-									</div>
-								)}
-								{contact.maiden_name && (
-									<div>
-										<span className="text-gray-500">Maiden Name:</span> {contact.maiden_name}
-									</div>
-								)}
-								{contact.role && (
-									<div>
-										<span className="text-gray-500">Role:</span> {contact.role}
-									</div>
-								)}
-								{contact.mailer && (
-									<div>
-										<span className="text-gray-500">Mailer:</span> {contact.mailer}
-									</div>
-								)}
-								{contact.time_zone && (
-									<div>
-										<span className="text-gray-500">Time Zone:</span> {contact.time_zone}
-									</div>
-								)}
-								{contact.geo && (
-									<div>
-										<span className="text-gray-500">Geo:</span> {contact.geo}
-									</div>
-								)}
-								{contact.agent && (
-									<div>
-										<span className="text-gray-500">Agent:</span> {contact.agent}
-									</div>
-								)}
-								{contact.prod_id && (
-									<div>
-										<span className="text-gray-500">Product ID:</span> {contact.prod_id}
-									</div>
-								)}
-								{contact.revision && (
-									<div>
-										<span className="text-gray-500">Revision:</span> {contact.revision}
-									</div>
-								)}
-								{contact.sort_string && (
-									<div>
-										<span className="text-gray-500">Sort String:</span> {contact.sort_string}
-									</div>
-								)}
-								{contact.class && (
-									<div>
-										<span className="text-gray-500">Class:</span> {contact.class}
-									</div>
-								)}
-								{orgUnits.length > 0 && (
-									<div>
-										<span className="text-gray-500">Organization Units:</span> {orgUnits.join(', ')}
-									</div>
-								)}
-								{categories.length > 0 && (
-									<div>
-										<span className="text-gray-500">Categories:</span> {categories.join(', ')}
-									</div>
-								)}
-								{labels.length > 0 && (
-									<div>
-										<span className="text-gray-500">Labels:</span>
-										<div className="mt-1 space-y-1">
-											{labels.map((label, index) => (
-												<div key={index}>
-													{label.value}
-													{label.type && <span className="text-gray-500 text-sm ml-2">({label.type})</span>}
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-								{logos.length > 0 && (
-									<div>
-										<span className="text-gray-500">Logos:</span>
-										<div className="mt-1 space-y-1">
-											{logos.map((logo, index) => (
-												<div key={index}>
-													{logo.value}
-													{logo.type && <span className="text-gray-500 text-sm ml-2">({logo.type})</span>}
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-								{sounds.length > 0 && (
-									<div>
-										<span className="text-gray-500">Sounds:</span>
-										<div className="mt-1 space-y-1">
-											{sounds.map((sound, index) => (
-												<div key={index}>
-													{sound.value}
-													{sound.type && <span className="text-gray-500 text-sm ml-2">({sound.type})</span>}
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-								{keys.length > 0 && (
-									<div>
-										<span className="text-gray-500">Keys:</span>
-										<div className="mt-1 space-y-1">
-											{keys.map((key, index) => (
-												<div key={index}>
-													{key.value}
-													{key.type && <span className="text-gray-500 text-sm ml-2">({key.type})</span>}
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-								{customFields.length > 0 && (
-									<div>
-										<span className="text-gray-500">Custom Fields:</span>
-										<div className="mt-1 space-y-1">
-											{customFields.map((field, index) => (
-												<div key={index}>
-													{field.key}: {field.value}
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-							</div>
+							)}
 						</div>
 					)}
 				</CardContent>
@@ -526,6 +475,15 @@ function ContactDetailPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+		</div>
+	)
+}
+
+function AdvancedField({ label, value }: { label: string; value: string }) {
+	return (
+		<div>
+			<dt className="text-muted-foreground">{label}</dt>
+			<dd className="text-foreground">{value}</dd>
 		</div>
 	)
 }
