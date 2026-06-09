@@ -6,24 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.29.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.2...v0.29.0) (2026-06-09)
+## [0.30.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.29.0...v0.30.0) (2026-06-09)
 
 ### Features
 
-* **contacts:** show photo previews in contacts table ([6f43fe7](https://github.com/shawnphoffman/shared-contacts/commit/6f43fe76704ecaef3e19896b2ecc9f7e1f31ffb5))
-
-### Bug Fixes
-
-* **vcard:** fold lines in O(n) to stop OOM on large embedded photos ([fc702ea](https://github.com/shawnphoffman/shared-contacts/commit/fc702ea13f83822d25f729cbf416d926c620425d))
+* **contacts:** redesign contact detail view ([e710437](https://github.com/shawnphoffman/shared-contacts/commit/e71043702bf75110dad37b7b3a15744c22639d48))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.30.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.29.0...v0.30.0)
+
+- ✨ Feature(contacts): redesign contact detail view [`e710437`](https://github.com/shawnphoffman/shared-contacts/commit/e71043702bf75110dad37b7b3a15744c22639d48)
+- 💄 Style(contacts): rename shadowed catch bindings in contacts index [`ea55c38`](https://github.com/shawnphoffman/shared-contacts/commit/ea55c38ab3b82a0351b2a0c94d4a357ed091a3e8)
+
 #### [v0.29.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.2...v0.29.0)
+
+> 9 June 2026
 
 - 🐛 Fix(vcard): fold lines in O(n) to stop OOM on large embedded photos [`fc702ea`](https://github.com/shawnphoffman/shared-contacts/commit/fc702ea13f83822d25f729cbf416d926c620425d)
 - ✨ Feature(contacts): show photo previews in contacts table [`6f43fe7`](https://github.com/shawnphoffman/shared-contacts/commit/6f43fe76704ecaef3e19896b2ecc9f7e1f31ffb5)
+- 🔧 Chore: release v0.29.0 [`7c740d4`](https://github.com/shawnphoffman/shared-contacts/commit/7c740d4a7d7eff04a1728cc90256abfeadc7f81e)
 - 💄 Style(vcard): alphabetize vitest import to satisfy eslint sort-imports [`50c3d7c`](https://github.com/shawnphoffman/shared-contacts/commit/50c3d7c831cf45e13fe2a23547e489337acb4c28)
 
 #### [v0.28.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.1...v0.28.2)
