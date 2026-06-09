@@ -9,15 +9,19 @@ function generateUID(): string {
 
 function foldVCardLine(line: string): Array<string> {
 	const maxLength = 75
-	const lines: Array<string> = []
-	let remaining = line
+	if (line.length <= maxLength) return [line]
 
-	while (remaining.length > maxLength) {
-		lines.push(remaining.slice(0, maxLength))
-		remaining = ` ${remaining.slice(maxLength)}`
+	// Index-based folding. The previous implementation rebuilt the entire
+	// `remaining` string on every iteration (` ${remaining.slice(maxLength)}`),
+	// which is O(n^2) and allocates gigabytes for a large line (e.g. a multi-MB
+	// base64 PHOTO), OOM-crashing the process. Slice fixed windows instead.
+	// First line carries `maxLength` chars; each continuation line starts with a
+	// single space and carries `maxLength - 1` chars, matching the prior output.
+	const lines: Array<string> = [line.slice(0, maxLength)]
+	const step = maxLength - 1
+	for (let i = maxLength; i < line.length; i += step) {
+		lines.push(` ${line.slice(i, i + step)}`)
 	}
-
-	lines.push(remaining)
 	return lines
 }
 
