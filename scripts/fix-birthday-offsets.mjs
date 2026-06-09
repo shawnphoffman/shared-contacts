@@ -3,62 +3,47 @@
  * fix-birthday-offsets.mjs
  *
  * Repairs birthdays corrupted by the historical CSV-import timezone off-by-one
- * bug. It is intentionally conservative:
+ * bug, over the HTTP API (no DB connection, no container access, no file
+ * transfer to the server) so it works against a remote deployment from your
+ * laptop. The original CSV stays local.
  *
- *   - It ONLY touches a contact whose currently-stored birthday is EXACTLY one
- *     day earlier than the original CSV value (the bug's fingerprint). Anything
- *     that differs by more than a day, matches already, or isn't in the CSV is
- *     reported and left untouched - so birthdays legitimately changed since the
- *     import are never clobbered.
- *   - It DEFAULTS TO DRY-RUN. It writes nothing unless you pass --apply.
- *   - When applying, it re-reads each row inside a transaction (FOR UPDATE) and
- *     re-checks the fingerprint before writing, so a concurrent edit can't be
- *     overwritten.
+ * It is intentionally conservative:
+ *   - It ONLY touches a contact whose stored birthday is EXACTLY one day earlier
+ *     than the original CSV value (the bug's fingerprint). Anything that differs
+ *     by more than a day, already matches, or isn't in the CSV is reported and
+ *     left untouched - so birthdays legitimately changed since import are never
+ *     clobbered.
+ *   - It DEFAULTS TO DRY-RUN. Nothing is written unless you pass --apply.
+ *   - At apply time it re-fetches each contact and re-checks the fingerprint
+ *     before writing, so a concurrent edit is skipped rather than overwritten.
  *
- * For each repaired contact it: corrects the `birthday` DATE column, surgically
- * rewrites only the `BDAY:` line inside `vcard_data` (preserving everything
- * else), and sets `last_synced_to_radicale_at = NULL` so the corrected vCard is
- * re-synced out to CardDAV/devices.
+ * The fix is a full-contact round-trip: GET the contact, change only `birthday`,
+ * PUT it back. The server regenerates the vCard (including the BDAY line),
+ * forces a re-sync to CardDAV/devices, and records an undoable history entry.
  *
  * IMPORTANT: deploy the code fix (string-based birthday handling) first, so the
- * app doesn't re-introduce the shift on subsequent imports or syncs.
+ * PUT regenerates a correct vCard and future imports don't re-introduce the shift.
  *
  * Usage (dry-run):
- *   DATABASE_URL=postgres://... node scripts/fix-birthday-offsets.mjs [path/to/original.csv]
+ *   CONTACTS_API_URL=https://contacts.example.com \
+ *     node scripts/fix-birthday-offsets.mjs [path/to/original.csv]
  * Apply for real:
- *   DATABASE_URL=postgres://... node scripts/fix-birthday-offsets.mjs [path/to/original.csv] --apply
+ *   CONTACTS_API_URL=https://contacts.example.com \
+ *     node scripts/fix-birthday-offsets.mjs [path/to/original.csv] --apply
  *
+ * Optional auth: CONTACTS_API_AUTH="Bearer <token>"
  * Default CSV path: private/contacts_import.csv
  */
 import { readFileSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const API = (process.env.CONTACTS_API_URL || '').replace(/\/+$/, '')
 const APPLY = process.argv.includes('--apply')
 const csvArg = process.argv.slice(2).find(a => !a.startsWith('--'))
 const CSV_PATH = csvArg ? resolve(csvArg) : join(REPO_ROOT, 'private/contacts_import.csv')
 
-// Resolve `pg` from whichever workspace has it (works at /app/scripts in the
-// production container, and in the repo locally).
-const require = createRequire(import.meta.url)
-let pgPath
-for (const ws of ['ui', 'sync-service']) {
-	try {
-		pgPath = require.resolve('pg', { paths: [join(REPO_ROOT, ws, 'node_modules')] })
-		break
-	} catch {
-		// try next workspace
-	}
-}
-if (!pgPath) {
-	console.error('ERROR: could not find the "pg" package. Run this inside the app container or after `npm install`.')
-	process.exit(2)
-}
-const pg = (await import(pathToFileURL(pgPath).href)).default
-
-// --- tiny CSV parser (handles quoted fields and escaped quotes) ---
 function parseCsv(text) {
 	const rows = []
 	let row = []
@@ -102,37 +87,44 @@ function normalizeBirthday(value) {
 	return null
 }
 
-// a - b in whole days, computed in UTC so DST never interferes.
 function dayDiff(a, b) {
 	const da = Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10))
 	const db = Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10))
 	return Math.round((da - db) / 86400000)
 }
 
-// Locate the BDAY line and pull its normalized value. Returns { raw, value } or null.
-function extractBday(vcard) {
+function bdayFromVcard(vcard) {
 	if (!vcard) return null
-	const m = vcard.match(/^(BDAY[^:\r\n]*:)([^\r\n]*)/im)
-	if (!m) return null
-	return { prefix: m[1], rawValue: m[2].trim(), value: normalizeBirthday(m[2]) }
-}
-
-// Rewrite only the BDAY value in vcard_data to `correct` (YYYY-MM-DD), keeping
-// the original delimiter style (dashed vs compact). Returns the new vcard string,
-// or null if there is no BDAY line to rewrite.
-function rewriteBday(vcard, correct) {
-	const b = extractBday(vcard)
-	if (!b) return null
-	const compact = `${correct.slice(0, 4)}${correct.slice(5, 7)}${correct.slice(8, 10)}`
-	const replacement = b.rawValue.includes('-') ? correct : compact
-	return vcard.replace(/^(BDAY[^:\r\n]*:)([^\r\n]*)/im, `$1${replacement}`)
+	const m = vcard.match(/^BDAY[^:\r\n]*:([^\r\n]*)/im)
+	return m ? normalizeBirthday(m[1]) : null
 }
 
 const norm = s => (s || '').toString().trim().toLowerCase()
 
+function authHeaders(extra) {
+	const h = { Accept: 'application/json', ...extra }
+	if (process.env.CONTACTS_API_AUTH) h.Authorization = process.env.CONTACTS_API_AUTH
+	return h
+}
+
+async function getJson(path) {
+	const res = await fetch(`${API}${path}`, { headers: authHeaders() })
+	if (!res.ok) throw new Error(`GET ${path} -> ${res.status} ${res.statusText}`)
+	return res.json()
+}
+
+// off-by-one fingerprint: stored column OR vCard BDAY is exactly csv - 1 day.
+function isOffByOne(contact, csvBday) {
+	const stored = normalizeBirthday(contact.birthday)
+	const vcardBday = bdayFromVcard(contact.vcard_data)
+	const c = stored && dayDiff(csvBday, stored) === 1
+	const v = vcardBday && dayDiff(csvBday, vcardBday) === 1
+	return { hit: !!(c || v), stored, vcardBday }
+}
+
 async function main() {
-	if (!process.env.DATABASE_URL) {
-		console.error('ERROR: DATABASE_URL is not set.')
+	if (!API) {
+		console.error('ERROR: CONTACTS_API_URL is not set.')
 		process.exit(2)
 	}
 
@@ -150,20 +142,11 @@ async function main() {
 		if (!bday) continue
 		const first = r[iFirst] || ''
 		const last = r[iLast] || ''
-		originals.push({
-			fullName: `${first} ${last}`.trim(),
-			nameKey: norm(`${first} ${last}`),
-			emailKey: norm(r[iEmail]),
-			bday,
-		})
+		originals.push({ fullName: `${first} ${last}`.trim(), nameKey: norm(`${first} ${last}`), emailKey: norm(r[iEmail]), bday })
 	}
 
-	pg.types.setTypeParser(pg.types.builtins.DATE, v => v)
-	const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
-	const { rows: contacts } = await pool.query(
-		`SELECT id, full_name, first_name, last_name, email, emails, birthday, vcard_data
-		 FROM contacts WHERE deleted_at IS NULL`
-	)
+	const list = await getJson('/api/contacts')
+	const contacts = Array.isArray(list) ? list : list.contacts || list.data || []
 
 	const byName = new Map()
 	const byEmail = new Map()
@@ -177,121 +160,74 @@ async function main() {
 		}
 	}
 
-	const toFix = [] // { id, name, correct, oldColumn, oldVcardBday, needsVcardRegen }
-	const skipped = [] // { name, reason, ... }
-
+	const toFix = []
+	const skipped = []
 	for (const o of originals) {
 		const c = (o.nameKey && byName.get(o.nameKey)) || (o.emailKey && byEmail.get(o.emailKey)) || null
 		if (!c) {
-			skipped.push({ name: o.fullName, reason: 'not matched to a DB contact', csv: o.bday })
+			skipped.push({ name: o.fullName, reason: 'not matched to a contact', csv: o.bday })
 			continue
 		}
-		const column = normalizeBirthday(c.birthday)
-		const vb = extractBday(c.vcard_data)
-		const vcardBday = vb?.value || null
-
-		const columnOff = column && dayDiff(o.bday, column) === 1
-		const vcardOff = vcardBday && dayDiff(o.bday, vcardBday) === 1
-
-		if (!columnOff && !vcardOff) {
-			// Not the off-by-one fingerprint. Report mismatches so they can be eyeballed.
-			const differs = (column && column !== o.bday) || (vcardBday && vcardBday !== o.bday)
-			if (differs)
-				skipped.push({
-					name: o.fullName,
-					reason: 'differs but not by one day (changed since import?) - left untouched',
-					csv: o.bday,
-					column,
-					vcardBday,
-				})
+		const { hit, stored, vcardBday } = isOffByOne(c, o.bday)
+		if (!hit) {
+			const differs = (stored && stored !== o.bday) || (vcardBday && vcardBday !== o.bday)
+			if (differs) skipped.push({ name: o.fullName, reason: 'differs but not by one day - left untouched', csv: o.bday, stored, vcardBday })
 			continue
 		}
-
-		toFix.push({
-			id: c.id,
-			name: o.fullName,
-			correct: o.bday,
-			oldColumn: column,
-			oldVcardBday: vcardBday,
-			// If there's no BDAY line we can't surgically patch; fall back to regen.
-			needsVcardRegen: !!c.vcard_data && !vb,
-		})
+		toFix.push({ id: c.id, name: o.fullName, correct: o.bday, stored, vcardBday })
 	}
 
-	console.log(`\nBirthday off-by-one REPAIR ${APPLY ? '(APPLY)' : '(DRY-RUN - no writes)'} | source: ${CSV_PATH}`)
-	console.log(`DB contacts: ${contacts.length} | CSV birthdays: ${originals.length} | to fix: ${toFix.length}\n`)
-
-	for (const f of toFix) {
-		const note = f.needsVcardRegen ? ' [no BDAY line: vcard_data will be regenerated from fields]' : ''
-		console.log(`  FIX ${f.name} [${f.id}]: ${f.oldColumn ?? '-'} / vcard ${f.oldVcardBday ?? '-'}  ->  ${f.correct}${note}`)
-	}
-
+	console.log(`\nBirthday off-by-one REPAIR ${APPLY ? '(APPLY)' : '(DRY-RUN - no writes)'}`)
+	console.log(`API: ${API} | source: ${CSV_PATH}`)
+	console.log(`contacts: ${contacts.length} | CSV birthdays: ${originals.length} | to fix: ${toFix.length}\n`)
+	for (const f of toFix) console.log(`  FIX ${f.name} [${f.id}]: stored ${f.stored ?? '-'} / vcard ${f.vcardBday ?? '-'}  ->  ${f.correct}`)
 	if (skipped.length) {
 		console.log(`\nLeft untouched (${skipped.length}):`)
 		for (const s of skipped) {
-			const extra = s.column !== undefined ? ` (csv=${s.csv}, db=${s.column ?? '-'}, vcard=${s.vcardBday ?? '-'})` : ` (csv=${s.csv})`
+			const extra = s.stored !== undefined ? ` (csv=${s.csv}, stored=${s.stored ?? '-'}, vcard=${s.vcardBday ?? '-'})` : ` (csv=${s.csv})`
 			console.log(`  - ${s.name}: ${s.reason}${extra}`)
 		}
 	}
 
 	if (!APPLY) {
 		console.log(`\nDry-run only. Re-run with --apply to write the ${toFix.length} fix(es).\n`)
-		await pool.end()
 		process.exit(0)
 	}
 
-	// --- APPLY: re-verify each row inside a transaction before writing ---
 	let applied = 0
-	let raced = 0
-	const client = await pool.connect()
-	try {
-		await client.query('BEGIN')
-		for (const f of toFix) {
-			const { rows } = await client.query(
-				'SELECT birthday, vcard_data FROM contacts WHERE id = $1 AND deleted_at IS NULL FOR UPDATE',
-				[f.id]
-			)
-			if (!rows.length) {
-				raced++
+	let skippedRace = 0
+	let failed = 0
+	for (const f of toFix) {
+		try {
+			// Re-fetch the full contact and re-verify the fingerprint before writing.
+			const current = await getJson(`/api/contacts/${encodeURIComponent(f.id)}`)
+			const { hit } = isOffByOne(current, f.correct)
+			if (!hit) {
+				skippedRace++
 				continue
 			}
-			const curColumn = normalizeBirthday(rows[0].birthday)
-			const curVcard = extractBday(rows[0].vcard_data)
-			const stillColumnOff = curColumn && dayDiff(f.correct, curColumn) === 1
-			const stillVcardOff = curVcard?.value && dayDiff(f.correct, curVcard.value) === 1
-			if (!stillColumnOff && !stillVcardOff) {
-				raced++ // changed since detection; skip to be safe
+			// Full round-trip: change ONLY birthday, PUT everything else back as-is.
+			const body = { ...current, birthday: f.correct }
+			const res = await fetch(`${API}/api/contacts/${encodeURIComponent(f.id)}`, {
+				method: 'PUT',
+				headers: authHeaders({ 'Content-Type': 'application/json' }),
+				body: JSON.stringify(body),
+			})
+			if (!res.ok) {
+				failed++
+				console.error(`  ! ${f.name} [${f.id}]: PUT -> ${res.status} ${res.statusText}`)
 				continue
-			}
-
-			let newVcard = rewriteBday(rows[0].vcard_data, f.correct)
-			if (newVcard === null) {
-				// No BDAY line to patch: null vcard_data so the (fixed) sync
-				// regenerates it from the corrected birthday column.
-				await client.query(
-					'UPDATE contacts SET birthday = $1, vcard_data = NULL, last_synced_to_radicale_at = NULL WHERE id = $2',
-					[f.correct, f.id]
-				)
-			} else {
-				await client.query(
-					'UPDATE contacts SET birthday = $1, vcard_data = $2, last_synced_to_radicale_at = NULL WHERE id = $3',
-					[f.correct, newVcard, f.id]
-				)
 			}
 			applied++
+		} catch (err) {
+			failed++
+			console.error(`  ! ${f.name} [${f.id}]: ${err.message}`)
 		}
-		await client.query('COMMIT')
-	} catch (err) {
-		await client.query('ROLLBACK')
-		throw err
-	} finally {
-		client.release()
 	}
 
-	await pool.end()
-	console.log(`\nApplied: ${applied} | skipped (changed since detection): ${raced}`)
-	console.log('Corrected contacts have last_synced_to_radicale_at = NULL; the sync service will push the fixed vCards out automatically.\n')
-	process.exit(0)
+	console.log(`\nApplied: ${applied} | skipped (changed since detection): ${skippedRace} | failed: ${failed}`)
+	console.log('The server regenerated each vCard and forced a re-sync to CardDAV; changes are undoable in the app history.\n')
+	process.exit(failed > 0 ? 1 : 0)
 }
 
 main().catch(err => {
