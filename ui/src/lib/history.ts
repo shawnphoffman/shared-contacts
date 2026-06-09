@@ -22,7 +22,13 @@ export interface HistoryEntryInput {
 	undoesHistoryId?: string | null
 }
 
-const SNAPSHOT_OMIT = new Set(['photo_blob'])
+// Fields excluded from history snapshots. These are large and/or derivable, so
+// storing them in previous_state/new_state bloats every contact_history row
+// (and can OOM the process for contacts with an embedded base64 photo, where
+// vcard_data is multiple MB). photo_blob is the raw binary; vcard_data is fully
+// regenerated from the other fields during undo (see history.$id.undo.ts), so
+// nothing reads these back.
+const SNAPSHOT_OMIT = new Set(['photo_blob', 'vcard_data'])
 
 const NON_CONTENT_FIELDS = new Set([
 	'updated_at',

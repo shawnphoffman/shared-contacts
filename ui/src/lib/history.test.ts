@@ -14,6 +14,19 @@ describe('snapshotContact', () => {
 		expect(result?.photo_mime).toBe('image/png')
 	})
 
+	it('omits vcard_data so embedded-photo blobs do not bloat history rows', () => {
+		// vcard_data with an embedded base64 PHOTO line is multi-MB for some
+		// contacts; storing it (twice, in previous_state + new_state) OOM'd the
+		// process. It is regenerated on undo, so the snapshot must drop it.
+		const bigPhotoLine = `PHOTO;ENCODING=b;TYPE=JPEG:${'A'.repeat(1_800_000)}`
+		const vcardData = `BEGIN:VCARD\nVERSION:3.0\nFN:Shawn Hoffman\n${bigPhotoLine}\nEND:VCARD`
+		const result = snapshotContact({ id: '1', full_name: 'Shawn Hoffman', vcard_data: vcardData })
+		expect(result).not.toHaveProperty('vcard_data')
+		expect(result?.full_name).toBe('Shawn Hoffman')
+		// The serialized snapshot must stay tiny, not carry the 1.8MB blob.
+		expect(JSON.stringify(result).length).toBeLessThan(1_000)
+	})
+
 	it('drops node Buffer values', () => {
 		const result = snapshotContact({ id: '1', some_buffer: Buffer.from('x') })
 		expect(result).not.toHaveProperty('some_buffer')
