@@ -3,6 +3,7 @@ import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
 import { createContact, getAllContacts, getAllContactsPaginated, getContactById, setContactAddressBooks } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
+import { normalizeBirthday } from '../../lib/csv'
 import { normalizePhoneNumber } from '../../lib/utils'
 import { decodePhotoPayload, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { CreateContactSchema } from '../../lib/schemas'
@@ -79,7 +80,7 @@ export const Route = createFileRoute('/api/contacts')({
 						address_state: parsed.data.address_state,
 						address_postal: parsed.data.address_postal,
 						address_country: parsed.data.address_country,
-						birthday: parsed.data.birthday ? new Date(parsed.data.birthday) : null,
+						birthday: normalizeBirthday(parsed.data.birthday),
 						homepage: parsed.data.homepage,
 						urls: parsed.data.urls,
 						categories: parsed.data.categories,

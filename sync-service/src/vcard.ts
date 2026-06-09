@@ -541,9 +541,11 @@ export function generateVCard(
 	if (birthday) {
 		let bdayStr: string
 		if (birthday instanceof Date) {
-			const year = birthday.getFullYear()
-			const month = String(birthday.getMonth() + 1).padStart(2, '0')
-			const day = String(birthday.getDate()).padStart(2, '0')
+			// Defensive fallback: birthdays are normally strings now. Read in UTC
+			// so a date-only Date (midnight UTC) doesn't shift a day.
+			const year = birthday.getUTCFullYear()
+			const month = String(birthday.getUTCMonth() + 1).padStart(2, '0')
+			const day = String(birthday.getUTCDate()).padStart(2, '0')
 			bdayStr = `${year}${month}${day}`
 		} else if (typeof birthday === 'string') {
 			// Handle string dates (YYYY-MM-DD format)

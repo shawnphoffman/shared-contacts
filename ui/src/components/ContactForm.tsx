@@ -31,13 +31,15 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
-	// Format birthday for date input (YYYY-MM-DD)
-	const formatDateForInput = (date: Date | null | undefined): string => {
+	// Format birthday for the date input (YYYY-MM-DD). Birthday is stored as a
+	// date-only string; just take its date part. A Date fallback (read in UTC)
+	// guards against any legacy callers still passing a Date.
+	const formatDateForInput = (date: string | Date | null | undefined): string => {
 		if (!date) return ''
-		const d = new Date(date)
-		const year = d.getFullYear()
-		const month = String(d.getMonth() + 1).padStart(2, '0')
-		const day = String(d.getDate()).padStart(2, '0')
+		if (typeof date === 'string') return date.slice(0, 10)
+		const year = date.getUTCFullYear()
+		const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+		const day = String(date.getUTCDate()).padStart(2, '0')
 		return `${year}-${month}-${day}`
 	}
 
@@ -351,7 +353,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 			await onSubmit({
 				...formData,
 				full_name: fullName || null,
-				birthday: formData.birthday ? new Date(formData.birthday) : null,
+				birthday: formData.birthday || null,
 				phones: nonEmptyPhones.length > 0 ? nonEmptyPhones : null,
 				emails: nonEmptyEmails.length > 0 ? nonEmptyEmails : null,
 				addresses: nonEmptyAddresses.length > 0 ? nonEmptyAddresses : null,

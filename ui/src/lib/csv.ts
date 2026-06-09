@@ -143,6 +143,46 @@ export function parseCSV(csvText: string): Array<Record<string, string>> {
 }
 
 /**
+ * Normalize a birthday from CSV into a date-only "YYYY-MM-DD" string without
+ * ever constructing a JS Date (which would introduce a timezone off-by-one).
+ * Accepts "YYYY-MM-DD" (optionally with a time/zone suffix), "YYYYMMDD", and
+ * "MM/DD/YYYY". Returns null if the value can't be parsed as a calendar date.
+ */
+export function normalizeBirthday(value: string | null | undefined): string | null {
+	if (!value) return null
+	const v = value.trim()
+	if (!v) return null
+
+	let year: number
+	let month: number
+	let day: number
+
+	const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?$/) // YYYY-MM-DD[...]
+	const compact = v.match(/^(\d{4})(\d{2})(\d{2})$/) // YYYYMMDD
+	const slash = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/) // MM/DD/YYYY
+	if (iso) {
+		year = +iso[1]
+		month = +iso[2]
+		day = +iso[3]
+	} else if (compact) {
+		year = +compact[1]
+		month = +compact[2]
+		day = +compact[3]
+	} else if (slash) {
+		month = +slash[1]
+		day = +slash[2]
+		year = +slash[3]
+	} else {
+		return null
+	}
+
+	// Validate it's a real calendar date (rejects e.g. month 13, day 32).
+	if (month < 1 || month > 12 || day < 1 || day > 31) return null
+	const pad = (n: number) => String(n).padStart(2, '0')
+	return `${String(year).padStart(4, '0')}-${pad(month)}-${pad(day)}`
+}
+
+/**
  * Map CSV row to Contact format
  */
 export function mapCSVRowToContact(row: Record<string, string>): Partial<Contact> {
@@ -157,14 +197,10 @@ export function mapCSVRowToContact(row: Record<string, string>): Partial<Contact
 	// Prefer email, then email_work, then email_other
 	const email = row.email || row.email_work || row.email_other || null
 
-	// Parse birthday (format: YYYY-MM-DD)
-	let birthday: Date | null = null
-	if (row.bday) {
-		const bdayDate = new Date(row.bday)
-		if (!isNaN(bdayDate.getTime())) {
-			birthday = bdayDate
-		}
-	}
+	// Parse birthday into a date-only "YYYY-MM-DD" string. We deliberately avoid
+	// `new Date()` here: a date-only string is parsed as midnight UTC and reading
+	// it back with local-timezone getters shifts the day by one (off-by-one bug).
+	const birthday = normalizeBirthday(row.bday)
 
 	return {
 		first_name: first || null,

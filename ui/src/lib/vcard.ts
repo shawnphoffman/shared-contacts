@@ -247,9 +247,11 @@ export function generateVCard(contact: {
 		// vCard BDAY format: YYYYMMDD or YYYY-MM-DD
 		let bdayStr: string
 		if (contact.birthday instanceof Date) {
-			const year = contact.birthday.getFullYear()
-			const month = String(contact.birthday.getMonth() + 1).padStart(2, '0')
-			const day = String(contact.birthday.getDate()).padStart(2, '0')
+			// Defensive fallback: birthdays are normally strings now. Read in UTC
+			// so a date-only Date (midnight UTC) doesn't shift a day.
+			const year = contact.birthday.getUTCFullYear()
+			const month = String(contact.birthday.getUTCMonth() + 1).padStart(2, '0')
+			const day = String(contact.birthday.getUTCDate()).padStart(2, '0')
 			bdayStr = `${year}${month}${day}`
 		} else if (typeof contact.birthday === 'string') {
 			// Handle string dates (YYYY-MM-DD format)

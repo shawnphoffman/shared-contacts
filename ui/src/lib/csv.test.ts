@@ -195,10 +195,15 @@ describe('mapCSVRowToContact', () => {
 		expect(contact.organization).toBeNull()
 	})
 
-	it('parses birthday', () => {
+	it('parses birthday as a date-only string (no timezone shift)', () => {
 		const contact = mapCSVRowToContact({ first: 'Alice', bday: '1990-05-15' })
-		expect(contact.birthday).toBeInstanceOf(Date)
-		expect(contact.birthday!.getFullYear()).toBe(1990)
+		// Must stay exactly 1990-05-15 regardless of the runtime timezone.
+		expect(contact.birthday).toBe('1990-05-15')
+	})
+
+	it('normalizes alternate birthday formats to YYYY-MM-DD', () => {
+		expect(mapCSVRowToContact({ first: 'A', bday: '19900515' }).birthday).toBe('1990-05-15')
+		expect(mapCSVRowToContact({ first: 'A', bday: '5/15/1990' }).birthday).toBe('1990-05-15')
 	})
 
 	it('handles invalid birthday gracefully', () => {

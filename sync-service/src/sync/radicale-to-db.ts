@@ -239,16 +239,18 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			const nameSuffix = nameParts[4] || ''
 			const fullName = vcardData.fn || `${firstName} ${middleName} ${lastName}`.trim() || 'Unknown'
 
-			// Parse birthday (BDAY format: YYYYMMDD or YYYY-MM-DD)
-			let birthday: Date | null = null
+			// Parse birthday (BDAY format: YYYYMMDD or YYYY-MM-DD) into a date-only
+			// "YYYY-MM-DD" string. We avoid constructing a JS Date so the value is
+			// never subject to a timezone off-by-one shift.
+			let birthday: string | null = null
 			if (vcardData.bday) {
 				const bdayStr = vcardData.bday.replace(/-/g, '')
 				if (bdayStr.length >= 8) {
-					const year = parseInt(bdayStr.substring(0, 4), 10)
-					const month = parseInt(bdayStr.substring(4, 6), 10) - 1 // Month is 0-indexed
-					const day = parseInt(bdayStr.substring(6, 8), 10)
-					if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-						birthday = new Date(year, month, day)
+					const year = bdayStr.substring(0, 4)
+					const month = bdayStr.substring(4, 6)
+					const day = bdayStr.substring(6, 8)
+					if (/^\d{4}$/.test(year) && /^\d{2}$/.test(month) && /^\d{2}$/.test(day)) {
+						birthday = `${year}-${month}-${day}`
 					}
 				}
 			}

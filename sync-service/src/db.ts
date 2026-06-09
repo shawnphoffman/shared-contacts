@@ -1,6 +1,12 @@
-import { Pool } from 'pg'
+import { Pool, types } from 'pg'
 import { logger } from './logger'
 import { retry, isTransientDbError } from './retry'
+
+// Return DATE columns (the `birthday` column) as the raw "YYYY-MM-DD" string
+// instead of a JS Date, so a date-only value isn't shifted by a day when read
+// back with local-timezone getters. Timestamps use TIMESTAMP(TZ) and are
+// unaffected.
+types.setTypeParser(types.builtins.DATE, value => value)
 
 let pool: Pool | null = null
 
@@ -86,7 +92,7 @@ export interface Contact {
 	role: string | null
 	address: string | null // Deprecated: use addresses array
 	addresses: ContactField[] | null // Multiple addresses
-	birthday: Date | null
+	birthday: string | null // Date-only "YYYY-MM-DD"; kept as a string to avoid timezone shifts
 	homepage: string | null // Deprecated: use urls array
 	urls: ContactField[] | null // Multiple URLs
 	categories: string[] | null

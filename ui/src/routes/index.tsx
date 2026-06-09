@@ -296,7 +296,9 @@ function ContactsIndexPage() {
 					if (!birthday) {
 						return <span className="text-gray-400">—</span>
 					}
-					const date = new Date(birthday)
+					// birthday is a date-only "YYYY-MM-DD" string. Parse at local
+					// midnight so toLocaleDateString doesn't shift the day.
+					const date = new Date(`${birthday}T00:00:00`)
 					return (
 						<span>
 							{date.toLocaleDateString('en-US', {
