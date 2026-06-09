@@ -6,20 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.28.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.1...v0.28.2) (2026-06-09)
+## [0.29.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.2...v0.29.0) (2026-06-09)
+
+### Features
+
+* **contacts:** show photo previews in contacts table ([6f43fe7](https://github.com/shawnphoffman/shared-contacts/commit/6f43fe76704ecaef3e19896b2ecc9f7e1f31ffb5))
 
 ### Bug Fixes
 
-* **history:** exclude vcard_data from snapshots to avoid OOM on photo updates ([e1004bb](https://github.com/shawnphoffman/shared-contacts/commit/e1004bb110c541bfef87453f8225444d2ef0c483))
+* **vcard:** fold lines in O(n) to stop OOM on large embedded photos ([fc702ea](https://github.com/shawnphoffman/shared-contacts/commit/fc702ea13f83822d25f729cbf416d926c620425d))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.29.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.2...v0.29.0)
+
+- 🐛 Fix(vcard): fold lines in O(n) to stop OOM on large embedded photos [`fc702ea`](https://github.com/shawnphoffman/shared-contacts/commit/fc702ea13f83822d25f729cbf416d926c620425d)
+- ✨ Feature(contacts): show photo previews in contacts table [`6f43fe7`](https://github.com/shawnphoffman/shared-contacts/commit/6f43fe76704ecaef3e19896b2ecc9f7e1f31ffb5)
+- 💄 Style(vcard): alphabetize vitest import to satisfy eslint sort-imports [`50c3d7c`](https://github.com/shawnphoffman/shared-contacts/commit/50c3d7c831cf45e13fe2a23547e489337acb4c28)
+
 #### [v0.28.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.1...v0.28.2)
+
+> 9 June 2026
 
 - ♻️ Refactor(scripts): run birthday off-by-one scripts over the HTTP API [`2314a67`](https://github.com/shawnphoffman/shared-contacts/commit/2314a67b5dd550ccde33b405abc66863da128a1b)
 - 🐛 Fix(history): exclude vcard_data from snapshots to avoid OOM on photo updates [`e1004bb`](https://github.com/shawnphoffman/shared-contacts/commit/e1004bb110c541bfef87453f8225444d2ef0c483)
+- 🔧 Chore: release v0.28.2 [`7fe971c`](https://github.com/shawnphoffman/shared-contacts/commit/7fe971ca9a1593721540fd9c463b7f17cc2ad943)
 
 #### [v0.28.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.0...v0.28.1)
 
