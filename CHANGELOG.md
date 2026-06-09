@@ -6,20 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.28.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.0...v0.28.1) (2026-06-09)
+## [0.28.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.1...v0.28.2) (2026-06-09)
 
 ### Bug Fixes
 
-* **birthday:** store birthdays as date-only strings to avoid timezone shift ([43a6c1f](https://github.com/shawnphoffman/shared-contacts/commit/43a6c1fd8a7aa614c1f0ad0a9733325e16fe1a35))
+* **history:** exclude vcard_data from snapshots to avoid OOM on photo updates ([e1004bb](https://github.com/shawnphoffman/shared-contacts/commit/e1004bb110c541bfef87453f8225444d2ef0c483))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.28.2](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.1...v0.28.2)
+
+- ♻️ Refactor(scripts): run birthday off-by-one scripts over the HTTP API [`2314a67`](https://github.com/shawnphoffman/shared-contacts/commit/2314a67b5dd550ccde33b405abc66863da128a1b)
+- 🐛 Fix(history): exclude vcard_data from snapshots to avoid OOM on photo updates [`e1004bb`](https://github.com/shawnphoffman/shared-contacts/commit/e1004bb110c541bfef87453f8225444d2ef0c483)
+
 #### [v0.28.1](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.0...v0.28.1)
+
+> 9 June 2026
 
 - 🔧 Chore(scripts): add birthday off-by-one detection and repair scripts [`449e6b7`](https://github.com/shawnphoffman/shared-contacts/commit/449e6b7eebd3893a4aa1cf1ac625a743ecb4055f)
 - 🐛 Fix(birthday): store birthdays as date-only strings to avoid timezone shift [`43a6c1f`](https://github.com/shawnphoffman/shared-contacts/commit/43a6c1fd8a7aa614c1f0ad0a9733325e16fe1a35)
+- 🔧 Chore: release v0.28.1 [`114d070`](https://github.com/shawnphoffman/shared-contacts/commit/114d070182356a249f3e30064d14d1c4210d8564)
 
 #### [v0.28.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.27.1...v0.28.0)
 
