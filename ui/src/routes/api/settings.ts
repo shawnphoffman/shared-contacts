@@ -10,9 +10,7 @@ export const Route = createFileRoute('/api/settings')({
 		handlers: {
 			GET: async () => {
 				try {
-					const entries = await Promise.all(
-						Array.from(ALLOWED_KEYS).map(async key => [key, await getAppSetting(key)] as const)
-					)
+					const entries = await Promise.all(Array.from(ALLOWED_KEYS).map(async key => [key, await getAppSetting(key)] as const))
 					const settings: Record<string, string | null> = {}
 					for (const [key, value] of entries) {
 						settings[key] = value

@@ -19,5 +19,5 @@ filesystem_folder = /data/collections
 type = none
 
 [logging]
-level = debug
+level = info
 

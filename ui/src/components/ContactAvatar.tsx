@@ -23,12 +23,7 @@ export function ContactAvatar({ contact, className }: ContactAvatarProps) {
 	}, [contact.id, contact.photo_hash, contact.photo_updated_at])
 
 	return (
-		<div
-			className={cn(
-				'rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500 shrink-0',
-				className,
-			)}
-		>
+		<div className={cn('rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500 shrink-0', className)}>
 			{showPhoto && (
 				<img
 					src={getContactPhotoUrl(contact)}

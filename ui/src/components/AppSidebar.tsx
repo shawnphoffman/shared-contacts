@@ -1,6 +1,18 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BookOpen, ContactRound, Heart, HelpCircle, History, Info, Link as LinkIcon, NotebookTabs, Trash2, Upload, Users } from 'lucide-react'
+import {
+	BookOpen,
+	ContactRound,
+	Heart,
+	HelpCircle,
+	History,
+	Info,
+	Link as LinkIcon,
+	NotebookTabs,
+	Trash2,
+	Upload,
+	Users,
+} from 'lucide-react'
 
 import { ThemeToggle } from './ThemeToggle'
 import { SupportDialog } from './SupportDialog'

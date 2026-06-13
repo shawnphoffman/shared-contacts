@@ -106,7 +106,12 @@ export const Route = createFileRoute('/api/history/$id/undo')({
 						const restored = snapshotToContact(entry.previous_state)
 						// Re-generate vcard_data from restored fields so CardDAV stays in sync.
 						const vcardData = generateVCard({ ...(before || {}), ...restored } as never)
-						await updateContact(entry.contact_id, { ...restored, vcard_data: vcardData, sync_source: 'api', last_synced_to_radicale_at: null })
+						await updateContact(entry.contact_id, {
+							...restored,
+							vcard_data: vcardData,
+							sync_source: 'api',
+							last_synced_to_radicale_at: null,
+						})
 						summary = `Reverted update on ${restored.full_name || 'contact'}`
 						resultPayload = { contactId: entry.contact_id, action: 'reverted' }
 					} else if (entry.operation === 'delete') {

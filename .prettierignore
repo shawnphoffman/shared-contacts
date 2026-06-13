@@ -9,3 +9,7 @@
 **/postgres_data/**
 **/radicale_data/**
 **/*.log
+
+# Generated files (their generators control formatting)
+CHANGELOG.md
+ui/src/routeTree.gen.ts

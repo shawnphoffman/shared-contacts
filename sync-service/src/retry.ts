@@ -84,7 +84,11 @@ export function isTransientDbError(err: unknown): boolean {
 		if (TRANSIENT_SYSTEM_CODES.has(code)) return true
 	}
 	const message = String((err as { message?: unknown }).message ?? '')
-	if (/terminating connection|Connection terminated|server closed the connection|the database system is (starting up|shutting down)/i.test(message)) {
+	if (
+		/terminating connection|Connection terminated|server closed the connection|the database system is (starting up|shutting down)/i.test(
+			message
+		)
+	) {
 		return true
 	}
 	return false

@@ -3,7 +3,9 @@
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 > [!WARNING]
-> This project is not production ready but is slowly becoming more stable. I stood this project up as an experiment with Cursor and I'm now trying to harden it. Do NOT use this without proper backups or with mission-critical data. Currently, there is NO AUTHENTICATION so do not expose this publicly.
+> This project is not production ready but is slowly becoming more stable. I stood this project up as an experiment with Cursor and I'm now trying to harden it. Do NOT use this without proper backups or with mission-critical data.
+>
+> Security model: the CardDAV server (Radicale) authenticates with per-user htpasswd/bcrypt credentials. The management UI and its internal admin API have NO built-in login of their own, so they must only be reachable on a trusted network. Do not expose the UI or the admin API publicly; put them behind a reverse proxy with access control (or a VPN) and keep CardDAV behind HTTPS.
 
 > [!NOTE]
 > To avoid exposing anything, one might run this locally and access it through a VPN (e.g. Tailscale).

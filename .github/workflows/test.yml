@@ -30,8 +30,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
+            package-lock.json
             sync-service/package-lock.json
             ui/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
 
       - name: Install sync-service dependencies
         run: cd sync-service && npm ci
@@ -39,17 +43,33 @@ jobs:
       - name: Install UI dependencies
         run: cd ui && npm ci
 
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Lint sync-service
         run: cd sync-service && npm run lint
 
       - name: Lint UI
         run: cd ui && npm run lint
 
+      - name: Typecheck sync-service
+        run: cd sync-service && npx tsc --noEmit
+
+      - name: Typecheck UI
+        run: cd ui && npx tsc --noEmit -p tsconfig.build.json
+
       - name: Run sync-service unit tests
         run: cd sync-service && npm run test:unit
 
       - name: Run UI unit tests
         run: cd ui && npm run test:unit
+
+      - name: Dependency audit (non-blocking)
+        continue-on-error: true
+        run: |
+          npm audit --audit-level=high || true
+          (cd sync-service && npm audit --audit-level=high) || true
+          (cd ui && npm audit --audit-level=high) || true
 
   docker-smoke:
     runs-on: ubuntu-latest
