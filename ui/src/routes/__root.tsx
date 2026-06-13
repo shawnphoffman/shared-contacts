@@ -6,6 +6,7 @@ import { Toaster } from '../components/ui/sonner'
 
 import appCss from '../styles.css?url'
 
+import type { ErrorComponentProps } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 
 interface MyRouterContext {
@@ -73,7 +74,20 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 
 	shellComponent: RootDocument,
+	errorComponent: RootErrorBoundary,
 })
+
+function RootErrorBoundary({ error }: ErrorComponentProps) {
+	return (
+		<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+			<h1 className="text-lg font-medium">Something went wrong</h1>
+			<p className="text-muted-foreground max-w-md text-sm">{error.message || 'An unexpected error occurred while rendering this page.'}</p>
+			<button type="button" onClick={() => window.location.reload()} className="hover:bg-muted rounded-md border px-4 py-2 text-sm">
+				Reload page
+			</button>
+		</div>
+	)
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
