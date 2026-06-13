@@ -5,7 +5,7 @@ import { deleteContact, getContactById, setContactAddressBooks, updateContact } 
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizeBirthday } from '../../lib/csv'
 import { normalizePhoneNumber } from '../../lib/utils'
-import { decodePhotoPayloadForUpdate, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
+import { BadPhotoError, decodePhotoPayloadForUpdate, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { UpdateContactSchema } from '../../lib/schemas'
 import { actorFromRequest, recordHistory } from '../../lib/history'
 import type { Contact } from '../../lib/db'
@@ -139,6 +139,9 @@ export const Route = createFileRoute('/api/contacts/$id')({
 					})
 					return json(sanitizeContact(contactWithBooks || contact))
 				} catch (error) {
+					if (error instanceof BadPhotoError) {
+						return json({ error: error.message }, { status: 400 })
+					}
 					logger.error({ err: error }, 'Error updating contact')
 					return json({ error: 'Failed to update contact' }, { status: 500 })
 				}

@@ -1,9 +1,58 @@
 import crypto from 'node:crypto'
 import { json } from '@tanstack/react-start'
+import { logger } from './logger'
 import { getAddressBookBySlug } from './db'
 import type { Contact } from './db'
 
 const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
+
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10 MB
+
+/** Canonical MIME types we accept for contact photos. */
+export const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+
+/** Thrown when an uploaded photo is too large or is not an allowed raster image. */
+export class BadPhotoError extends Error {
+	constructor(message: string) {
+		super(message)
+		this.name = 'BadPhotoError'
+	}
+}
+
+/**
+ * Sniff the real image type from the leading bytes. Returns the canonical MIME
+ * for supported raster formats, or null for anything else (e.g. SVG or HTML,
+ * which must never be stored or served as an image; that enables stored XSS).
+ */
+function detectImageMime(buffer: Uint8Array): string | null {
+	if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg'
+	if (
+		buffer.length >= 8 &&
+		buffer[0] === 0x89 &&
+		buffer[1] === 0x50 &&
+		buffer[2] === 0x4e &&
+		buffer[3] === 0x47 &&
+		buffer[4] === 0x0d &&
+		buffer[5] === 0x0a &&
+		buffer[6] === 0x1a &&
+		buffer[7] === 0x0a
+	)
+		return 'image/png'
+	if (buffer.length >= 4 && buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) return 'image/gif'
+	if (
+		buffer.length >= 12 &&
+		buffer[0] === 0x52 &&
+		buffer[1] === 0x49 &&
+		buffer[2] === 0x46 &&
+		buffer[3] === 0x46 &&
+		buffer[8] === 0x57 &&
+		buffer[9] === 0x45 &&
+		buffer[10] === 0x42 &&
+		buffer[11] === 0x50
+	)
+		return 'image/webp'
+	return null
+}
 
 type PhotoPayload = {
 	photo_data?: string | null
@@ -73,7 +122,6 @@ export function decodePhotoPayload(payload: PhotoPayload): DecodedPhoto {
 	}
 
 	const dataUrlMatch = payload.photo_data.match(/^data:(.+);base64,(.*)$/)
-	const mime = payload.photo_mime || (dataUrlMatch ? dataUrlMatch[1] : null)
 	const base64Data = dataUrlMatch ? dataUrlMatch[2] : payload.photo_data
 	if (!NodeBuffer) {
 		return {
@@ -87,11 +135,20 @@ export function decodePhotoPayload(payload: PhotoPayload): DecodedPhoto {
 	}
 
 	const buffer = NodeBuffer.from(base64Data, 'base64')
+	if (buffer.length > MAX_PHOTO_BYTES) {
+		throw new BadPhotoError(`Photo exceeds the ${Math.floor(MAX_PHOTO_BYTES / (1024 * 1024))} MB limit`)
+	}
+	// Derive the MIME from the actual bytes, not the client-declared type, and
+	// reject anything that is not a known raster image (blocks SVG/HTML XSS).
+	const detectedMime = detectImageMime(buffer)
+	if (!detectedMime) {
+		throw new BadPhotoError('Photo must be a JPEG, PNG, GIF, or WebP image')
+	}
 	const hash = crypto.createHash('sha256').update(buffer).digest('hex')
 
 	return {
 		photo_blob: buffer,
-		photo_mime: mime,
+		photo_mime: detectedMime,
 		photo_width: payload.photo_width ?? null,
 		photo_height: payload.photo_height ?? null,
 		photo_hash: hash,
@@ -120,11 +177,8 @@ export function decodePhotoPayloadForUpdate(payload: PhotoPayload): DecodedPhoto
  *   if (!parsed.success) return zodError(parsed.error)
  */
 export function zodError(error: { issues: Array<{ message: string; path: Array<PropertyKey> }> }) {
-	return json(
-		{
-			error: 'Validation failed',
-			issues: error.issues.map(i => ({ path: i.path.map(String).join('.'), message: i.message })),
-		},
-		{ status: 400 }
-	)
+	// Log the detailed issues server-side, but return only a generic message to
+	// the client so the request does not disclose the internal schema shape.
+	logger.warn({ issues: error.issues.map(i => ({ path: i.path.map(String).join('.'), message: i.message })) }, 'Request validation failed')
+	return json({ error: 'Validation failed' }, { status: 400 })
 }

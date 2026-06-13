@@ -5,7 +5,7 @@ import { createContact, getAllContacts, getAllContactsPaginated, getContactById,
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { normalizeBirthday } from '../../lib/csv'
 import { normalizePhoneNumber } from '../../lib/utils'
-import { decodePhotoPayload, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
+import { BadPhotoError, decodePhotoPayload, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { CreateContactSchema } from '../../lib/schemas'
 import { actorFromRequest, recordHistory } from '../../lib/history'
 import type { Contact } from '../../lib/db'
@@ -140,6 +140,9 @@ export const Route = createFileRoute('/api/contacts')({
 					})
 					return json(sanitizeContact(contactWithBooks || contact), { status: 201 })
 				} catch (error) {
+					if (error instanceof BadPhotoError) {
+						return json({ error: error.message }, { status: 400 })
+					}
 					logger.error({ err: error }, 'Error creating contact')
 					return json({ error: 'Failed to create contact' }, { status: 500 })
 				}

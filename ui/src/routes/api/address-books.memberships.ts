@@ -27,7 +27,7 @@ export const Route = createFileRoute('/api/address-books/memberships')({
 					if (!username) {
 						return json({ error: 'username is required' }, { status: 400 })
 					}
-					const addressBookIds = Array.isArray(body.address_book_ids) ? body.address_book_ids.map(String) : []
+					const addressBookIds: Array<string> = Array.isArray(body.address_book_ids) ? body.address_book_ids.map(String) : []
 					const books = await getAddressBooks()
 					const privateBookIds = new Set(books.filter(book => !book.is_public).map(book => book.id))
 					const filteredIds = addressBookIds.filter(id => privateBookIds.has(id))

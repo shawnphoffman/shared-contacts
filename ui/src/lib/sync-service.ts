@@ -42,7 +42,10 @@ export async function proxyRequest(path: string, options?: ProxyRequestOptions) 
 		logger.info('fetching %s', url)
 		const response = await fetch(url, { ...rest, signal: controller.signal })
 		const data = await parseResponseBody(response)
-		logger.info({ data }, 'response data')
+		// Do not log the response body: some proxied endpoints (e.g. the
+		// radicale-users password read-back) return decrypted secrets, and we
+		// must not write those to logs. Log the status only.
+		logger.info({ status: response.status }, 'sync-service response')
 		return { data, status: response.status }
 	} catch (error) {
 		logger.error({ err: error, url }, 'error fetching')

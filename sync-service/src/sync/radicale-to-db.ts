@@ -32,6 +32,10 @@ import {
 	ensureAddressBookProps,
 } from './radicale-fs'
 
+// Cap inbound photo size so a hostile or oversized vCard PHOTO cannot OOM the
+// process. Oversize photos are skipped (the rest of the contact still syncs).
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10 MB
+
 /**
  * Sync from Radicale to PostgreSQL
  * Only syncs files that have changed since last sync to prevent loops
@@ -294,16 +298,21 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			let photoHash: string | null = null
 			if (vcardData.photo?.data) {
 				try {
-					photoBlob = Buffer.from(vcardData.photo.data, 'base64')
-					const type = vcardData.photo.type?.toUpperCase()
-					if (type === 'PNG') {
-						photoMime = 'image/png'
-					} else if (type === 'JPEG' || type === 'JPG') {
-						photoMime = 'image/jpeg'
+					const decoded = Buffer.from(vcardData.photo.data, 'base64')
+					if (decoded.length > MAX_PHOTO_BYTES) {
+						logger.warn({ vcardId, size: decoded.length }, 'Photo exceeds size limit; skipping photo for this contact')
 					} else {
-						photoMime = 'image/jpeg'
+						photoBlob = decoded
+						const type = vcardData.photo.type?.toUpperCase()
+						if (type === 'PNG') {
+							photoMime = 'image/png'
+						} else if (type === 'JPEG' || type === 'JPG') {
+							photoMime = 'image/jpeg'
+						} else {
+							photoMime = 'image/jpeg'
+						}
+						photoHash = crypto.createHash('sha256').update(photoBlob).digest('hex')
 					}
-					photoHash = crypto.createHash('sha256').update(photoBlob).digest('hex')
 				} catch (error) {
 					logger.warn({ err: error, vcardId }, 'Failed to decode photo')
 				}

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getContactById } from '../../lib/db'
 import { logger } from '../../lib/logger'
+import { ALLOWED_IMAGE_MIME } from '../../lib/contact-helpers'
 
 const NodeBuffer = (globalThis as { Buffer?: any }).Buffer
 
@@ -45,9 +46,18 @@ export const Route = createFileRoute('/api/contacts/$id/photo')({
 						buffer.buffer instanceof ArrayBuffer
 							? buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
 							: Uint8Array.from(buffer).buffer
+					// Only serve a stored MIME we trust. Anything else (including any
+					// svg/html photo stored before the upload-time allowlist existed) is
+					// served as a non-renderable download, and the extra headers stop the
+					// browser sniffing or executing it. This neutralizes stored XSS.
+					const safeType =
+						contact.photo_mime && ALLOWED_IMAGE_MIME.has(contact.photo_mime) ? contact.photo_mime : 'application/octet-stream'
 					return new Response(arrayBuffer, {
 						headers: {
-							'Content-Type': contact.photo_mime || 'image/jpeg',
+							'Content-Type': safeType,
+							'Content-Disposition': 'inline',
+							'X-Content-Type-Options': 'nosniff',
+							'Content-Security-Policy': "default-src 'none'; sandbox",
 							'Cache-Control': 'private, max-age=3600',
 						},
 					})
