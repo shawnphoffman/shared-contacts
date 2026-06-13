@@ -1,8 +1,6 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { getUsers, createUser, updateUserPassword, deleteUser, backfillSharedContactsForUser } from './htpasswd'
-import { getEncryptedPassword } from './db'
-import { decrypt, isEncryptionEnabled } from './crypto'
 import { logger, httpLogger } from './logger'
 
 const app = express()
@@ -79,8 +77,11 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
 			return res.status(400).json({ error: 'Username and password are required' })
 		}
 
-		if (username.includes(':') || username.includes('\n')) {
-			return res.status(400).json({ error: 'Username contains invalid characters' })
+		// Allowlist usernames: they become htpasswd entries and Radicale collection
+		// path segments, so restrict to a safe character set rather than only
+		// blocking a couple of characters.
+		if (!/^[a-zA-Z0-9._-]{1,64}$/.test(username)) {
+			return res.status(400).json({ error: 'Username must be 1-64 chars of letters, numbers, dot, underscore, or hyphen' })
 		}
 
 		await createUser(username, password)
@@ -125,32 +126,6 @@ app.put('/api/radicale-users/:username', async (req: Request, res: Response) => 
 			return res.status(404).json({ error: error.message })
 		}
 		res.status(500).json({ error: 'Failed to update user' })
-	}
-})
-
-// Get a user's plaintext password (decrypted from DB)
-app.get('/api/radicale-users/:username/password', async (req: Request, res: Response) => {
-	try {
-		const { username } = req.params
-
-		if (!isEncryptionEnabled()) {
-			return res.status(501).json({ error: 'Password viewing is not enabled (PASSWORD_ENCRYPTION_KEY not set)' })
-		}
-
-		const encrypted = await getEncryptedPassword(username)
-		if (!encrypted) {
-			return res.status(404).json({ error: 'No stored password found for this user' })
-		}
-
-		const password = decrypt(encrypted)
-		if (!password) {
-			return res.status(500).json({ error: 'Failed to decrypt password' })
-		}
-
-		res.json({ password })
-	} catch (error: unknown) {
-		logger.error({ err: error }, 'Error fetching user password')
-		res.status(500).json({ error: 'Failed to fetch password' })
 	}
 })
 

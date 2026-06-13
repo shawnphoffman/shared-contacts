@@ -1,8 +1,7 @@
 import bcrypt from 'bcrypt'
 import path from 'path'
 import { readFile, writeFile, access, constants, readdir, copyFile, mkdir, rm, stat } from 'fs/promises'
-import { getAddressBooks, getAddressBooksForUser, storeEncryptedPassword, deleteEncryptedPassword } from './db'
-import { encrypt } from './crypto'
+import { getAddressBooks, getAddressBooksForUser } from './db'
 import { AsyncMutex, atomicWriteFile } from './fs-utils'
 import { logger } from './logger'
 
@@ -215,12 +214,6 @@ export async function createUser(username: string, password: string): Promise<vo
 
 		await atomicWriteFile(USERS_FILE, newContent, 'utf-8')
 
-		// Store encrypted copy of the plaintext password (if encryption key is configured)
-		const encryptedPassword = encrypt(password)
-		if (encryptedPassword) {
-			await storeEncryptedPassword(username, encryptedPassword)
-		}
-
 		await backfillSharedContactsForUser(username)
 	})
 }
@@ -271,12 +264,6 @@ export async function updateUserPassword(username: string, password: string): Pr
 		})
 
 		await atomicWriteFile(USERS_FILE, updatedLines.join('\n') + '\n', 'utf-8')
-
-		// Update encrypted copy of the plaintext password
-		const encryptedPassword = encrypt(password)
-		if (encryptedPassword) {
-			await storeEncryptedPassword(username, encryptedPassword)
-		}
 
 		if (compositeCount > 0) {
 			logger.info({ username, compositeCount }, 'Propagated password update to composite users')
@@ -652,8 +639,5 @@ export async function deleteUser(username: string): Promise<void> {
 		})
 
 		await atomicWriteFile(USERS_FILE, filteredLines.join('\n') + '\n', 'utf-8')
-
-		// Remove encrypted password
-		await deleteEncryptedPassword(username)
 	})
 }

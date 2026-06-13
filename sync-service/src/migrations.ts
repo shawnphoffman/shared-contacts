@@ -48,6 +48,7 @@ function getMigrationFiles(): string[] {
 		'16_user_encrypted_passwords.sql',
 		'17_app_settings.sql',
 		'18_change_history.sql',
+		'19_drop_user_encrypted_passwords.sql',
 	]
 }
 

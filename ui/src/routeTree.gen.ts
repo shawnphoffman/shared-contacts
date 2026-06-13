@@ -42,7 +42,6 @@ import { Route as ApiContactsBulkBooksRouteImport } from './routes/api/contacts.
 import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
 import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/address-books.memberships'
 import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-books.$id'
-import { Route as ApiRadicaleUsersUsernamePasswordRouteImport } from './routes/api/radicale-users.$username.password'
 import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
 import { Route as ApiHistoryIdUndoRouteImport } from './routes/api/history.$id.undo'
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
@@ -214,12 +213,6 @@ const ApiAddressBooksIdRoute = ApiAddressBooksIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAddressBooksRoute,
 } as any)
-const ApiRadicaleUsersUsernamePasswordRoute =
-  ApiRadicaleUsersUsernamePasswordRouteImport.update({
-    id: '/password',
-    path: '/password',
-    getParentRoute: () => ApiRadicaleUsersUsernameRoute,
-  } as any)
 const ApiRadicaleUsersUsernameBackfillRoute =
   ApiRadicaleUsersUsernameBackfillRouteImport.update({
     id: '/backfill',
@@ -274,7 +267,6 @@ export interface FileRoutesByFullPath {
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/history/$id/undo': typeof ApiHistoryIdUndoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
-  '/api/radicale-users/$username/password': typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -313,7 +305,6 @@ export interface FileRoutesByTo {
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/history/$id/undo': typeof ApiHistoryIdUndoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
-  '/api/radicale-users/$username/password': typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -353,7 +344,6 @@ export interface FileRoutesById {
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
   '/api/history/$id/undo': typeof ApiHistoryIdUndoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
-  '/api/radicale-users/$username/password': typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -394,7 +384,6 @@ export interface FileRouteTypes {
     | '/api/contacts/$id/photo'
     | '/api/history/$id/undo'
     | '/api/radicale-users/$username/backfill'
-    | '/api/radicale-users/$username/password'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -433,7 +422,6 @@ export interface FileRouteTypes {
     | '/api/contacts/$id/photo'
     | '/api/history/$id/undo'
     | '/api/radicale-users/$username/backfill'
-    | '/api/radicale-users/$username/password'
   id:
     | '__root__'
     | '/'
@@ -472,7 +460,6 @@ export interface FileRouteTypes {
     | '/api/contacts/$id/photo'
     | '/api/history/$id/undo'
     | '/api/radicale-users/$username/backfill'
-    | '/api/radicale-users/$username/password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -733,13 +720,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAddressBooksIdRouteImport
       parentRoute: typeof ApiAddressBooksRoute
     }
-    '/api/radicale-users/$username/password': {
-      id: '/api/radicale-users/$username/password'
-      path: '/password'
-      fullPath: '/api/radicale-users/$username/password'
-      preLoaderRoute: typeof ApiRadicaleUsersUsernamePasswordRouteImport
-      parentRoute: typeof ApiRadicaleUsersUsernameRoute
-    }
     '/api/radicale-users/$username/backfill': {
       id: '/api/radicale-users/$username/backfill'
       path: '/backfill'
@@ -830,15 +810,12 @@ const ApiHistoryRouteWithChildren = ApiHistoryRoute._addFileChildren(
 
 interface ApiRadicaleUsersUsernameRouteChildren {
   ApiRadicaleUsersUsernameBackfillRoute: typeof ApiRadicaleUsersUsernameBackfillRoute
-  ApiRadicaleUsersUsernamePasswordRoute: typeof ApiRadicaleUsersUsernamePasswordRoute
 }
 
 const ApiRadicaleUsersUsernameRouteChildren: ApiRadicaleUsersUsernameRouteChildren =
   {
     ApiRadicaleUsersUsernameBackfillRoute:
       ApiRadicaleUsersUsernameBackfillRoute,
-    ApiRadicaleUsersUsernamePasswordRoute:
-      ApiRadicaleUsersUsernamePasswordRoute,
   }
 
 const ApiRadicaleUsersUsernameRouteWithChildren =
