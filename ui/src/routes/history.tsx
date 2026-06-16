@@ -1,6 +1,7 @@
+import { Fragment, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { History, RotateCcw } from 'lucide-react'
+import { ChevronDown, ChevronRight, History, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
@@ -23,10 +24,88 @@ interface HistoryRow {
 	user_agent: string | null
 	summary: string | null
 	changed_fields: Array<string> | null
+	previous_state: Record<string, unknown> | null
+	new_state: Record<string, unknown> | null
 	related_contact_ids: Array<string> | null
 	undone_at: string | null
 	undoes_history_id: string | null
 	created_at: string
+}
+
+interface FieldChange {
+	field: string
+	before: string
+	after: string
+	hasValues: boolean
+}
+
+// Friendly labels for the noisier snake_case column names. Anything not listed
+// falls back to a generic prettifier, so new fields still render acceptably.
+const FIELD_LABELS: Record<string, string> = {
+	full_name: 'Name',
+	first_name: 'First name',
+	last_name: 'Last name',
+	middle_name: 'Middle name',
+	maiden_name: 'Maiden name',
+	name_prefix: 'Name prefix',
+	name_suffix: 'Name suffix',
+	job_title: 'Job title',
+	org_units: 'Org units',
+	prod_id: 'Product ID',
+	time_zone: 'Time zone',
+	sort_string: 'Sort string',
+	vcard_data: 'vCard data',
+}
+
+function humanizeField(field: string): string {
+	return FIELD_LABELS[field] ?? field.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
+}
+
+// Derived/serialized fields that aren't useful to diff line-by-line. vcard_data
+// is the regenerated vCard text (the sync service stores it in snapshots); it
+// changes on every edit and just restates the structured field changes, so we
+// hide it from the per-field diff rather than dumping the whole document twice.
+const DIFF_HIDE_FIELDS = new Set(['vcard_data'])
+
+const MAX_VALUE_LENGTH = 160
+
+// Render a stored snapshot value as a short, human-readable string. Handles the
+// {value, type} shape used by phones/emails/addresses/urls, plain arrays, and
+// scalars, collapses empty values to a dash, and truncates very long values.
+function formatValue(value: unknown): string {
+	if (value === null || value === undefined || value === '') return '—'
+	let text: string
+	if (Array.isArray(value)) {
+		const parts = value.map(item => {
+			if (item && typeof item === 'object' && 'value' in item) {
+				const field = item as { value: string; type?: string }
+				return field.type ? `${field.value} (${field.type})` : field.value
+			}
+			return typeof item === 'object' ? JSON.stringify(item) : String(item)
+		})
+		text = parts.join(', ')
+	} else if (typeof value === 'object') {
+		text = JSON.stringify(value)
+	} else {
+		text = String(value)
+	}
+	if (!text) return '—'
+	return text.length > MAX_VALUE_LENGTH ? `${text.slice(0, MAX_VALUE_LENGTH)}…` : text
+}
+
+function computeChanges(row: HistoryRow): Array<FieldChange> {
+	const fields = (row.changed_fields ?? []).filter(field => !DIFF_HIDE_FIELDS.has(field))
+	const prev = row.previous_state ?? {}
+	const next = row.new_state ?? {}
+	return fields.map(field => {
+		const hasValues = field in prev || field in next
+		return {
+			field,
+			before: formatValue(prev[field]),
+			after: formatValue(next[field]),
+			hasValues,
+		}
+	})
 }
 
 interface HistoryResponse {
@@ -112,12 +191,9 @@ function HistoryPage() {
 	const { contactId } = Route.useSearch()
 	const queryClient = useQueryClient()
 	const queryKey = ['history', contactId ?? null] as const
+	const [expandedId, setExpandedId] = useState<string | null>(null)
 
-	const {
-		data,
-		isLoading,
-		error,
-	} = useQuery({
+	const { data, isLoading, error } = useQuery({
 		queryKey,
 		queryFn: () => fetchHistory(contactId),
 	})
@@ -184,44 +260,77 @@ function HistoryPage() {
 							{rows.map(row => {
 								const undone = Boolean(row.undone_at)
 								const canUndo = UNDOABLE_OPS.has(row.operation) && !undone
+								const changes = computeChanges(row)
+								const expanded = expandedId === row.id
 								return (
-									<TableRow key={row.id} className={undone ? 'opacity-60' : ''}>
-										<TableCell className="text-sm whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
-										<TableCell>
-											<span className={operationBadgeClass(row.operation)}>{row.operation}</span>
-										</TableCell>
-										<TableCell className="text-sm">{describeSource(row.source)}</TableCell>
-										<TableCell className="text-sm">{row.actor || (row.actor_type === 'system' ? 'system' : '—')}</TableCell>
-										<TableCell className="text-sm">
-											<div>{row.summary || '—'}</div>
-											{row.changed_fields && row.changed_fields.length > 0 && (
-												<div className="text-xs text-muted-foreground mt-0.5">
-													Fields: {row.changed_fields.slice(0, 6).join(', ')}
-													{row.changed_fields.length > 6 ? `, +${row.changed_fields.length - 6} more` : ''}
-												</div>
-											)}
-											{undone && <div className="text-xs italic text-muted-foreground mt-0.5">Undone {formatDate(row.undone_at!)}</div>}
-										</TableCell>
-										<TableCell className="text-right">
-											{canUndo ? (
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => {
-														if (window.confirm('Undo this change? A new history entry will be recorded.')) {
-															undoMutation.mutate(row.id)
-														}
-													}}
-													disabled={undoMutation.isPending}
-												>
-													<RotateCcw className="w-3 h-3 mr-1" />
-													Undo
-												</Button>
-											) : (
-												<span className="text-xs text-muted-foreground">—</span>
-											)}
-										</TableCell>
-									</TableRow>
+									<Fragment key={row.id}>
+										<TableRow className={undone ? 'opacity-60' : ''}>
+											<TableCell className="text-sm whitespace-nowrap align-top">{formatDate(row.created_at)}</TableCell>
+											<TableCell className="align-top">
+												<span className={operationBadgeClass(row.operation)}>{row.operation}</span>
+											</TableCell>
+											<TableCell className="text-sm align-top">{describeSource(row.source)}</TableCell>
+											<TableCell className="text-sm align-top">{row.actor || (row.actor_type === 'system' ? 'system' : '—')}</TableCell>
+											<TableCell className="text-sm">
+												<div>{row.summary || '—'}</div>
+												{changes.length > 0 && (
+													<button
+														type="button"
+														onClick={() => setExpandedId(expanded ? null : row.id)}
+														className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5 hover:text-foreground transition-colors"
+														aria-expanded={expanded}
+													>
+														{expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+														{changes.length} {changes.length === 1 ? 'field' : 'fields'} changed
+													</button>
+												)}
+												{undone && <div className="text-xs italic text-muted-foreground mt-0.5">Undone {formatDate(row.undone_at!)}</div>}
+											</TableCell>
+											<TableCell className="text-right align-top">
+												{canUndo ? (
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() => {
+															if (window.confirm('Undo this change? A new history entry will be recorded.')) {
+																undoMutation.mutate(row.id)
+															}
+														}}
+														disabled={undoMutation.isPending}
+													>
+														<RotateCcw className="w-3 h-3 mr-1" />
+														Undo
+													</Button>
+												) : (
+													<span className="text-xs text-muted-foreground">—</span>
+												)}
+											</TableCell>
+										</TableRow>
+										{expanded && changes.length > 0 && (
+											<TableRow key={`${row.id}-diff`} className={undone ? 'opacity-60' : ''}>
+												<TableCell colSpan={6} className="bg-muted/30">
+													<div className="space-y-2 py-1">
+														{changes.map(change => (
+															<div key={change.field} className="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-sm">
+																<div className="font-medium text-muted-foreground">{humanizeField(change.field)}</div>
+																{change.hasValues ? (
+																	<div className="flex flex-wrap items-baseline gap-2 font-mono text-xs">
+																		<span className="text-red-700 line-through decoration-red-700/40 dark:text-red-400">
+																			{change.before}
+																		</span>
+																		<span className="text-muted-foreground">→</span>
+																		<span className="text-green-700 dark:text-green-400">{change.after}</span>
+																	</div>
+																) : (
+																	<div className="text-xs italic text-muted-foreground">updated (value not recorded)</div>
+																)}
+															</div>
+														))}
+													</div>
+												</TableCell>
+											</TableRow>
+										)}
+									</Fragment>
 								)
 							})}
 						</TableBody>
