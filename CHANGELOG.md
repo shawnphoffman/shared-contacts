@@ -6,19 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.30.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.29.0...v0.30.0) (2026-06-09)
+## [0.31.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.30.0...v0.31.0) (2026-06-16)
 
 ### Features
 
-* **contacts:** redesign contact detail view ([e710437](https://github.com/shawnphoffman/shared-contacts/commit/e71043702bf75110dad37b7b3a15744c22639d48))
+* **history:** show per-field before/after diff in change history ([e01ba51](https://github.com/shawnphoffman/shared-contacts/commit/e01ba51303ab25779edc2cd2789d8c127e030a0a))
+
+### Bug Fixes
+
+* **vcard:** strip iOS group prefix so grouped properties are not dropped ([0c075ed](https://github.com/shawnphoffman/shared-contacts/commit/0c075ed26cd28031dcc3bd334f006dc92b666c41))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v0.31.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.30.0...v0.31.0)
+
+- ✨ Feature(history): show per-field before/after diff in change history [`e01ba51`](https://github.com/shawnphoffman/shared-contacts/commit/e01ba51303ab25779edc2cd2789d8c127e030a0a)
+- 🐛 Fix(vcard): strip iOS group prefix so grouped properties are not dropped [`0c075ed`](https://github.com/shawnphoffman/shared-contacts/commit/0c075ed26cd28031dcc3bd334f006dc92b666c41)
+
 #### [v0.30.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.29.0...v0.30.0)
 
+> 9 June 2026
+
 - ✨ Feature(contacts): redesign contact detail view [`e710437`](https://github.com/shawnphoffman/shared-contacts/commit/e71043702bf75110dad37b7b3a15744c22639d48)
+- 🔧 Chore: release v0.30.0 [`cb062e0`](https://github.com/shawnphoffman/shared-contacts/commit/cb062e013dfffaa7d8c981ab9621906f5c0e38fd)
 - 💄 Style(contacts): rename shadowed catch bindings in contacts index [`ea55c38`](https://github.com/shawnphoffman/shared-contacts/commit/ea55c38ab3b82a0351b2a0c94d4a357ed091a3e8)
 
 #### [v0.29.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.28.2...v0.29.0)
