@@ -130,7 +130,13 @@ function parseVCardLine(line: string, data: VCardData): void {
 
 	// Parse parameters (e.g., "TEL;TYPE=CELL;PREF=1" or "TEL;WORK;VOICE")
 	const parts = key.split(';')
-	const baseKey = parts[0]
+	// iOS/macOS prefix grouped properties with a group name, e.g. "item1.ADR" or
+	// "item2.URL", to attach companion lines like X-ABLabel. Strip the group so the
+	// property matches the switch below. Without this, grouped properties (commonly
+	// ADR and URL) are silently dropped on import.
+	const rawKey = parts[0]
+	const groupSeparator = rawKey.indexOf('.')
+	const baseKey = groupSeparator === -1 ? rawKey : rawKey.substring(groupSeparator + 1)
 	const typeParts: string[] = []
 	for (let i = 1; i < parts.length; i++) {
 		const param = parts[i].split('=')
@@ -273,7 +279,9 @@ function parseVCardLine(line: string, data: VCardData): void {
 			}
 			break
 		default:
-			if (baseKey.startsWith('X-')) {
+			// Match on the raw (possibly grouped) key so Apple's grouping-helper
+			// metadata such as item1.X-ABLabel is not ingested as a visible custom field.
+			if (rawKey.startsWith('X-')) {
 				if (!data.customFields) data.customFields = []
 				const params = parts.slice(1)
 				data.customFields.push({

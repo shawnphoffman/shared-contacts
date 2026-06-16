@@ -60,6 +60,30 @@ describe('parseVCard', () => {
 		expect(result.addresses![0].type).toBe('HOME')
 	})
 
+	it('parses grouped properties from iOS (item1.ADR / item2.URL)', () => {
+		const vcard = [
+			'BEGIN:VCARD',
+			'VERSION:3.0',
+			'PRODID:-//Apple Inc.//iOS 26.5//EN',
+			'FN:Stephanie Hunt',
+			'TEL;type=CELL;type=VOICE;type=pref:(317) 514-4993',
+			'item1.ADR;type=HOME;type=pref:;;2350 Elizaville Rd;Lebanon;IN;46052;United States',
+			'item1.X-ABADR:us',
+			'item2.URL;type=pref:https://example.com',
+			'item2.X-ABLabel:_$!<HomePage>!$_',
+			'END:VCARD',
+		].join('\r\n')
+
+		const result = parseVCard(vcard)
+		expect(result.addresses).toHaveLength(1)
+		expect(result.addresses![0].value).toBe(';;2350 Elizaville Rd;Lebanon;IN;46052;United States')
+		expect(result.addresses![0].type).toBe('HOME,PREF')
+		expect(result.urls).toHaveLength(1)
+		expect(result.urls![0].value).toBe('https://example.com')
+		// Apple's grouping-helper metadata must not leak in as visible custom fields
+		expect(result.customFields ?? []).toHaveLength(0)
+	})
+
 	it('handles line folding (continuation lines)', () => {
 		const vcard = [
 			'BEGIN:VCARD',
