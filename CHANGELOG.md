@@ -6,30 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.0.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.31.0...v1.0.0) (2026-06-17)
-
-### ⚠ BREAKING CHANGES
-
-* **security:** the password reveal feature and its API endpoint are removed and the user_encrypted_passwords table is dropped on migration. Existing passwords keep working (auth is bcrypt htpasswd); rotating them is still recommended since they were previously retrievable in plaintext.
-
-### Features
-
-* **security:** remove plaintext password reveal ([5a62423](https://github.com/shawnphoffman/shared-contacts/commit/5a6242336eb635a0781282d93a3da4dcf4976c3e))
-* **ui:** add root error boundary ([2aaf498](https://github.com/shawnphoffman/shared-contacts/commit/2aaf4985005ccc70c3a87813f8214e8f738cfa60))
-
-### Bug Fixes
-
-* **security:** harden contact photo handling and request validation ([9576916](https://github.com/shawnphoffman/shared-contacts/commit/9576916060ceefb1012d2c887cc9998822bb9597))
+## [1.0.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.0.0...v1.0.1) (2026-06-17)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [v1.0.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.31.0...v1.0.0)
+#### [v1.0.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.0.0...v1.0.1)
+
+- 🔧 Chore(sync-service): fix test:integration script for vitest 4 [`669df2c`](https://github.com/shawnphoffman/shared-contacts/commit/669df2c813d4052f262df9f27a21699b8c7180b1)
+
+### [v1.0.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.31.0...v1.0.0)
+
+> 17 June 2026
 
 - ✨ Feature(security)!: remove plaintext password reveal [`5a62423`](https://github.com/shawnphoffman/shared-contacts/commit/5a6242336eb635a0781282d93a3da4dcf4976c3e)
 - 🐛 Fix(security): harden contact photo handling and request validation [`9576916`](https://github.com/shawnphoffman/shared-contacts/commit/9576916060ceefb1012d2c887cc9998822bb9597)
 - 🔧 Chore(repo): add CI checks, pin nitro, and tidy repository [`2480aca`](https://github.com/shawnphoffman/shared-contacts/commit/2480acadd77bb8453e8e4dd1a13f377270bdd2be)
+- 🔧 Chore: release v1.0.0 [`e24b032`](https://github.com/shawnphoffman/shared-contacts/commit/e24b032ca5e1d40bfe7dd001cc82f64ceeb9b22c)
 - ✨ Feature(ui): add root error boundary [`2aaf498`](https://github.com/shawnphoffman/shared-contacts/commit/2aaf4985005ccc70c3a87813f8214e8f738cfa60)
 
 #### [v0.31.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.30.0...v0.31.0)
