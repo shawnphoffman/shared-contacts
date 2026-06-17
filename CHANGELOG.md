@@ -6,24 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.31.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.30.0...v0.31.0) (2026-06-16)
+## [1.0.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.31.0...v1.0.0) (2026-06-17)
+
+### ⚠ BREAKING CHANGES
+
+* **security:** the password reveal feature and its API endpoint are removed and the user_encrypted_passwords table is dropped on migration. Existing passwords keep working (auth is bcrypt htpasswd); rotating them is still recommended since they were previously retrievable in plaintext.
 
 ### Features
 
-* **history:** show per-field before/after diff in change history ([e01ba51](https://github.com/shawnphoffman/shared-contacts/commit/e01ba51303ab25779edc2cd2789d8c127e030a0a))
+* **security:** remove plaintext password reveal ([5a62423](https://github.com/shawnphoffman/shared-contacts/commit/5a6242336eb635a0781282d93a3da4dcf4976c3e))
+* **ui:** add root error boundary ([2aaf498](https://github.com/shawnphoffman/shared-contacts/commit/2aaf4985005ccc70c3a87813f8214e8f738cfa60))
 
 ### Bug Fixes
 
-* **vcard:** strip iOS group prefix so grouped properties are not dropped ([0c075ed](https://github.com/shawnphoffman/shared-contacts/commit/0c075ed26cd28031dcc3bd334f006dc92b666c41))
+* **security:** harden contact photo handling and request validation ([9576916](https://github.com/shawnphoffman/shared-contacts/commit/9576916060ceefb1012d2c887cc9998822bb9597))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.0.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.31.0...v1.0.0)
+
+- ✨ Feature(security)!: remove plaintext password reveal [`5a62423`](https://github.com/shawnphoffman/shared-contacts/commit/5a6242336eb635a0781282d93a3da4dcf4976c3e)
+- 🐛 Fix(security): harden contact photo handling and request validation [`9576916`](https://github.com/shawnphoffman/shared-contacts/commit/9576916060ceefb1012d2c887cc9998822bb9597)
+- 🔧 Chore(repo): add CI checks, pin nitro, and tidy repository [`2480aca`](https://github.com/shawnphoffman/shared-contacts/commit/2480acadd77bb8453e8e4dd1a13f377270bdd2be)
+- ✨ Feature(ui): add root error boundary [`2aaf498`](https://github.com/shawnphoffman/shared-contacts/commit/2aaf4985005ccc70c3a87813f8214e8f738cfa60)
+
 #### [v0.31.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.30.0...v0.31.0)
+
+> 16 June 2026
 
 - ✨ Feature(history): show per-field before/after diff in change history [`e01ba51`](https://github.com/shawnphoffman/shared-contacts/commit/e01ba51303ab25779edc2cd2789d8c127e030a0a)
 - 🐛 Fix(vcard): strip iOS group prefix so grouped properties are not dropped [`0c075ed`](https://github.com/shawnphoffman/shared-contacts/commit/0c075ed26cd28031dcc3bd334f006dc92b666c41)
+- 🔧 Chore: release v0.31.0 [`12a6896`](https://github.com/shawnphoffman/shared-contacts/commit/12a6896e53d76c2972920f6310bd24ef80ee206f)
 
 #### [v0.30.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.29.0...v0.30.0)
 
