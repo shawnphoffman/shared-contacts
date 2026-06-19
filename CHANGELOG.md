@@ -6,14 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.0.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.0.0...v1.0.1) (2026-06-17)
+## [1.1.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.0.1...v1.1.0) (2026-06-19)
+
+### Features
+
+* **ui:** redesign contact editor with live preview and tabbed edit/history ([dbbf61f](https://github.com/shawnphoffman/shared-contacts/commit/dbbf61fa965be81114f2d01adaedfdeb0f829cef))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.1.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.0.1...v1.1.0)
+
+- ✨ Feature(ui): redesign contact editor with live preview and tabbed edit/history [`dbbf61f`](https://github.com/shawnphoffman/shared-contacts/commit/dbbf61fa965be81114f2d01adaedfdeb0f829cef)
+
 #### [v1.0.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.0.0...v1.0.1)
 
+> 17 June 2026
+
+- 🔧 Chore: release v1.0.1 [`54e754e`](https://github.com/shawnphoffman/shared-contacts/commit/54e754e5c14194106a87ed69357c1695b15e2bb5)
 - 🔧 Chore(sync-service): fix test:integration script for vitest 4 [`669df2c`](https://github.com/shawnphoffman/shared-contacts/commit/669df2c813d4052f262df9f27a21699b8c7180b1)
 
 ### [v1.0.0](https://github.com/shawnphoffman/shared-contacts/compare/v0.31.0...v1.0.0)
