@@ -1,7 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
-import { normalizeUrl, validateEmail, validateUrl } from '../lib/validation'
-import { normalizePhoneNumber } from '../lib/utils'
-import { cropToSquareDataUrl, getContactPhotoUrl, readFileAsDataUrl } from '../lib/image'
+import { useState } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -9,20 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Field, FieldContent, FieldLabel } from './ui/field'
 import { PhoneInput } from './PhoneInput'
 import { MultiFieldInput } from './MultiFieldInput'
-import { AddressInput, parseAddress } from './AddressInput'
+import { AddressInput } from './AddressInput'
 import { Checkbox } from './ui/checkbox'
 import { ContactAdvancedFields, ContactExtendedFields, ContactPhotoSection } from './contact-form'
-import type { CropArea } from '../lib/image'
-import type { AddressBook, Contact, ContactField } from '../lib/db'
+import { useContactForm } from './contact-form/useContactForm'
+import type { ContactPayload } from './contact-form/useContactForm'
+import type { Contact } from '../lib/db'
 
-export type ContactPayload = Partial<Contact> & {
-	photo_data?: string
-	photo_mime?: string | null
-	photo_width?: number | null
-	photo_height?: number | null
-	photo_remove?: boolean
-	address_book_ids?: Array<string>
-}
+export type { ContactPayload }
 
 interface ContactFormProps {
 	contact?: Contact
@@ -31,262 +22,63 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
-	// Format birthday for the date input (YYYY-MM-DD). Birthday is stored as a
-	// date-only string; just take its date part. A Date fallback (read in UTC)
-	// guards against any legacy callers still passing a Date.
-	const formatDateForInput = (date: string | Date | null | undefined): string => {
-		if (!date) return ''
-		if (typeof date === 'string') return date.slice(0, 10)
-		const year = date.getUTCFullYear()
-		const month = String(date.getUTCMonth() + 1).padStart(2, '0')
-		const day = String(date.getUTCDate()).padStart(2, '0')
-		return `${year}-${month}-${day}`
-	}
-
-	// Initialize arrays from contact, or migrate from single values
-	// Always return at least one empty field so users don't need to click "+"
-	const initializeArray = (
-		array: Array<ContactField> | null | undefined,
-		singleValue: string | null | undefined,
-		defaultType: string
-	): Array<ContactField> => {
-		if (array && array.length > 0) {
-			return array
-		}
-		if (singleValue) {
-			return [{ value: singleValue, type: defaultType }]
-		}
-		// Always return at least one empty field
-		return [{ value: '', type: defaultType }]
-	}
-
-	const initializeOptionalArray = (array: Array<ContactField> | null | undefined): Array<ContactField> => {
-		if (array && array.length > 0) {
-			return array
-		}
-		return []
-	}
-
-	const [formData, setFormData] = useState({
-		first_name: contact?.first_name || '',
-		last_name: contact?.last_name || '',
-		middle_name: contact?.middle_name || '',
-		name_prefix: contact?.name_prefix || '',
-		name_suffix: contact?.name_suffix || '',
-		nickname: contact?.nickname || '',
-		maiden_name: contact?.maiden_name || '',
-		organization: contact?.organization || '',
-		job_title: contact?.job_title || '',
-		role: contact?.role || '',
-		mailer: contact?.mailer || '',
-		time_zone: contact?.time_zone || '',
-		geo: contact?.geo || '',
-		agent: contact?.agent || '',
-		prod_id: contact?.prod_id || '',
-		revision: contact?.revision || '',
-		sort_string: contact?.sort_string || '',
-		class: contact?.class || '',
-		notes: contact?.notes || '',
-		birthday: formatDateForInput(contact?.birthday),
-	})
-
-	const [phones, setPhones] = useState<Array<ContactField>>(initializeArray(contact?.phones, contact?.phone, 'CELL'))
-	const [emails, setEmails] = useState<Array<ContactField>>(initializeArray(contact?.emails, contact?.email, 'INTERNET'))
-	const [addresses, setAddresses] = useState<Array<ContactField>>(initializeArray(contact?.addresses, contact?.address, 'HOME'))
-	const [urls, setUrls] = useState<Array<ContactField>>(initializeArray(contact?.urls, contact?.homepage, 'HOME'))
-	const [labels, setLabels] = useState<Array<ContactField>>(initializeOptionalArray(contact?.labels))
-	const [logos, setLogos] = useState<Array<ContactField>>(initializeOptionalArray(contact?.logos))
-	const [sounds, setSounds] = useState<Array<ContactField>>(initializeOptionalArray(contact?.sounds))
-	const [keys, setKeys] = useState<Array<ContactField>>(initializeOptionalArray(contact?.keys))
-	const [customFields, setCustomFields] = useState<Array<{ key: string; value: string; params?: Array<string> }>>(
-		contact?.custom_fields && contact.custom_fields.length > 0 ? contact.custom_fields : []
-	)
-	const [orgUnitsInput, setOrgUnitsInput] = useState(contact?.org_units?.join(', ') || '')
-	const [categoriesInput, setCategoriesInput] = useState(contact?.categories?.join(', ') || '')
-	const [fullName, setFullName] = useState(
-		contact?.full_name || [contact?.first_name, contact?.last_name].filter(Boolean).join(' ').trim() || ''
-	)
-	const existingPhotoUrl = contact?.id ? getContactPhotoUrl(contact) : null
+	const form = useContactForm(contact)
 	const [showAdvanced, setShowAdvanced] = useState(false)
-	const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
-	const [photoData, setPhotoData] = useState<string | null>(null)
-	const [photoMime, setPhotoMime] = useState<string | null>(null)
-	const [photoWidth, setPhotoWidth] = useState<number | null>(null)
-	const [photoHeight, setPhotoHeight] = useState<number | null>(null)
-	const [photoRemove, setPhotoRemove] = useState(false)
-	const [showExistingPhoto, setShowExistingPhoto] = useState(true)
-	const [cropSource, setCropSource] = useState<string | null>(null)
-	const [isCropOpen, setIsCropOpen] = useState(false)
-	const [crop, setCrop] = useState({ x: 0, y: 0 })
-	const [zoom, setZoom] = useState(1)
-	const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null)
-	const [cropOutputMime, setCropOutputMime] = useState('image/jpeg')
-	const [isSubmitting, setIsSubmitting] = useState(false)
-	const [validationErrors, setValidationErrors] = useState<Partial<Record<string, Record<number, string | null>>>>({})
-	const isInitialMount = useRef(true)
-	const [addressBooks, setAddressBooks] = useState<Array<AddressBook>>([])
-	const [selectedBookIds, setSelectedBookIds] = useState<Array<string>>([])
-
-	useEffect(() => {
-		let isMounted = true
-		const loadAddressBooks = async () => {
-			try {
-				const response = await fetch('/api/address-books')
-				if (!response.ok) return
-				const books = (await response.json()) as Array<AddressBook>
-				if (!isMounted) return
-				setAddressBooks(books)
-				setSelectedBookIds(prev => {
-					if (prev.length > 0) return prev
-					const existing = contact?.address_books?.map(book => book.id) || []
-					if (existing.length > 0) return existing
-					return books.filter(book => book.is_public).map(book => book.id)
-				})
-			} catch (error) {
-				console.error('Failed to load address books', error)
-			}
-		}
-		loadAddressBooks()
-		return () => {
-			isMounted = false
-		}
-	}, [contact?.id])
-
-	// Calculate full_name from first_name and last_name only when user edits them
-	useEffect(() => {
-		// Skip recalculation on initial mount to preserve custom full_name
-		if (isInitialMount.current) {
-			isInitialMount.current = false
-			return
-		}
-
-		// Recalculate full_name when user edits first_name or last_name
-		const parts = [formData.first_name, formData.last_name].filter(Boolean)
-		setFullName(parts.join(' ').trim() || '')
-	}, [formData.first_name, formData.last_name])
-
-	// Validate emails
-	const validateEmails = (emailFields: Array<ContactField>): boolean => {
-		const errors: Record<number, string | null> = {}
-		let isValid = true
-
-		emailFields.forEach((field, index) => {
-			if (field.value.trim()) {
-				const error = validateEmail(field.value)
-				if (error) {
-					errors[index] = error
-					isValid = false
-				} else {
-					errors[index] = null
-				}
-			} else {
-				errors[index] = null
-			}
-		})
-
-		setValidationErrors(prev => ({ ...prev, emails: errors }))
-		return isValid
-	}
-
-	// Validate URLs
-	const validateUrls = (urlFields: Array<ContactField>): boolean => {
-		const errors: Record<number, string | null> = {}
-		let isValid = true
-
-		urlFields.forEach((field, index) => {
-			if (field.value.trim()) {
-				const error = validateUrl(field.value)
-				if (error) {
-					errors[index] = error
-					isValid = false
-				} else {
-					errors[index] = null
-				}
-			} else {
-				errors[index] = null
-			}
-		})
-
-		setValidationErrors(prev => ({ ...prev, urls: errors }))
-		return isValid
-	}
-
-	// Handle email changes with validation
-	const handleEmailsChange = (newEmails: Array<ContactField>) => {
-		setEmails(newEmails)
-		// Validate after a short delay to avoid showing errors while typing
-		setTimeout(() => validateEmails(newEmails), 300)
-	}
-
-	// Handle URL changes with validation and normalization
-	const handleUrlsChange = (newUrls: Array<ContactField>) => {
-		// Normalize URLs (add protocol if missing)
-		const normalized = newUrls.map(url => ({
-			...url,
-			value: url.value.trim() ? normalizeUrl(url.value) : url.value,
-		}))
-		setUrls(normalized)
-		// Validate after a short delay
-		setTimeout(() => validateUrls(normalized), 300)
-	}
-
-	const handlePhotoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0]
-		if (!file) return
-		const dataUrl = await readFileAsDataUrl(file)
-		setCropSource(dataUrl)
-		setCropOutputMime(file.type === 'image/png' ? 'image/png' : 'image/jpeg')
-		setCrop({ x: 0, y: 0 })
-		setZoom(1)
-		setCroppedAreaPixels(null)
-		setIsCropOpen(true)
-	}
-
-	const handleCropSave = async () => {
-		if (!cropSource || !croppedAreaPixels) return
-		const { dataUrl, width, height } = await cropToSquareDataUrl({
-			imageSrc: cropSource,
-			crop: croppedAreaPixels,
-			outputSize: 512,
-			outputMime: cropOutputMime,
-			quality: cropOutputMime === 'image/jpeg' ? 0.9 : undefined,
-		})
-		const base64Data = dataUrl.split(',')[1] || ''
-		setPhotoPreviewUrl(dataUrl)
-		setPhotoData(base64Data)
-		setPhotoMime(cropOutputMime)
-		setPhotoWidth(width)
-		setPhotoHeight(height)
-		setPhotoRemove(false)
-		setShowExistingPhoto(false)
-		setIsCropOpen(false)
-		setCropSource(null)
-	}
-
-	const handleCropCancel = () => {
-		setIsCropOpen(false)
-		setCropSource(null)
-	}
-
-	const handleRemovePhoto = () => {
-		setPhotoPreviewUrl(null)
-		setPhotoData(null)
-		setPhotoMime(null)
-		setPhotoWidth(null)
-		setPhotoHeight(null)
-		setPhotoRemove(true)
-		setShowExistingPhoto(false)
-	}
+	const {
+		formData,
+		setFormData,
+		fullName,
+		phones,
+		setPhones,
+		emails,
+		addresses,
+		setAddresses,
+		urls,
+		labels,
+		setLabels,
+		logos,
+		setLogos,
+		sounds,
+		setSounds,
+		keys,
+		setKeys,
+		customFields,
+		setCustomFields,
+		orgUnitsInput,
+		setOrgUnitsInput,
+		categoriesInput,
+		setCategoriesInput,
+		validationErrors,
+		handleEmailsChange,
+		handleUrlsChange,
+		validateAll,
+		existingPhotoUrl,
+		photoPreviewUrl,
+		showExistingPhoto,
+		setShowExistingPhoto,
+		handlePhotoFileChange,
+		handleRemovePhoto,
+		isCropOpen,
+		cropSource,
+		crop,
+		setCrop,
+		zoom,
+		setZoom,
+		setCroppedAreaPixels,
+		handleCropSave,
+		handleCropCancel,
+		addressBooks,
+		selectedBookIds,
+		setSelectedBookIds,
+		isSubmitting,
+		setIsSubmitting,
+		buildPayload,
+	} = form
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 
-		// Validate all fields before submission
-		const emailsValid = validateEmails(emails)
-		const urlsValid = validateUrls(urls)
-
-		if (!emailsValid || !urlsValid) {
-			// Scroll to first error
+		if (!validateAll()) {
 			const firstErrorField = document.querySelector('.border-red-500')
 			if (firstErrorField) {
 				firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -296,85 +88,7 @@ export function ContactForm({ contact, onSubmit, onCancel }: ContactFormProps) {
 
 		setIsSubmitting(true)
 		try {
-			const parseListInput = (value: string): Array<string> =>
-				value
-					.split(',')
-					.map(entry => entry.trim())
-					.filter(Boolean)
-
-			// Normalize URLs before submission
-			const normalizedUrls = urls.map(url => ({
-				...url,
-				value: url.value.trim() ? normalizeUrl(url.value) : url.value,
-			}))
-
-			const normalizedPhones = phones.map(phone => ({
-				...phone,
-				value: normalizePhoneNumber(phone.value) ?? '',
-			}))
-
-			// Filter out empty fields before submission
-			const nonEmptyPhones = normalizedPhones.filter(p => p.value.trim())
-			const nonEmptyEmails = emails.filter(emailField => emailField.value.trim())
-			const nonEmptyAddresses = addresses.filter(a => a.value.trim())
-			const nonEmptyUrls = normalizedUrls.filter(u => u.value.trim())
-			const nonEmptyLabels = labels.filter(label => label.value.trim())
-			const nonEmptyLogos = logos.filter(logo => logo.value.trim())
-			const nonEmptySounds = sounds.filter(sound => sound.value.trim())
-			const nonEmptyKeys = keys.filter(key => key.value.trim())
-			const nonEmptyCustomFields = customFields.filter(field => field.key.trim() && field.value.trim())
-			const orgUnits = parseListInput(orgUnitsInput)
-			const categories = parseListInput(categoriesInput)
-
-			// Extract structured address fields from the first address (primary address)
-			let structuredAddressFields: Partial<Contact> = {}
-			if (nonEmptyAddresses.length > 0) {
-				const primaryAddress = nonEmptyAddresses[0].value
-				const parsed = parseAddress(primaryAddress)
-				structuredAddressFields = {
-					address_street: parsed.street || null,
-					address_city: parsed.city || null,
-					address_state: parsed.state || null,
-					address_postal: parsed.postal || null,
-					address_country: parsed.country || null,
-				}
-			}
-
-			const photoPayload: ContactPayload = {}
-			if (photoRemove) {
-				photoPayload.photo_remove = true
-			} else if (photoData && photoMime) {
-				photoPayload.photo_data = photoData
-				photoPayload.photo_mime = photoMime
-				photoPayload.photo_width = photoWidth || 512
-				photoPayload.photo_height = photoHeight || 512
-			}
-
-			await onSubmit({
-				...formData,
-				full_name: fullName || null,
-				birthday: formData.birthday || null,
-				phones: nonEmptyPhones.length > 0 ? nonEmptyPhones : null,
-				emails: nonEmptyEmails.length > 0 ? nonEmptyEmails : null,
-				addresses: nonEmptyAddresses.length > 0 ? nonEmptyAddresses : null,
-				urls: nonEmptyUrls.length > 0 ? nonEmptyUrls : null,
-				labels: nonEmptyLabels.length > 0 ? nonEmptyLabels : null,
-				logos: nonEmptyLogos.length > 0 ? nonEmptyLogos : null,
-				sounds: nonEmptySounds.length > 0 ? nonEmptySounds : null,
-				keys: nonEmptyKeys.length > 0 ? nonEmptyKeys : null,
-				org_units: orgUnits.length > 0 ? orgUnits : null,
-				categories: categories.length > 0 ? categories : null,
-				custom_fields: nonEmptyCustomFields.length > 0 ? nonEmptyCustomFields : null,
-				// Backward compatibility: set single values from arrays
-				phone: nonEmptyPhones.length > 0 ? nonEmptyPhones[0].value : null,
-				email: nonEmptyEmails.length > 0 ? nonEmptyEmails[0].value : null,
-				address: nonEmptyAddresses.length > 0 ? nonEmptyAddresses[0].value : null,
-				homepage: nonEmptyUrls.length > 0 ? nonEmptyUrls[0].value : null,
-				// Structured address fields for easier querying and display
-				...structuredAddressFields,
-				...photoPayload,
-				address_book_ids: selectedBookIds,
-			})
+			await onSubmit(buildPayload({ includeAddressBooks: true }))
 		} finally {
 			setIsSubmitting(false)
 		}
