@@ -60,8 +60,9 @@ interface BuildPayloadOptions {
 
 /**
  * Owns all contact form state, handlers, validation, and payload building.
- * Shared by the standalone {@link ContactForm} and the two-column contact
- * editor so a live preview can read the same in-progress values the form edits.
+ * Shared by the create (`/new`) and edit (`/$id`) screens, which both drive the
+ * two-column ContactEditPane + ContactPreview so a live preview can read the
+ * same in-progress values the form edits.
  */
 export function useContactForm(contact?: Contact) {
 	const [formData, setFormData] = useState({

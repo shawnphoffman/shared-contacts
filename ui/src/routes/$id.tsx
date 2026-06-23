@@ -7,7 +7,8 @@ import { ContactHistoryPanel } from '../components/ContactHistoryPanel'
 import { ContactPreview } from '../components/ContactPreview'
 import { useContactForm } from '../components/contact-form/useContactForm'
 import { Button } from '../components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
+import { PageContainer } from '../components/ui/page-container'
 import type { ContactPayload } from '../components/contact-form/useContactForm'
 import type { Contact } from '../lib/db'
 
@@ -110,7 +111,7 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 
 	const handleSave = () => {
 		if (!form.validateAll()) {
-			const firstErrorField = document.querySelector('.border-red-500')
+			const firstErrorField = document.querySelector('.border-destructive')
 			firstErrorField?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 			return
 		}
@@ -120,7 +121,7 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 	const displayName = form.fullName.trim() || 'Unnamed contact'
 
 	return (
-		<div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
+		<PageContainer width="wide">
 			{/* Header */}
 			<div className="mb-6 flex flex-wrap items-center gap-3">
 				<button
@@ -178,24 +179,16 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 				</div>
 			</div>
 
-			<Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Delete Contact</DialogTitle>
-						<DialogDescription>
-							Are you sure you want to delete {contact.full_name || 'this contact'}? This action cannot be undone.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-							Cancel
-						</Button>
-						<Button variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
-							{deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</div>
+			<ConfirmDialog
+				open={showDeleteDialog}
+				onOpenChange={setShowDeleteDialog}
+				title="Delete Contact"
+				description={`Are you sure you want to delete ${contact.full_name || 'this contact'}? This action cannot be undone.`}
+				confirmLabel="Delete"
+				pendingLabel="Deleting…"
+				onConfirm={() => deleteMutation.mutate()}
+				pending={deleteMutation.isPending}
+			/>
+		</PageContainer>
 	)
 }

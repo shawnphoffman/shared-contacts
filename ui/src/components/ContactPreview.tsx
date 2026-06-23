@@ -66,8 +66,10 @@ function PreviewRow({ label, type, children }: { label: string; type?: string; c
 
 interface ContactPreviewProps {
 	form: UseContactForm
-	contact: Contact
-	onDelete: () => void
+	/** The saved contact, when editing an existing one. Omitted on the create
+	 * screen, where there is no raw vCard metadata or delete affordance yet. */
+	contact?: Contact
+	onDelete?: () => void
 }
 
 /**
@@ -121,10 +123,10 @@ export function ContactPreview({ form, contact, onDelete }: ContactPreviewProps)
 	const primaryPhone = nonEmptyPhones[0]?.value
 
 	const rawEntries: Array<[string, string]> = [
-		['PRODID', contact.prod_id || ''],
-		['REV', contact.revision || ''],
-		['X-IMAGEHASH', contact.photo_hash || ''],
-		['X-IMAGETYPE', contact.photo_mime ? `PHOTO · ${contact.photo_mime}` : ''],
+		['PRODID', contact?.prod_id || ''],
+		['REV', contact?.revision || ''],
+		['X-IMAGEHASH', contact?.photo_hash || ''],
+		['X-IMAGETYPE', contact?.photo_mime ? `PHOTO · ${contact.photo_mime}` : ''],
 	].filter((entry): entry is [string, string] => Boolean(entry[1]))
 
 	return (
@@ -179,10 +181,18 @@ export function ContactPreview({ form, contact, onDelete }: ContactPreviewProps)
 						Call
 					</Button>
 				)}
-				<Button variant="secondary" size="sm" className="ml-auto px-2" aria-label="More actions" onClick={() => setShowMenu(prev => !prev)}>
-					<MoreHorizontal className="size-4" />
-				</Button>
-				{showMenu && (
+				{onDelete && (
+					<Button
+						variant="secondary"
+						size="sm"
+						className="ml-auto px-2"
+						aria-label="More actions"
+						onClick={() => setShowMenu(prev => !prev)}
+					>
+						<MoreHorizontal className="size-4" />
+					</Button>
+				)}
+				{onDelete && showMenu && (
 					<>
 						<div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
 						<div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-md">

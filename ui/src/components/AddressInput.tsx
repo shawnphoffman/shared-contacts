@@ -296,7 +296,7 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
 				placeholder="Street address"
 				value={structured.street}
 				onChange={e => updateField('street', e.target.value)}
-				className={error ? 'border-red-500' : ''}
+				className={error ? 'border-destructive' : ''}
 			/>
 			<Input
 				name="address-city"
@@ -328,7 +328,7 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
 				value={structured.country}
 				onChange={e => updateField('country', e.target.value)}
 			/>
-			{error && <p className="text-sm text-red-500">{error}</p>}
+			{error && <p className="text-sm text-destructive">{error}</p>}
 		</div>
 	)
 }

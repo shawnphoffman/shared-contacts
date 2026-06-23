@@ -179,9 +179,9 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 									value={field.value}
 									onChange={e => onChange(e.target.value)}
 									placeholder="Enter email address"
-									className={validationErrors.emails?.[index] ? 'border-red-500' : ''}
+									className={validationErrors.emails?.[index] ? 'border-destructive' : ''}
 								/>
-								{validationErrors.emails?.[index] && <p className="mt-1 text-sm text-red-500">{validationErrors.emails[index]}</p>}
+								{validationErrors.emails?.[index] && <p className="mt-1 text-sm text-destructive">{validationErrors.emails[index]}</p>}
 							</div>
 						)}
 					/>
@@ -349,9 +349,9 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 											value={field.value}
 											onChange={e => onChange(e.target.value)}
 											placeholder="example.com or https://example.com"
-											className={validationErrors.urls?.[index] ? 'border-red-500' : ''}
+											className={validationErrors.urls?.[index] ? 'border-destructive' : ''}
 										/>
-										{validationErrors.urls?.[index] && <p className="mt-1 text-sm text-red-500">{validationErrors.urls[index]}</p>}
+										{validationErrors.urls?.[index] && <p className="mt-1 text-sm text-destructive">{validationErrors.urls[index]}</p>}
 									</div>
 								)}
 							/>
