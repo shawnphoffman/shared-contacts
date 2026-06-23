@@ -5,6 +5,9 @@ import { ChevronDown, ChevronRight, History, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
+import { PageContainer } from '../components/ui/page-container'
+import { PageHeader } from '../components/ui/page-header'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import {
 	UNDOABLE_OPS,
@@ -29,6 +32,7 @@ function HistoryPage() {
 	const queryClient = useQueryClient()
 	const queryKey = ['history', contactId ?? null] as const
 	const [expandedId, setExpandedId] = useState<string | null>(null)
+	const [confirmId, setConfirmId] = useState<string | null>(null)
 
 	const { data, isLoading, error } = useQuery({
 		queryKey,
@@ -39,6 +43,7 @@ function HistoryPage() {
 		mutationFn: undoHistory,
 		onSuccess: result => {
 			toast.success(result.message || 'Change undone')
+			setConfirmId(null)
 			queryClient.invalidateQueries({ queryKey: ['history'] })
 			queryClient.invalidateQueries({ queryKey: ['contacts'] })
 			queryClient.invalidateQueries({ queryKey: ['trash'] })
@@ -48,37 +53,38 @@ function HistoryPage() {
 
 	const rows = data?.rows ?? []
 
+	const description = contactId
+		? `History for this contact (${rows.length} of ${data?.total ?? 0}).`
+		: `Every change made to your contacts (${rows.length} of ${data?.total ?? 0}).`
+
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center">Loading history…</div>
-			</div>
+			<PageContainer width="wide">
+				<PageHeader icon={<History />} title="History" description="Every change made to your contacts." />
+				<div className="mt-6 text-center text-sm text-muted-foreground">Loading history…</div>
+			</PageContainer>
 		)
 	}
 
 	if (error) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center text-red-500">Error loading history</div>
-			</div>
+			<PageContainer width="wide">
+				<PageHeader icon={<History />} title="History" description="Every change made to your contacts." />
+				<div className="mt-6 text-center text-sm text-destructive">Error loading history</div>
+			</PageContainer>
 		)
 	}
 
 	return (
-		<div className="container mx-auto p-6 max-w-6xl">
-			<div className="mb-6">
-				<h1 className="text-3xl font-bold flex items-center gap-2">
-					<History className="w-7 h-7" />
-					Change History
-				</h1>
-				<p className="text-muted-foreground mt-1">
-					{contactId ? 'History for this contact' : 'All changes across contacts'} ({rows.length} of {data?.total ?? 0})
-				</p>
-			</div>
+		<PageContainer width="wide" className="space-y-6">
+			<PageHeader icon={<History />} title="History" description={description} />
 
 			{rows.length === 0 ? (
 				<Card>
-					<CardContent className="py-12 text-center text-muted-foreground">No history yet.</CardContent>
+					<CardContent className="flex flex-col items-center gap-2 py-12 text-center">
+						<History className="size-8 text-muted-foreground" />
+						<p className="text-sm text-muted-foreground">No history yet.</p>
+					</CardContent>
 				</Card>
 			) : (
 				<div className="rounded-md border">
@@ -102,40 +108,35 @@ function HistoryPage() {
 								return (
 									<Fragment key={row.id}>
 										<TableRow className={undone ? 'opacity-60' : ''}>
-											<TableCell className="text-sm whitespace-nowrap align-top">{formatDate(row.created_at)}</TableCell>
+											<TableCell className="align-top whitespace-nowrap text-sm text-muted-foreground">
+												{formatDate(row.created_at)}
+											</TableCell>
 											<TableCell className="align-top">
 												<span className={operationBadgeClass(row.operation)}>{row.operation}</span>
 											</TableCell>
-											<TableCell className="text-sm align-top">{describeSource(row.source)}</TableCell>
-											<TableCell className="text-sm align-top">{row.actor || (row.actor_type === 'system' ? 'system' : '—')}</TableCell>
+											<TableCell className="align-top text-sm text-muted-foreground">{describeSource(row.source)}</TableCell>
+											<TableCell className="align-top text-sm font-medium">
+												{row.actor || (row.actor_type === 'system' ? 'system' : '—')}
+											</TableCell>
 											<TableCell className="text-sm">
 												<div>{row.summary || '—'}</div>
 												{changes.length > 0 && (
 													<button
 														type="button"
 														onClick={() => setExpandedId(expanded ? null : row.id)}
-														className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5 hover:text-foreground transition-colors"
+														className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
 														aria-expanded={expanded}
 													>
-														{expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+														{expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
 														{changes.length} {changes.length === 1 ? 'field' : 'fields'} changed
 													</button>
 												)}
-												{undone && <div className="text-xs italic text-muted-foreground mt-0.5">Undone {formatDate(row.undone_at!)}</div>}
+												{undone && <div className="mt-0.5 text-xs italic text-muted-foreground">Undone {formatDate(row.undone_at!)}</div>}
 											</TableCell>
-											<TableCell className="text-right align-top">
+											<TableCell className="align-top text-right">
 												{canUndo ? (
-													<Button
-														variant="outline"
-														size="sm"
-														onClick={() => {
-															if (window.confirm('Undo this change? A new history entry will be recorded.')) {
-																undoMutation.mutate(row.id)
-															}
-														}}
-														disabled={undoMutation.isPending}
-													>
-														<RotateCcw className="w-3 h-3 mr-1" />
+													<Button variant="outline" size="sm" onClick={() => setConfirmId(row.id)} disabled={undoMutation.isPending}>
+														<RotateCcw className="mr-1 size-3" />
 														Undo
 													</Button>
 												) : (
@@ -174,6 +175,22 @@ function HistoryPage() {
 					</Table>
 				</div>
 			)}
-		</div>
+
+			<ConfirmDialog
+				open={confirmId !== null}
+				onOpenChange={open => {
+					if (!open) setConfirmId(null)
+				}}
+				variant="default"
+				title="Undo this change?"
+				description="A new history entry will be recorded."
+				confirmLabel="Undo"
+				pendingLabel="Undoing…"
+				pending={undoMutation.isPending}
+				onConfirm={() => {
+					if (confirmId) undoMutation.mutate(confirmId)
+				}}
+			/>
+		</PageContainer>
 	)
 }
