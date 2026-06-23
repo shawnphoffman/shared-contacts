@@ -1,9 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { RotateCcw, Trash2 } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Card, CardContent } from '../components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export const Route = createFileRoute('/trash')({
 	component: TrashPage,
@@ -40,6 +44,8 @@ async function trashAction(action: string, id?: string): Promise<void> {
 
 function TrashPage() {
 	const queryClient = useQueryClient()
+	const [deleteTarget, setDeleteTarget] = useState<DeletedContact | null>(null)
+	const [emptyOpen, setEmptyOpen] = useState(false)
 
 	const {
 		data: contacts = [],
@@ -55,6 +61,10 @@ function TrashPage() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['trash'] })
 			queryClient.invalidateQueries({ queryKey: ['contacts'] })
+			toast.success('Contact restored')
+		},
+		onError: (err: Error) => {
+			toast.error(err.message)
 		},
 	})
 
@@ -62,6 +72,11 @@ function TrashPage() {
 		mutationFn: (id: string) => trashAction('permanent-delete', id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['trash'] })
+			setDeleteTarget(null)
+			toast.success('Contact permanently deleted')
+		},
+		onError: (err: Error) => {
+			toast.error(err.message)
 		},
 	})
 
@@ -69,6 +84,11 @@ function TrashPage() {
 		mutationFn: () => trashAction('empty'),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['trash'] })
+			setEmptyOpen(false)
+			toast.success('Trash emptied')
+		},
+		onError: (err: Error) => {
+			toast.error(err.message)
 		},
 	})
 
@@ -89,54 +109,49 @@ function TrashPage() {
 		})
 	}
 
+	const header = (
+		<PageHeader
+			icon={<Trash2 />}
+			title="Trash"
+			description="Restore contacts or permanently remove them."
+			actions={
+				contacts.length > 0 ? (
+					<Button variant="destructive" onClick={() => setEmptyOpen(true)} disabled={emptyMutation.isPending}>
+						<Trash2 className="mr-2 h-4 w-4" />
+						{emptyMutation.isPending ? 'Emptying…' : 'Empty trash'}
+					</Button>
+				) : undefined
+			}
+		/>
+	)
+
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center">Loading...</div>
-			</div>
+			<PageContainer width="standard" className="space-y-6">
+				{header}
+				<div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>
+			</PageContainer>
 		)
 	}
 
 	if (error) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center text-red-500">Error loading trash</div>
-			</div>
+			<PageContainer width="standard" className="space-y-6">
+				{header}
+				<div className="py-12 text-center text-sm text-destructive">Error loading trash</div>
+			</PageContainer>
 		)
 	}
 
 	return (
-		<div className="container mx-auto p-6 max-w-4xl">
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="text-3xl font-bold flex items-center gap-2">
-						<Trash2 className="w-7 h-7" />
-						Trash
-					</h1>
-					<p className="text-muted-foreground mt-1">
-						{contacts.length === 0 ? 'No deleted contacts' : `${contacts.length} deleted contact${contacts.length === 1 ? '' : 's'}`}
-					</p>
-				</div>
-				{contacts.length > 0 && (
-					<Button
-						variant="destructive"
-						onClick={() => {
-							if (window.confirm('Permanently delete all contacts in trash? This cannot be undone.')) {
-								emptyMutation.mutate()
-							}
-						}}
-						disabled={emptyMutation.isPending}
-					>
-						<Trash2 className="w-4 h-4 mr-1" />
-						{emptyMutation.isPending ? 'Emptying...' : 'Empty Trash'}
-					</Button>
-				)}
-			</div>
+		<PageContainer width="standard" className="space-y-6">
+			{header}
 
 			{contacts.length === 0 ? (
-				<Card>
-					<CardContent className="py-12 text-center text-muted-foreground">Trash is empty. Deleted contacts will appear here.</CardContent>
-				</Card>
+				<div className="flex flex-col items-center gap-2 rounded-2xl border bg-card py-16 text-center">
+					<Trash2 className="size-8 text-muted-foreground" />
+					<p className="text-sm text-muted-foreground">Trash is empty. Deleted contacts will appear here.</p>
+				</div>
 			) : (
 				<div className="rounded-md border">
 					<Table>
@@ -149,43 +164,69 @@ function TrashPage() {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{contacts.map(contact => (
-								<TableRow key={contact.id}>
-									<TableCell className="font-medium">{getDisplayName(contact)}</TableCell>
-									<TableCell className="hidden sm:table-cell text-muted-foreground">{contact.email || '—'}</TableCell>
-									<TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(contact.deleted_at)}</TableCell>
-									<TableCell className="text-right">
-										<div className="flex justify-end gap-2">
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => restoreMutation.mutate(contact.id)}
-												disabled={restoreMutation.isPending}
-											>
-												<RotateCcw className="w-3 h-3 mr-1" />
-												Restore
-											</Button>
-											<Button
-												variant="destructive"
-												size="sm"
-												onClick={() => {
-													if (window.confirm(`Permanently delete "${getDisplayName(contact)}"? This cannot be undone.`)) {
-														deleteMutation.mutate(contact.id)
-													}
-												}}
-												disabled={deleteMutation.isPending}
-											>
-												<Trash2 className="w-3 h-3 mr-1" />
-												Delete
-											</Button>
-										</div>
-									</TableCell>
-								</TableRow>
-							))}
+							{contacts.map(contact => {
+								const deletingThis = deleteMutation.isPending && deleteTarget?.id === contact.id
+								const restoringThis = restoreMutation.isPending && restoreMutation.variables === contact.id
+								return (
+									<TableRow key={contact.id}>
+										<TableCell className="font-medium">{getDisplayName(contact)}</TableCell>
+										<TableCell className="hidden text-muted-foreground sm:table-cell">{contact.email || '-'}</TableCell>
+										<TableCell className="hidden text-sm text-muted-foreground md:table-cell">{formatDate(contact.deleted_at)}</TableCell>
+										<TableCell className="text-right">
+											<div className="flex justify-end gap-2">
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => restoreMutation.mutate(contact.id)}
+													disabled={restoreMutation.isPending}
+												>
+													<RotateCcw className="mr-1 h-3 w-3" />
+													{restoringThis ? 'Restoring…' : 'Restore'}
+												</Button>
+												<Button
+													variant="destructive"
+													size="sm"
+													onClick={() => setDeleteTarget(contact)}
+													disabled={deleteMutation.isPending}
+												>
+													<Trash2 className="mr-1 h-3 w-3" />
+													{deletingThis ? 'Deleting…' : 'Delete'}
+												</Button>
+											</div>
+										</TableCell>
+									</TableRow>
+								)
+							})}
 						</TableBody>
 					</Table>
 				</div>
 			)}
-		</div>
+
+			<ConfirmDialog
+				open={deleteTarget !== null}
+				onOpenChange={open => {
+					if (!open) setDeleteTarget(null)
+				}}
+				title={deleteTarget ? `Permanently delete ${getDisplayName(deleteTarget)}?` : 'Permanently delete contact?'}
+				description="This cannot be undone."
+				confirmLabel="Delete"
+				pendingLabel="Deleting…"
+				onConfirm={() => {
+					if (deleteTarget) deleteMutation.mutate(deleteTarget.id)
+				}}
+				pending={deleteMutation.isPending}
+			/>
+
+			<ConfirmDialog
+				open={emptyOpen}
+				onOpenChange={setEmptyOpen}
+				title={`Permanently delete all ${contacts.length} contact${contacts.length === 1 ? '' : 's'} in trash?`}
+				description="This cannot be undone."
+				confirmLabel="Empty trash"
+				pendingLabel="Emptying…"
+				onConfirm={() => emptyMutation.mutate()}
+				pending={emptyMutation.isPending}
+			/>
+		</PageContainer>
 	)
 }
