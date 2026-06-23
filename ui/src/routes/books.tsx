@@ -2,12 +2,16 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BookOpen, Edit, Eye, EyeOff, Plus, Server, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
+import { PageContainer } from '../components/ui/page-container'
+import { PageHeader } from '../components/ui/page-header'
+import { Skeleton } from '../components/ui/skeleton'
 import { Switch } from '../components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import {
@@ -177,7 +181,7 @@ function EditBookDialog({ book, open, onOpenChange }: { book: AddressBook | null
 					<Field>
 						<FieldLabel>Slug</FieldLabel>
 						<FieldContent>
-							<code className="text-sm text-muted-foreground">{book.slug}</code>
+							<code className="font-mono text-sm text-muted-foreground">{book.slug}</code>
 						</FieldContent>
 					</Field>
 					<label className="flex items-center gap-2">
@@ -291,7 +295,7 @@ function ConnectionDetailsDialog({
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Server className="size-5" />
-						Connection Details — {book.name}
+						Connection Details - {book.name}
 					</DialogTitle>
 					<DialogDescription>
 						CardDAV subscription URLs for users assigned to this book. Use the composite username and URL when configuring CardDAV clients.
@@ -319,7 +323,7 @@ function ConnectionDetailsDialog({
 												<div className="flex items-start justify-between gap-2">
 													<div className="min-w-0">
 														<div className="text-[11px] uppercase text-muted-foreground mb-0.5">URL</div>
-														<code className="text-xs break-all">{directUrl}</code>
+														<code className="font-mono text-xs text-muted-foreground break-all">{directUrl}</code>
 													</div>
 													<CopyButton text={directUrl} label="URL" />
 												</div>
@@ -328,14 +332,14 @@ function ConnectionDetailsDialog({
 													<div className="flex items-start justify-between gap-2">
 														<div className="min-w-0">
 															<div className="text-[11px] uppercase text-muted-foreground mb-0.5">Direct</div>
-															<code className="text-xs break-all">{directUrl}</code>
+															<code className="font-mono text-xs text-muted-foreground break-all">{directUrl}</code>
 														</div>
 														<CopyButton text={directUrl} label="Direct" />
 													</div>
 													<div className="flex items-start justify-between gap-2">
 														<div className="min-w-0">
 															<div className="text-[11px] uppercase text-muted-foreground mb-0.5">Proxy</div>
-															<code className="text-xs break-all">{proxyUrl}</code>
+															<code className="font-mono text-xs text-muted-foreground break-all">{proxyUrl}</code>
 														</div>
 														<CopyButton text={proxyUrl} label="Proxy" />
 													</div>
@@ -419,25 +423,25 @@ function BooksPage() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
-				<div className="h-16 w-64 animate-pulse rounded bg-muted" />
-				<div className="h-48 animate-pulse rounded-lg bg-muted" />
-			</div>
+			<PageContainer width="standard" className="space-y-6">
+				<Skeleton className="h-16 w-64" />
+				<Skeleton className="h-48 w-full" />
+			</PageContainer>
 		)
 	}
 
 	return (
-		<div className="container mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div>
-					<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Address Books</h1>
-					<p className="mt-1 text-sm text-muted-foreground">Manage address books and view connection details.</p>
-				</div>
-				<Button onClick={() => setIsCreateDialogOpen(true)} className="shrink-0">
-					<Plus className="mr-2 h-4 w-4" />
-					New Book
-				</Button>
-			</div>
+		<PageContainer width="standard" className="space-y-6">
+			<PageHeader
+				title="Address Books"
+				description="Manage address books and view connection details."
+				actions={
+					<Button onClick={() => setIsCreateDialogOpen(true)}>
+						<Plus className="mr-2 h-4 w-4" />
+						New Book
+					</Button>
+				}
+			/>
 
 			{books.length === 0 ? (
 				<Card className="border-dashed">
@@ -447,7 +451,7 @@ function BooksPage() {
 						<p className="mb-6 text-sm text-muted-foreground">Create one to organize contacts and share read-only links.</p>
 						<Button onClick={() => setIsCreateDialogOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
-							Create First Book
+							Create first book
 						</Button>
 					</CardContent>
 				</Card>
@@ -522,7 +526,7 @@ function BooksPage() {
 							/>
 							<span>Public book</span>
 						</label>
-						{error && <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950 p-2 rounded">{error}</div>}
+						{error && <div className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</div>}
 					</div>
 					<DialogFooter>
 						<Button
@@ -546,7 +550,7 @@ function BooksPage() {
 							}
 							disabled={createMutation.isPending}
 						>
-							{createMutation.isPending ? 'Creating...' : 'Create'}
+							{createMutation.isPending ? 'Creating…' : 'Create'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -557,7 +561,7 @@ function BooksPage() {
 
 			{/* Connection Details Dialog */}
 			<ConnectionDetailsDialog book={selectedBook} open={isConnectionDialogOpen} onOpenChange={setIsConnectionDialogOpen} />
-		</div>
+		</PageContainer>
 	)
 }
 
@@ -573,29 +577,13 @@ function BookRow({ book, onEdit, onConnectionDetails }: { book: AddressBook; onE
 		<TableRow>
 			<TableCell className="font-medium">{book.name}</TableCell>
 			<TableCell className="hidden sm:table-cell">
-				<code className="text-xs text-muted-foreground">{book.slug}</code>
+				<code className="font-mono text-xs text-muted-foreground">{book.slug}</code>
 			</TableCell>
 			<TableCell className="hidden sm:table-cell">
-				<span
-					className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-						book.is_public
-							? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-							: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-					}`}
-				>
-					{book.is_public ? 'Public' : 'Private'}
-				</span>
+				<Badge variant={book.is_public ? 'secondary' : 'outline'}>{book.is_public ? 'Public' : 'Private'}</Badge>
 			</TableCell>
 			<TableCell className="hidden sm:table-cell">
-				<span
-					className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-						details?.readonly_enabled
-							? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-							: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-					}`}
-				>
-					{details?.readonly_enabled ? 'Yes' : 'No'}
-				</span>
+				<Badge variant={details?.readonly_enabled ? 'secondary' : 'outline'}>{details?.readonly_enabled ? 'Yes' : 'No'}</Badge>
 			</TableCell>
 			<TableCell className="text-right">
 				<div className="flex justify-end gap-2">
