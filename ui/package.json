@@ -34,7 +34,7 @@
 		"@tanstack/react-table": "^8.21.2",
 		"@tanstack/router-plugin": "^1.132.0",
 		"@types/pg": "^8.15.6",
-		"bcrypt": "^5.1.1",
+		"bcryptjs": "^3.0.2",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"libphonenumber-js": "^1.12.34",
@@ -55,7 +55,6 @@
 	},
 	"devDependencies": {
 		"@tanstack/eslint-config": "^0.3.0",
-		"@types/bcrypt": "^6.0.0",
 		"@types/node": "^22.10.2",
 		"@types/react": "^19.2.0",
 		"@types/react-dom": "^19.2.0",
