@@ -10,9 +10,9 @@ Integration branch: `redesign/unify` (branched from `main` @ cc40689).
 - **DESIGN_SYSTEM_PATH** (`FACT-DS`): `ui/src/components/ui/*` (20 shadcn primitives: accordion, button, card, checkbox, dialog, field, input, item, label, select, separator, sheet, skeleton, slider, sonner, spinner, switch, table, textarea, toggle, tooltip). Tokens in `ui/src/styles.css`. These are the FROZEN shared layer after the design-system step.
 - **VERIFY_COMMANDS** (`FACT-VERIFY`) — exact, from `.github/workflows/test.yml`. Run from `ui/` unless noted:
   - Typecheck: `npx tsc --noEmit -p tsconfig.build.json`
-  - Lint: `npm run lint`  (eslint, tanstack config)
-  - Unit tests: `npm run test:unit`  (vitest run)
-  - Format (from repo ROOT): `npm run format:check`  (prettier --check .). Agents should run `npx prettier --write <changed files>` before reporting.
+  - Lint: `npm run lint` (eslint, tanstack config)
+  - Unit tests: `npm run test:unit` (vitest run)
+  - Format (from repo ROOT): `npm run format:check` (prettier --check .). Agents should run `npx prettier --write <changed files>` before reporting.
   - No standalone `typecheck` npm script exists; use the tsc command above. Build (`vite build`) and docker-smoke exist in CI but are heavy; not part of the per-flow gate.
 - **BASELINE** (`FACT-BASE`): On `redesign/unify` base, full gate is GREEN — typecheck PASS, lint PASS (1 pre-existing warning: `routes/api/mobileconfig.test.ts:16` require-await), 181 unit tests PASS, format PASS.
 - **DO_NOT_TOUCH** (`FACT-DNT`): behavior must stay stable.
@@ -27,27 +27,40 @@ Integration branch: `redesign/unify` (branched from `main` @ cc40689).
 
 Shared chrome renders every flow but lives in separate files (no conflict). `components/ui/**` is frozen for all flow agents.
 
-- [TODO] `REF-SHELL`  app-shell-and-nav — owns: `routes/__root.tsx`, `components/AppSidebar.tsx`, `components/MobileHeader.tsx`, `components/ThemeToggle.tsx`, `components/ThemeProvider.tsx`, `components/SupportDialog.tsx`
-- [TODO] `REF-LIST`   contacts-list — owns: `routes/index.tsx`, `components/ContactAvatar.tsx`, `components/DeduplicateButton.tsx`, `components/MergeButton.tsx`  (ContactCard dead/untouched)
-- [TODO] `REF-EDIT`   contact-editor — owns: `routes/$id.tsx`, `routes/new.tsx`, `components/ContactEditPane.tsx`, `components/ContactPreview.tsx`, `components/ContactHistoryPanel.tsx`, `components/ContactForm.tsx`, `components/AddressInput.tsx`, `components/PhoneInput.tsx`, `components/MultiFieldInput.tsx`, `components/contact-form/**`. NOTE: `$id` editor was already redesigned (commit dbbf61f) — it is the NORTH STAR. This flow's job: align to the frozen system + port the still-old `routes/new.tsx` (single-column `ContactForm`) onto the new editor.
-- [TODO] `REF-BOOKS`  address-books — owns: `routes/books.tsx`
-- [TODO] `REF-USERS`  book-users-admin — owns: `routes/radicale-users.tsx`
-- [TODO] `REF-DAV`    carddav-config-admin — owns: `routes/carddav-connection.tsx`
-- [TODO] `REF-DUP`    duplicates — owns: `routes/duplicates.tsx`
-- [TODO] `REF-TRASH`  trash — owns: `routes/trash.tsx`
-- [TODO] `REF-HIST`   history — owns: `routes/history.tsx`
+- [TODO] `REF-SHELL` app-shell-and-nav — owns: `routes/__root.tsx`, `components/AppSidebar.tsx`, `components/MobileHeader.tsx`, `components/ThemeToggle.tsx`, `components/ThemeProvider.tsx`, `components/SupportDialog.tsx`
+- [TODO] `REF-LIST` contacts-list — owns: `routes/index.tsx`, `components/ContactAvatar.tsx`, `components/DeduplicateButton.tsx`, `components/MergeButton.tsx` (ContactCard dead/untouched)
+- [TODO] `REF-EDIT` contact-editor — owns: `routes/$id.tsx`, `routes/new.tsx`, `components/ContactEditPane.tsx`, `components/ContactPreview.tsx`, `components/ContactHistoryPanel.tsx`, `components/ContactForm.tsx`, `components/AddressInput.tsx`, `components/PhoneInput.tsx`, `components/MultiFieldInput.tsx`, `components/contact-form/**`. NOTE: `$id` editor was already redesigned (commit dbbf61f) — it is the NORTH STAR. This flow's job: align to the frozen system + port the still-old `routes/new.tsx` (single-column `ContactForm`) onto the new editor.
+- [TODO] `REF-BOOKS` address-books — owns: `routes/books.tsx`
+- [TODO] `REF-USERS` book-users-admin — owns: `routes/radicale-users.tsx`
+- [TODO] `REF-DAV` carddav-config-admin — owns: `routes/carddav-connection.tsx`
+- [TODO] `REF-DUP` duplicates — owns: `routes/duplicates.tsx`
+- [TODO] `REF-TRASH` trash — owns: `routes/trash.tsx`
+- [TODO] `REF-HIST` history — owns: `routes/history.tsx`
 - [TODO] `REF-IMPORT` import — owns: `routes/import.tsx`, `components/CSVUpload.tsx`
-- [TODO] `REF-INFO`   help-and-about — owns: `routes/help.tsx`, `routes/about.tsx`
+- [TODO] `REF-INFO` help-and-about — owns: `routes/help.tsx`, `routes/about.tsx`
 
 ## Sequential prerequisites
 
-- [TODO] `REF-LANG`   design-language.md (doc only, no code) — BLOCKS everything
-- [TODO] `REF-SYS`    design-system (tokens + primitives refactor + design-system.md) — BLOCKS all flows; only agent allowed to edit `components/ui/**` and token block in `styles.css`
+- [DONE] `REF-LANG` design-language.md — committed ee6bfa5. `ui/design-language.md`.
+- [WIP] `REF-SYS` design-system (new shared layout components + badge + design-system.md) — BLOCKS all flows; only agent allowed to edit `components/ui/**` and token block in `styles.css`
+
+## Integration decisions (orchestrator) — resolving design-language §10 tensions
+
+- D1: migrate raw palette literals (`text-gray-*`, `bg-red-50`, `bg-green-100` pills) to tokens. Flow-agents apply per screen. Keep diff red/green as dark-aware pairs (domain convention).
+- D2: new shared `PageHeader` (title + one-line muted description + right-aligned actions slot). Canonical = books.tsx header generalized.
+- D3: new shared `PageContainer` with named widths — narrow (~max-w-2xl form), standard (~max-w-5xl table), wide (~max-w-6xl detail) + consistent padding.
+- D4: new shared `ConfirmDialog` (named-consequence destructive confirm) to retire `window.confirm`/`window.alert`.
+- D5: add shadcn `badge.tsx` for tokenized status pills (variants default/secondary/destructive/outline).
+- D6: `Card` keeps token radius; `rounded-2xl` reserved for hero/preview/detail panels (document, don't change Card).
+- D7: pending ellipsis standardized to `…`.
+- FROZEN LAYER after REF-SYS = `components/ui/**` (incl. new PageHeader/PageContainer/ConfirmDialog/badge) + token block in `styles.css`. Flow-agents consume, never edit.
 
 ## Shared-change requests
+
 (none yet — flow agents file these when a primitive needs changing)
 
 ## Open items / risks
+
 - Worktree node_modules: fan-out worktrees must symlink `ui/node_modules` + root `node_modules` from the main checkout so verify commands work without `npm ci`.
 - Pre-existing uncommitted change: `ui/package-lock.json` pins `nitro` `latest`→`3.0.1-alpha.2` (matches package.json). Harmless, left in working tree.
 - `styles.css` is split: token block (REF-SYS owns) vs nothing else editable by flows. Flow agents must not touch `styles.css`.
