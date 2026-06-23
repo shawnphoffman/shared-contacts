@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { BookOpen, Edit, Plus, RefreshCw, Trash2, Users, UsersRound } from 'lucide-react'
+import { BookOpen, Check, Copy, Edit, Plus, RefreshCw, Trash2, Users, UsersRound } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field, FieldContent, FieldLabel } from '../components/ui/field'
@@ -9,7 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Textarea } from '../components/ui/textarea'
 import { Checkbox } from '../components/ui/checkbox'
-import { Item } from '@/components/ui/item'
+import { Item, ItemContent, ItemDescription, ItemTitle } from '@/components/ui/item'
+import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export const Route = createFileRoute('/radicale-users')({
 	component: RadicaleUsersPage,
@@ -115,6 +121,37 @@ async function updateUserMemberships(username: string, addressBookIds: Array<str
 	}
 }
 
+// ── Username (machine value) with copy affordance ──────────────────
+
+function UsernameCell({ username }: { username: string }) {
+	const [copied, setCopied] = useState(false)
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(username)
+			setCopied(true)
+			setTimeout(() => setCopied(false), 2000)
+		} catch (err) {
+			console.error('Failed to copy:', err)
+		}
+	}
+
+	return (
+		<div className="flex items-center gap-2">
+			<span className="font-mono font-medium">{username}</span>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				className="text-muted-foreground"
+				onClick={handleCopy}
+				aria-label={copied ? `Copied ${username}` : `Copy username ${username}`}
+			>
+				{copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+			</Button>
+		</div>
+	)
+}
+
 function RadicaleUsersPage() {
 	const queryClient = useQueryClient()
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -124,7 +161,6 @@ function RadicaleUsersPage() {
 	const [selectedUser, setSelectedUser] = useState<string | null>(null)
 	const [formData, setFormData] = useState({ username: '', password: '' })
 	const [error, setError] = useState<string | null>(null)
-	const [backfillMessage, setBackfillMessage] = useState<string | null>(null)
 	const [selectedBookIds, setSelectedBookIds] = useState<Array<string>>([])
 	const [isBulkCreateDialogOpen, setIsBulkCreateDialogOpen] = useState(false)
 	const [bulkCreateInput, setBulkCreateInput] = useState('')
@@ -144,11 +180,12 @@ function RadicaleUsersPage() {
 
 	const createMutation = useMutation({
 		mutationFn: ({ username, password }: { username: string; password: string }) => createUser(username, password),
-		onSuccess: () => {
+		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
 			setIsCreateDialogOpen(false)
 			setFormData({ username: '', password: '' })
 			setError(null)
+			toast.success(`User ${variables.username} created`)
 		},
 		onError: (err: Error) => {
 			setError(err.message)
@@ -157,12 +194,13 @@ function RadicaleUsersPage() {
 
 	const updateMutation = useMutation({
 		mutationFn: ({ username, password }: { username: string; password: string }) => updateUserPassword(username, password),
-		onSuccess: () => {
+		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
 			setIsEditDialogOpen(false)
 			setSelectedUser(null)
 			setFormData({ username: '', password: '' })
 			setError(null)
+			toast.success(`Password updated for ${variables.username}`)
 		},
 		onError: (err: Error) => {
 			setError(err.message)
@@ -171,26 +209,24 @@ function RadicaleUsersPage() {
 
 	const deleteMutation = useMutation({
 		mutationFn: deleteUser,
-		onSuccess: () => {
+		onSuccess: (_data, username) => {
 			queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
 			setIsDeleteDialogOpen(false)
 			setSelectedUser(null)
-			setError(null)
+			toast.success(`User ${username} deleted`)
 		},
 		onError: (err: Error) => {
-			setError(err.message)
+			toast.error(err.message)
 		},
 	})
 
 	const backfillMutation = useMutation({
 		mutationFn: backfillSharedContacts,
 		onSuccess: (_data, username) => {
-			setBackfillMessage(`Backfill complete for ${username}.`)
-			setError(null)
+			toast.success(`Backfill complete for ${username}`)
 		},
 		onError: (err: Error) => {
-			setError(err.message)
-			setBackfillMessage(null)
+			toast.error(err.message)
 		},
 	})
 
@@ -200,23 +236,22 @@ function RadicaleUsersPage() {
 			return usernames.length
 		},
 		onSuccess: count => {
-			setBackfillMessage(`Backfill complete for ${count} user${count === 1 ? '' : 's'}.`)
-			setError(null)
+			toast.success(`Backfill complete for ${count} user${count === 1 ? '' : 's'}`)
 		},
 		onError: (err: Error) => {
-			setError(err.message)
-			setBackfillMessage(null)
+			toast.error(err.message)
 		},
 	})
 
 	const membershipUpdateMutation = useMutation({
 		mutationFn: ({ username, addressBookIds }: { username: string; addressBookIds: Array<string> }) =>
 			updateUserMemberships(username, addressBookIds),
-		onSuccess: () => {
+		onSuccess: (_data, variables) => {
 			setIsBooksDialogOpen(false)
 			setSelectedUser(null)
 			setSelectedBookIds([])
 			setError(null)
+			toast.success(`Address books updated for ${variables.username}`)
 		},
 		onError: (err: Error) => {
 			setError(err.message)
@@ -311,82 +346,87 @@ function RadicaleUsersPage() {
 		setIsBulkCreating(false)
 		queryClient.invalidateQueries({ queryKey: ['radicale-users'] })
 
-		const allSuccess = results.every(r => r.status === 'success')
-		if (allSuccess) {
+		const succeeded = results.filter(r => r.status === 'success').length
+		const failed = results.length - succeeded
+		if (failed === 0) {
+			toast.success(`Created ${succeeded} user${succeeded === 1 ? '' : 's'}`)
 			setTimeout(() => {
 				setIsBulkCreateDialogOpen(false)
 				setBulkCreateInput('')
 				setBulkCreatePassword('')
 				setBulkCreateResults([])
 			}, 1500)
+		} else {
+			toast.error(`${failed} of ${results.length} users could not be created`)
 		}
 	}
 
-	if (isLoading) {
-		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center">Loading users...</div>
-			</div>
-		)
-	}
-
 	return (
-		<div className="container mx-auto p-6 gap-6 flex flex-col max-w-2xl">
-			{/*  */}
-			<div className="flex justify-between items-center">
-				<div className="flex items-center gap-3">
-					<Users className="w-8 h-8" />
-					<h1 className="text-3xl font-bold">Radicale Users</h1>
-				</div>
-				<div className="flex gap-2">
-					<Button
-						variant="outline"
-						onClick={() => {
-							setBulkCreateInput('')
-							setBulkCreatePassword('')
-							setBulkCreateResults([])
-							setError(null)
-							setIsBulkCreateDialogOpen(true)
-						}}
-					>
-						<UsersRound className="w-4 h-4 mr-1" />
-						Bulk Create
-					</Button>
-					<Button onClick={() => setIsCreateDialogOpen(true)}>
-						<Plus className="w-4 h-4 mr-1" />
-						New User
-					</Button>
-				</div>
-			</div>
-
-			<div className="text-muted-foreground">
-				Manage users who can sync contacts via Radicale. These users are separate from the web UI authentication.
-			</div>
-			<Item variant="outline" className="flex flex-col gap-2 ">
-				<div className="flex flex-col sm:flex-row items-center w-full justify-between gap-4">
-					<div>
-						If a user cannot see existing shared contacts, run a backfill to copy the shared address book into their Radicale account.
-					</div>
-					{users.length > 0 && (
+		<PageContainer width="standard" className="space-y-6">
+			<PageHeader
+				title="Book Users"
+				description="CardDAV sync accounts that clients use to subscribe to address books. Separate from web UI sign-in."
+				actions={
+					<>
 						<Button
 							variant="outline"
-							size="sm"
-							onClick={() => backfillAllMutation.mutate(users.map(user => user.username))}
-							disabled={backfillAllMutation.isPending}
+							onClick={() => {
+								setBulkCreateInput('')
+								setBulkCreatePassword('')
+								setBulkCreateResults([])
+								setError(null)
+								setIsBulkCreateDialogOpen(true)
+							}}
 						>
-							<RefreshCw className="w-4 h-4 mr-1" />
-							{backfillAllMutation.isPending ? 'Backfilling...' : 'Backfill All Users'}
+							<UsersRound className="mr-1 size-4" />
+							Bulk Create
 						</Button>
-					)}
-				</div>
-				{backfillMessage && <Item variant="outline">{backfillMessage}</Item>}
+						<Button onClick={() => setIsCreateDialogOpen(true)}>
+							<Plus className="mr-1 size-4" />
+							New User
+						</Button>
+					</>
+				}
+			/>
+
+			<Item variant="outline">
+				<ItemContent>
+					<ItemTitle>
+						<RefreshCw className="size-4 text-muted-foreground" />
+						Backfill shared contacts
+					</ItemTitle>
+					<ItemDescription>
+						If a user cannot see existing shared contacts, run a backfill to copy the shared address book into their CardDAV account. This
+						does not affect their sign-in or assignments.
+					</ItemDescription>
+				</ItemContent>
+				{users.length > 0 && (
+					<Button
+						variant="outline"
+						size="sm"
+						className="self-start"
+						onClick={() => backfillAllMutation.mutate(users.map(user => user.username))}
+						disabled={backfillAllMutation.isPending}
+					>
+						<RefreshCw className="mr-1 size-4" />
+						{backfillAllMutation.isPending ? 'Backfilling…' : 'Backfill All Users'}
+					</Button>
+				)}
 			</Item>
 
-			{users.length === 0 ? (
-				<div className="text-center py-12 border rounded-lg">
-					<p className="text-gray-500 mb-4">No Radicale users yet.</p>
+			{isLoading ? (
+				<div className="space-y-3">
+					<Skeleton className="h-10 w-full" />
+					<Skeleton className="h-10 w-full" />
+					<Skeleton className="h-10 w-full" />
+				</div>
+			) : users.length === 0 ? (
+				<div className="flex flex-col items-center rounded-md border py-12 text-center">
+					<Users className="mb-4 size-10 text-muted-foreground" />
+					<p className="mb-1 text-muted-foreground">No book users yet</p>
+					<p className="mb-6 text-sm text-muted-foreground">Create one so a CardDAV client can subscribe to your address books.</p>
 					<Button onClick={() => setIsCreateDialogOpen(true)}>
-						<Plus className="w-4 h-4 mr-1" />
+						<Plus className="mr-1 size-4" />
 						Create First User
 					</Button>
 				</div>
@@ -402,11 +442,13 @@ function RadicaleUsersPage() {
 						<TableBody>
 							{users.map(user => (
 								<TableRow key={user.username}>
-									<TableCell className="font-medium">{user.username}</TableCell>
+									<TableCell>
+										<UsernameCell username={user.username} />
+									</TableCell>
 									<TableCell className="text-right">
-										<div className="flex flex-col sm:flex-row justify-end gap-2">
+										<div className="flex flex-col justify-end gap-2 sm:flex-row">
 											<Button variant="outline" size="sm" onClick={() => openBooksDialog(user.username)}>
-												<BookOpen className="w-4 h-4 mr-1" />
+												<BookOpen className="mr-1 size-4" />
 												Books
 											</Button>
 											<Button
@@ -415,15 +457,20 @@ function RadicaleUsersPage() {
 												onClick={() => backfillMutation.mutate(user.username)}
 												disabled={backfillMutation.isPending}
 											>
-												<RefreshCw className="w-4 h-4 mr-1" />
-												Backfill
+												<RefreshCw className="mr-1 size-4" />
+												{backfillMutation.isPending && backfillMutation.variables === user.username ? 'Backfilling…' : 'Backfill'}
 											</Button>
 											<Button variant="outline" size="sm" onClick={() => openEditDialog(user.username)}>
-												<Edit className="w-4 h-4 mr-1" />
+												<Edit className="mr-1 size-4" />
 												Change Password
 											</Button>
-											<Button variant="outline" size="sm" onClick={() => openDeleteDialog(user.username)}>
-												<Trash2 className="w-4 h-4 mr-1" />
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={() => openDeleteDialog(user.username)}
+												aria-label={`Delete user ${user.username}`}
+											>
+												<Trash2 className="mr-1 size-4" />
 												<span className="inline sm:hidden md:inline">Delete</span>
 											</Button>
 										</div>
@@ -439,12 +486,12 @@ function RadicaleUsersPage() {
 			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Create New Radicale User</DialogTitle>
+						<DialogTitle>New Book User</DialogTitle>
 						<DialogDescription>
-							Create a new user account for CardDAV synchronization. This user will be able to sync contacts via Radicale.
+							Create a CardDAV sync account. This user will be able to subscribe to address books via CardDAV clients.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="space-y-4 py-4">
+					<div className="space-y-4 py-2">
 						<Field>
 							<FieldLabel htmlFor="create-username">Username</FieldLabel>
 							<FieldContent>
@@ -468,7 +515,7 @@ function RadicaleUsersPage() {
 								/>
 							</FieldContent>
 						</Field>
-						{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+						{error && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>}
 					</div>
 					<DialogFooter>
 						<Button
@@ -482,7 +529,7 @@ function RadicaleUsersPage() {
 							Cancel
 						</Button>
 						<Button onClick={handleCreate} disabled={createMutation.isPending}>
-							{createMutation.isPending ? 'Creating...' : 'Create User'}
+							{createMutation.isPending ? 'Creating…' : 'Create User'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -524,7 +571,7 @@ function RadicaleUsersPage() {
 								)
 							})
 						)}
-						{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+						{error && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>}
 					</div>
 					<DialogFooter>
 						<Button
@@ -542,22 +589,22 @@ function RadicaleUsersPage() {
 							onClick={() => selectedUser && membershipUpdateMutation.mutate({ username: selectedUser, addressBookIds: selectedBookIds })}
 							disabled={membershipUpdateMutation.isPending || !selectedUser}
 						>
-							{membershipUpdateMutation.isPending ? 'Saving...' : 'Save'}
+							{membershipUpdateMutation.isPending ? 'Saving…' : 'Save'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 
-			{/* Edit User Dialog */}
+			{/* Change Password Dialog */}
 			<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Change Password</DialogTitle>
 						<DialogDescription>
-							Update the password for user: <strong>{selectedUser}</strong>
+							Update the password for <strong>{selectedUser}</strong>. CardDAV clients using the old password will need to reconnect.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="space-y-4 py-4">
+					<div className="space-y-4 py-2">
 						<Field>
 							<FieldLabel htmlFor="edit-password">New Password</FieldLabel>
 							<FieldContent>
@@ -570,7 +617,7 @@ function RadicaleUsersPage() {
 								/>
 							</FieldContent>
 						</Field>
-						{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+						{error && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>}
 					</div>
 					<DialogFooter>
 						<Button
@@ -585,39 +632,26 @@ function RadicaleUsersPage() {
 							Cancel
 						</Button>
 						<Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-							{updateMutation.isPending ? 'Updating...' : 'Update Password'}
+							{updateMutation.isPending ? 'Saving…' : 'Update Password'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 
-			{/* Delete User Dialog */}
-			<Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Delete User</DialogTitle>
-						<DialogDescription>
-							Are you sure you want to delete user <strong>{selectedUser}</strong>? This action cannot be undone.
-						</DialogDescription>
-					</DialogHeader>
-					{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => {
-								setIsDeleteDialogOpen(false)
-								setSelectedUser(null)
-								setError(null)
-							}}
-						>
-							Cancel
-						</Button>
-						<Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
-							{deleteMutation.isPending ? 'Deleting...' : 'Delete User'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			{/* Delete User Confirm */}
+			<ConfirmDialog
+				open={isDeleteDialogOpen}
+				onOpenChange={open => {
+					setIsDeleteDialogOpen(open)
+					if (!open) setSelectedUser(null)
+				}}
+				title={`Delete user ${selectedUser}?`}
+				description="This removes their access. CardDAV clients using this account will stop syncing. This cannot be undone."
+				confirmLabel="Delete"
+				pendingLabel="Deleting…"
+				onConfirm={handleDelete}
+				pending={deleteMutation.isPending}
+			/>
 
 			{/* Bulk Create Users Dialog */}
 			<Dialog open={isBulkCreateDialogOpen} onOpenChange={setIsBulkCreateDialogOpen}>
@@ -625,11 +659,11 @@ function RadicaleUsersPage() {
 					<DialogHeader>
 						<DialogTitle>Bulk Create Users</DialogTitle>
 						<DialogDescription>
-							Create multiple Radicale users at once. Enter one username per line or separate with commas. All users will share the same
-							initial password.
+							Create multiple book users at once. Enter one username per line or separate with commas. All users will share the same initial
+							password.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="space-y-4 py-4">
+					<div className="space-y-4 py-2">
 						<Field>
 							<FieldLabel htmlFor="bulk-usernames">Usernames</FieldLabel>
 							<FieldContent>
@@ -654,17 +688,16 @@ function RadicaleUsersPage() {
 								/>
 							</FieldContent>
 						</Field>
-						{error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+						{error && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>}
 						{bulkCreateResults.length > 0 && (
-							<div className="space-y-1">
+							<div className="space-y-1.5">
 								{bulkCreateResults.map((result, i) => (
-									<div
-										key={i}
-										className={`text-sm flex items-center gap-2 ${result.status === 'success' ? 'text-green-600' : 'text-red-600'}`}
-									>
-										<span>{result.status === 'success' ? '✓' : '✗'}</span>
-										<span className="font-medium">{result.username}</span>
-										{result.message && <span className="text-muted-foreground">— {result.message}</span>}
+									<div key={i} className="flex items-center gap-2 text-sm">
+										<Badge variant={result.status === 'success' ? 'secondary' : 'destructive'}>
+											{result.status === 'success' ? 'Created' : 'Failed'}
+										</Badge>
+										<span className="font-mono font-medium">{result.username}</span>
+										{result.message && <span className="text-muted-foreground">{result.message}</span>}
 									</div>
 								))}
 							</div>
@@ -681,11 +714,11 @@ function RadicaleUsersPage() {
 							Cancel
 						</Button>
 						<Button onClick={handleBulkCreate} disabled={isBulkCreating}>
-							{isBulkCreating ? 'Creating...' : 'Create Users'}
+							{isBulkCreating ? 'Creating…' : 'Create Users'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-		</div>
+		</PageContainer>
 	)
 }
