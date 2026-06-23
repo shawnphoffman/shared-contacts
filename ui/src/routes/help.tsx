@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { HelpCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { PageContainer } from '../components/ui/page-container'
+import { PageHeader } from '../components/ui/page-header'
 
 export const Route = createFileRoute('/help')({
 	component: HelpPage,
@@ -8,18 +10,12 @@ export const Route = createFileRoute('/help')({
 
 function HelpPage() {
 	return (
-		<div className="container mx-auto p-6 space-y-6 max-w-3xl">
-			<div className="mb-6">
-				<h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-					<HelpCircle className="w-8 h-8" />
-					Help
-				</h1>
-				<p className="text-muted-foreground">Understanding how contacts, address books, and users work together.</p>
-			</div>
+		<PageContainer width="narrow" className="space-y-6">
+			<PageHeader icon={<HelpCircle />} title="Help" description="Understanding how contacts, address books, and users work together." />
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Contacts</CardTitle>
+					<CardTitle className="text-base font-semibold">Contacts</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm">
 					<p>
@@ -35,7 +31,7 @@ function HelpPage() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Address Books</CardTitle>
+					<CardTitle className="text-base font-semibold">Address Books</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm">
 					<p>Address books are collections that organize contacts into groups. They control which contacts are synced to which users.</p>
@@ -57,7 +53,7 @@ function HelpPage() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Users (Radicale Users)</CardTitle>
+					<CardTitle className="text-base font-semibold">Users (Radicale Users)</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm">
 					<p>
@@ -70,15 +66,16 @@ function HelpPage() {
 					</p>
 					<p>
 						Each user-book combination creates a <strong>composite username</strong> (e.g.,{' '}
-						<code className="text-xs bg-muted px-1 py-0.5 rounded">username-bookid</code>) that is used when configuring a CardDAV client.
-						You can find the exact connection details on the Address Books page by clicking the Connection button for a book.
+						<code className="font-mono text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">username-bookid</code>) that is used when
+						configuring a CardDAV client. You can find the exact connection details on the Address Books page by clicking the Connection
+						button for a book.
 					</p>
 				</CardContent>
 			</Card>
 
 			<Card>
 				<CardHeader>
-					<CardTitle>How They Relate</CardTitle>
+					<CardTitle className="text-base font-semibold">How They Relate</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm">
 					<p>The three concepts form a layered system:</p>
@@ -100,6 +97,6 @@ function HelpPage() {
 					</p>
 				</CardContent>
 			</Card>
-		</div>
+		</PageContainer>
 	)
 }
