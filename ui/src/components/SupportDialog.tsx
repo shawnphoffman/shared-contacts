@@ -10,10 +10,10 @@ interface SupportDialogProps {
 export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2 text-lg">
-						<Heart className="w-5 h-5 text-orange-500 fill-orange-500" />
+					<DialogTitle className="flex items-center gap-2">
+						<Heart className="size-5 shrink-0 fill-primary text-primary" />
 						Support the Trail
 					</DialogTitle>
 				</DialogHeader>
@@ -27,13 +27,13 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
 						href="https://www.pcta.org/donate/"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors group"
+						className="group flex items-center justify-between gap-3 rounded-lg border border-border p-4 transition-colors outline-none hover:bg-accent focus-visible:ring-ring/50 focus-visible:ring-[3px]"
 					>
 						<div>
 							<div className="font-medium">Pacific Crest Trail Association</div>
 							<div className="text-sm text-muted-foreground">Protecting the PCT from Mexico to Canada</div>
 						</div>
-						<ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+						<ExternalLink className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
 					</a>
 
 					<div className="space-y-2">

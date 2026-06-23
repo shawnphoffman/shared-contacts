@@ -19,9 +19,10 @@ import { SupportDialog } from './SupportDialog'
 import { Separator } from './ui/separator'
 
 const navLinkClass =
-	'flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors'
+	'flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/50 focus-visible:ring-[3px]'
 const navLinkActiveClass =
-	'flex items-center gap-3 px-3 py-2 rounded-md text-sm bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+	'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium bg-sidebar-accent text-sidebar-accent-foreground outline-none focus-visible:ring-sidebar-ring/50 focus-visible:ring-[3px]'
+const groupLabelClass = 'mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60'
 
 interface AppSidebarProps {
 	onNavigate?: () => void
@@ -33,18 +34,18 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 	return (
 		<aside className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
 			{/* Branding */}
-			<div className="flex items-center gap-2 px-4 py-5">
+			<div className="flex h-14 items-center gap-2 px-4">
 				<NotebookTabs className="size-5 shrink-0" />
-				<span className="text-lg font-semibold">Shared Contacts</span>
+				<span className="text-base font-semibold tracking-tight">Shared Contacts</span>
 			</div>
 
 			<Separator className="bg-sidebar-border" />
 
 			{/* Navigation */}
-			<nav className="flex-1 overflow-y-auto px-3 py-4">
+			<nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
 				{/* Contacts */}
-				<div className="mb-4">
-					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">Contacts</p>
+				<div className="space-y-1">
+					<p className={groupLabelClass}>Contacts</p>
 					<Link
 						to="/"
 						search={{ book: undefined }}
@@ -77,8 +78,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 				</div>
 
 				{/* Address Books */}
-				<div className="mb-4">
-					<p className="mb-1 px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">Address Books</p>
+				<div className="space-y-1">
+					<p className={groupLabelClass}>Address Books</p>
 					<Link to="/books" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<BookOpen className="size-4 shrink-0" />
 						All Books
@@ -94,7 +95,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 				</div>
 
 				{/* Help & About */}
-				<div>
+				<div className="space-y-1">
+					<p className={groupLabelClass}>Help &amp; About</p>
 					<Link to="/help" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<HelpCircle className="size-4 shrink-0" />
 						Help
@@ -111,11 +113,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 			{/* Footer */}
 			<div className="flex items-center justify-between px-4 py-3">
 				<button
+					type="button"
 					onClick={() => setSupportOpen(true)}
-					className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+					className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/80 transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/50 focus-visible:ring-[3px]"
 					aria-label="Support"
 				>
-					<Heart className="size-4" />
+					<Heart className="size-4 shrink-0" />
 					<span>Support</span>
 				</button>
 				<ThemeToggle />
