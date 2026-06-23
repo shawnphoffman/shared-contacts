@@ -16,15 +16,20 @@ import {
 	RefreshCw,
 	Search,
 	Trash2,
+	Users,
 	X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { formatPhoneNumber } from '../lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
+import { PageContainer } from '../components/ui/page-container'
+import { PageHeader } from '../components/ui/page-header'
 import { Skeleton } from '../components/ui/skeleton'
 import { ContactAvatar } from '../components/ContactAvatar'
 import { DeduplicateButton } from '../components/DeduplicateButton'
@@ -71,6 +76,7 @@ function ContactsIndexPage() {
 	const [searchQuery, setSearchQuery] = useState('')
 	const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 	const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+	const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false)
 	const [isBulkBooksDialogOpen, setIsBulkBooksDialogOpen] = useState(false)
 	const [bulkAddToBookIds, setBulkAddToBookIds] = useState<Set<string>>(new Set())
 	const [bulkRemoveFromBookIds, setBulkRemoveFromBookIds] = useState<Set<string>>(new Set())
@@ -210,9 +216,9 @@ function ContactsIndexPage() {
 					return (
 						<div className="flex items-center gap-3">
 							<ContactAvatar contact={contact} className="h-8 w-8 text-xs" />
-							<div>
+							<div className="min-w-0">
 								<div className="font-medium">{firstName || 'Unnamed Contact'}</div>
-								{contact.nickname && <div className="text-sm text-gray-500">{contact.nickname}</div>}
+								{contact.nickname && <div className="text-sm text-muted-foreground">{contact.nickname}</div>}
 							</div>
 						</div>
 					)
@@ -243,7 +249,7 @@ function ContactsIndexPage() {
 				},
 				cell: ({ row }) => {
 					const { lastName } = getNameParts(row.original)
-					return lastName ? <span>{lastName}</span> : <span className="text-gray-400">—</span>
+					return lastName ? <span>{lastName}</span> : <span className="text-muted-foreground">—</span>
 				},
 			},
 			{
@@ -270,7 +276,7 @@ function ContactsIndexPage() {
 				},
 				cell: ({ row }) => {
 					const email = row.original.email
-					return email ? <span>{email}</span> : <span className="text-gray-400">—</span>
+					return email ? <span>{email}</span> : <span className="text-muted-foreground">—</span>
 				},
 			},
 			{
@@ -298,7 +304,7 @@ function ContactsIndexPage() {
 				cell: ({ row }) => {
 					const birthday = row.original.birthday
 					if (!birthday) {
-						return <span className="text-gray-400">—</span>
+						return <span className="text-muted-foreground">—</span>
 					}
 					// birthday is a date-only "YYYY-MM-DD" string. Parse at local
 					// midnight so toLocaleDateString doesn't shift the day.
@@ -339,7 +345,7 @@ function ContactsIndexPage() {
 				cell: ({ row }) => {
 					const phone = row.original.phone
 					if (!phone) {
-						return <span className="text-gray-400">—</span>
+						return <span className="text-muted-foreground">—</span>
 					}
 					return <span>{formatPhoneNumber(phone)}</span>
 				},
@@ -371,7 +377,7 @@ function ContactsIndexPage() {
 					return (
 						<div className="hidden lg:block">
 							{contact.organization && <div>{contact.organization}</div>}
-							{contact.job_title && <div className="text-sm text-gray-500">{contact.job_title}</div>}
+							{contact.job_title && <div className="text-sm text-muted-foreground">{contact.job_title}</div>}
 						</div>
 					)
 				},
@@ -386,7 +392,7 @@ function ContactsIndexPage() {
 							header: 'Books',
 							cell: ({ row }) => {
 								const count = row.original.address_books?.length ?? 0
-								return count > 0 ? <span>{count}</span> : <span className="text-gray-400">—</span>
+								return count > 0 ? <span>{count}</span> : <span className="text-muted-foreground">—</span>
 							},
 							enableSorting: false,
 							meta: {
@@ -509,9 +515,10 @@ function ContactsIndexPage() {
 			setBulkRemoveFromBookIds(new Set())
 			setRowSelection({})
 			await refetch()
+			toast.success('Address books updated')
 		} catch (e) {
 			console.error(e)
-			alert(e instanceof Error ? e.message : 'Failed to update address books')
+			toast.error(e instanceof Error ? e.message : 'Failed to update address books')
 		} finally {
 			setIsBulkBooksSubmitting(false)
 		}
@@ -522,13 +529,7 @@ function ContactsIndexPage() {
 			return
 		}
 
-		const shouldDelete = window.confirm(
-			`Delete ${selectedContactIds.length} contact${selectedContactIds.length === 1 ? '' : 's'}? This cannot be undone.`
-		)
-		if (!shouldDelete) {
-			return
-		}
-
+		const total = selectedContactIds.length
 		setIsBulkDeleting(true)
 		try {
 			const results = await Promise.allSettled(
@@ -544,13 +545,16 @@ function ContactsIndexPage() {
 			)
 			const failed = results.filter(result => result.status === 'rejected')
 			if (failed.length > 0) {
-				alert(`Failed to delete ${failed.length} contact${failed.length === 1 ? '' : 's'}.`)
+				toast.error(`Failed to delete ${failed.length} contact${failed.length === 1 ? '' : 's'}.`)
+			} else {
+				toast.success(`Deleted ${total} contact${total === 1 ? '' : 's'}`)
 			}
 		} catch (err) {
 			console.error('Error deleting contacts:', err)
-			alert('Failed to delete selected contacts.')
+			toast.error('Failed to delete selected contacts.')
 		} finally {
 			setIsBulkDeleting(false)
+			setIsBulkDeleteDialogOpen(false)
 			await refetch()
 			setRowSelection({})
 		}
@@ -558,74 +562,81 @@ function ContactsIndexPage() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6 gap-4 flex flex-col max-w-5xl">
-				<div className="flex sm:justify-between sm:items-center flex-col sm:flex-row gap-2">
-					<Skeleton className="h-9 w-40" />
+			<PageContainer width="standard" className="space-y-6">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+					<div className="space-y-2">
+						<Skeleton className="h-8 w-40" />
+						<Skeleton className="h-4 w-64" />
+					</div>
 					<div className="flex gap-2">
 						<Skeleton className="h-9 w-24" />
-						<Skeleton className="h-9 w-16" />
+						<Skeleton className="h-9 w-28" />
 					</div>
 				</div>
 				<div className="space-y-4">
 					<Skeleton className="h-9 w-full" />
 					<div className="rounded-md border">
-						<div className="p-4 space-y-4">
+						<div className="space-y-4 p-4">
 							{Array.from({ length: 8 }).map((_, i) => (
 								<div key={i} className="flex items-center gap-4">
-									<Skeleton className="h-4 w-4 rounded" />
+									<Skeleton className="size-4 rounded" />
+									<Skeleton className="size-8 rounded-full" />
 									<Skeleton className="h-4 flex-1" />
-									<Skeleton className="h-4 w-40 hidden sm:block" />
-									<Skeleton className="h-4 w-32 hidden md:block" />
+									<Skeleton className="hidden h-4 w-40 sm:block" />
+									<Skeleton className="hidden h-4 w-32 md:block" />
 								</div>
 							))}
 						</div>
 					</div>
 				</div>
-			</div>
+			</PageContainer>
 		)
 	}
 
 	if (error) {
 		return (
-			<div className="container mx-auto p-6 max-w-5xl">
-				<div className="text-center py-12">
-					<p className="text-red-500 mb-4">Failed to load contacts</p>
+			<PageContainer width="standard">
+				<div className="py-12 text-center">
+					<p className="mb-4 text-destructive">Failed to load contacts</p>
 					<Button variant="outline" onClick={() => refetch()}>
 						Try Again
 					</Button>
 				</div>
-			</div>
+			</PageContainer>
 		)
 	}
 
 	return (
-		<div className="container mx-auto p-6 gap-4 flex flex-col max-w-5xl">
-			<div className="flex sm:justify-between sm:items-center flex-col sm:flex-row gap-2">
-				<h1 className="text-3xl font-bold">Contacts</h1>
-				<div className="flex sm:flex-row flex-col sm:items-center gap-2 w-full sm:w-auto justify-between">
-					<DeduplicateButton />
-					<Button onClick={() => navigate({ to: '/new' })}>
-						<Plus className="w-4 h-4 mr-1" />
-						New
-					</Button>
-				</div>
-			</div>
+		<PageContainer width="standard" className="space-y-6">
+			<PageHeader
+				title="Contacts"
+				description="Browse, search, and organize everyone in your address books."
+				actions={
+					<>
+						<DeduplicateButton />
+						<Button onClick={() => navigate({ to: '/new' })}>
+							<Plus className="size-4" />
+							New Contact
+						</Button>
+					</>
+				}
+			/>
 
 			<div className="space-y-4">
 				<div className="flex flex-col sm:flex-row gap-2 sm:items-center">
 					<div className="relative flex-1">
-						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 						<Input
 							type="text"
-							placeholder="Search contacts..."
+							placeholder="Search contacts…"
 							value={searchQuery}
 							onChange={e => setSearchQuery(e.target.value)}
 							className="pl-10"
 						/>
 					</div>
 					<div className="flex flex-row gap-2">
-						<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-							<RefreshCw className="size-4" />
+						<Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} aria-label="Refresh contacts">
+							<RefreshCw className={isFetching ? 'size-4 animate-spin' : 'size-4'} />
 						</Button>
 						<Button variant="outline" onClick={() => setIsDownloadDialogOpen(true)}>
 							<Download className="size-4" />
@@ -638,7 +649,7 @@ function ContactsIndexPage() {
 						<select
 							value={selectedBookId}
 							onChange={e => handleBookChange(e.target.value)}
-							className="h-7 pl-2 pr-6 rounded-full border border-input bg-background text-xs font-medium appearance-none"
+							className="h-7 appearance-none rounded-full border border-input bg-background pl-2 pr-6 text-xs font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
 							style={{
 								backgroundImage:
 									"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
@@ -660,8 +671,10 @@ function ContactsIndexPage() {
 						return (
 							<button
 								key={id}
+								type="button"
 								onClick={() => toggleFilter(id)}
-								className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+								aria-pressed={state !== 'off'}
+								className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
 									state === 'has'
 										? 'border-primary bg-primary text-primary-foreground'
 										: state === 'missing'
@@ -676,8 +689,9 @@ function ContactsIndexPage() {
 					})}
 					{(activeFilters.size > 0 || selectedBookId !== 'all' || searchQuery) && (
 						<button
+							type="button"
 							onClick={clearAllFilters}
-							className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+							className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
 						>
 							<X className="size-3" />
 							Clear all
@@ -690,8 +704,9 @@ function ContactsIndexPage() {
 					</div>
 				)}
 				{selectedContactIds.length >= 1 && (
-					<div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-end">
-						<div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2">
+					<div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-sm text-muted-foreground">{selectedContactIds.length} selected</p>
+						<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
 							{addressBooks.length > 0 && (
 								<Button
 									variant="outline"
@@ -701,25 +716,27 @@ function ContactsIndexPage() {
 										setIsBulkBooksDialogOpen(true)
 									}}
 								>
-									<BookOpen className="w-4 h-4 mr-1" />
+									<BookOpen className="size-4" />
 									Manage Books
 								</Button>
 							)}
-							<Button variant="destructive" onClick={handleBulkDelete} disabled={isBulkDeleting}>
-								<Trash2 className="w-4 h-4 mr-1" />
-								{isBulkDeleting ? 'Deleting...' : `Delete ${selectedContactIds.length}`}
-							</Button>
 							{selectedContactIds.length >= 2 && <MergeButton contactIds={selectedContactIds} onMergeSuccess={() => setRowSelection({})} />}
+							<Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} disabled={isBulkDeleting}>
+								<Trash2 className="size-4" />
+								Delete {selectedContactIds.length}
+							</Button>
 						</div>
 					</div>
 				)}
 			</div>
 
 			{contacts.length === 0 && !searchQuery ? (
-				<div className="text-center py-12">
-					<p className="text-gray-500 mb-4">No contacts yet. Create your first contact!</p>
+				<div className="flex flex-col items-center justify-center rounded-md border border-dashed py-16 text-center">
+					<Users className="mb-4 size-12 text-muted-foreground" />
+					<p className="mb-1 text-muted-foreground">No contacts yet</p>
+					<p className="mb-6 text-sm text-muted-foreground">Create your first contact to start building your address book.</p>
 					<Button onClick={() => navigate({ to: '/new' })}>
-						<Plus className="w-4 h-4 mr-1" />
+						<Plus className="size-4" />
 						Create Contact
 					</Button>
 				</div>
@@ -746,7 +763,15 @@ function ContactsIndexPage() {
 											key={row.id}
 											data-state={row.getIsSelected() && 'selected'}
 											onClick={() => navigate({ to: '/$id', params: { id: contact.id } })}
-											className="cursor-pointer"
+											onKeyDown={e => {
+												if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+													e.preventDefault()
+													navigate({ to: '/$id', params: { id: contact.id } })
+												}
+											}}
+											tabIndex={0}
+											aria-label={`View ${contact.full_name || 'contact'}`}
+											className="cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
 										>
 											{row.getVisibleCells().map(cell => (
 												<TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
@@ -758,7 +783,7 @@ function ContactsIndexPage() {
 								})
 							) : (
 								<TableRow>
-									<TableCell colSpan={columns.length} className="h-24 text-center">
+									<TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
 										{searchQuery ? 'No contacts found matching your search.' : 'No contacts yet.'}
 									</TableCell>
 								</TableRow>
@@ -858,11 +883,22 @@ function ContactsIndexPage() {
 							onClick={handleBulkBooksSubmit}
 							disabled={isBulkBooksSubmitting || (bulkAddToBookIds.size === 0 && bulkRemoveFromBookIds.size === 0)}
 						>
-							{isBulkBooksSubmitting ? 'Updating...' : 'Update'}
+							{isBulkBooksSubmitting ? 'Updating…' : 'Update'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-		</div>
+
+			<ConfirmDialog
+				open={isBulkDeleteDialogOpen}
+				onOpenChange={setIsBulkDeleteDialogOpen}
+				title={`Delete ${selectedContactIds.length} contact${selectedContactIds.length === 1 ? '' : 's'}?`}
+				description="This cannot be undone."
+				confirmLabel={`Delete ${selectedContactIds.length}`}
+				pendingLabel="Deleting…"
+				onConfirm={handleBulkDelete}
+				pending={isBulkDeleting}
+			/>
+		</PageContainer>
 	)
 }

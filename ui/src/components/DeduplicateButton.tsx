@@ -81,10 +81,12 @@ export function DeduplicateButton() {
 
 	return (
 		<Button onClick={() => navigate({ to: '/duplicates' })} variant="outline">
-			<Merge className="w-4 h-4 mr-1" />
+			<Merge className="size-4" />
 			Merge
 			{visibleGroupsCount > 0 && (
-				<span className="ml-1 px-2 py-0.5 text-sm font-semibold bg-primary text-primary-foreground rounded-full">{visibleGroupsCount}</span>
+				<span className="ml-0.5 rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">
+					{visibleGroupsCount}
+				</span>
 			)}
 		</Button>
 	)

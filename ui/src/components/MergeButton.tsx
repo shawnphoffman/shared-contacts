@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Merge } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from './ui/button'
 
 interface MergeResult {
@@ -36,12 +37,14 @@ export function MergeButton({ contactIds, onMergeSuccess }: MergeButtonProps) {
 
 	const mergeMutation = useMutation({
 		mutationFn: mergeContacts,
-		onSuccess: () => {
+		onSuccess: result => {
 			// Invalidate contacts query to refresh the list
 			queryClient.invalidateQueries({ queryKey: ['contacts'] })
+			toast.success(result.message || 'Contacts merged')
 			// Clear selection after successful merge
 			onMergeSuccess?.()
 		},
+		onError: (error: Error) => toast.error(error.message),
 	})
 
 	const handleMerge = () => {
@@ -55,12 +58,12 @@ export function MergeButton({ contactIds, onMergeSuccess }: MergeButtonProps) {
 		<Button onClick={handleMerge} disabled={mergeMutation.isPending || contactIds.length < 2} variant="outline">
 			{mergeMutation.isPending ? (
 				<>
-					<Loader2 className="w-4 h-4 mr-1 animate-spin" />
-					Merging...
+					<Loader2 className="size-4 animate-spin" />
+					Merging…
 				</>
 			) : (
 				<>
-					<Merge className="w-4 h-4 mr-1" />
+					<Merge className="size-4" />
 					Merge {contactIds.length}
 				</>
 			)}
