@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Loader2, Upload, XCircle } from 'lucide-react'
+import { CheckCircle2, FileText, Loader2, Upload, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Card, CardContent } from './ui/card'
 
 interface ImportResult {
 	message: string
@@ -31,28 +34,47 @@ async function importCSV(file: File): Promise<ImportResult> {
 
 export function CSVUpload() {
 	const [file, setFile] = useState<File | null>(null)
+	const [isDragging, setIsDragging] = useState(false)
+	const inputRef = useRef<HTMLInputElement>(null)
 	const queryClient = useQueryClient()
 
 	const importMutation = useMutation({
 		mutationFn: importCSV,
-		onSuccess: () => {
+		onSuccess: data => {
 			// Invalidate contacts query to refresh the list
 			queryClient.invalidateQueries({ queryKey: ['contacts'] })
+			toast.success(`Imported ${data.success} contact${data.success === 1 ? '' : 's'}`)
 			// Reset file after successful import
 			setFile(null)
 		},
+		onError: (err: Error) => {
+			toast.error(err.message)
+		},
 	})
 
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const selectedFile = e.target.files?.[0]
-		if (selectedFile) {
-			if (selectedFile.name.endsWith('.csv')) {
-				setFile(selectedFile)
-			} else {
-				alert('Please select a CSV file')
-			}
+	const selectFile = (selectedFile: File | undefined) => {
+		if (!selectedFile) return
+		if (selectedFile.name.toLowerCase().endsWith('.csv')) {
+			setFile(selectedFile)
+		} else {
+			toast.error('Please select a CSV file')
 		}
 	}
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		selectFile(e.target.files?.[0])
+		// Allow re-selecting the same file name after a reset
+		e.target.value = ''
+	}
+
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault()
+		setIsDragging(false)
+		if (importMutation.isPending) return
+		selectFile(e.dataTransfer.files[0])
+	}
+
+	const openPicker = () => inputRef.current?.click()
 
 	const handleUpload = () => {
 		if (file) {
@@ -60,90 +82,126 @@ export function CSVUpload() {
 		}
 	}
 
+	const result = importMutation.data
+
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center gap-4">
-				<div className="flex-1">
-					<label htmlFor="csv-upload" className="flex items-center gap-2 cursor-pointer">
-						<input
-							id="csv-upload"
-							type="file"
-							accept=".csv"
-							onChange={handleFileChange}
-							className="hidden"
-							disabled={importMutation.isPending}
-						/>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => document.getElementById('csv-upload')?.click()}
-							disabled={importMutation.isPending}
-						>
-							<Upload className="w-4 h-4 mr-1" />
-							{file ? file.name : 'Select CSV File'}
-						</Button>
-					</label>
-				</div>
+			<input
+				ref={inputRef}
+				id="csv-upload"
+				type="file"
+				accept=".csv"
+				onChange={handleFileChange}
+				className="sr-only"
+				disabled={importMutation.isPending}
+			/>
 
-				{file && (
-					<Button onClick={handleUpload} disabled={importMutation.isPending}>
-						{importMutation.isPending ? (
-							<>
-								<Loader2 className="w-4 h-4 mr-1 animate-spin" />
-								Importing...
-							</>
-						) : (
-							<>
-								<Upload className="w-4 h-4 mr-1" />
-								Import
-							</>
-						)}
-					</Button>
+			{/* Dropzone */}
+			<div
+				role="button"
+				tabIndex={0}
+				aria-label="Choose a CSV file or drop one here"
+				aria-disabled={importMutation.isPending}
+				onClick={() => !importMutation.isPending && openPicker()}
+				onKeyDown={e => {
+					if (importMutation.isPending) return
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault()
+						openPicker()
+					}
+				}}
+				onDragOver={e => {
+					e.preventDefault()
+					if (!importMutation.isPending) setIsDragging(true)
+				}}
+				onDragLeave={() => setIsDragging(false)}
+				onDrop={handleDrop}
+				className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center outline-none transition-colors focus-visible:ring-ring/50 focus-visible:ring-[3px] ${
+					importMutation.isPending ? 'pointer-events-none opacity-60' : 'cursor-pointer hover:border-primary/50 hover:bg-accent/40'
+				} ${isDragging ? 'border-primary bg-accent/50' : 'border-border'}`}
+			>
+				<Upload className="size-8 text-muted-foreground" />
+				{file ? (
+					<div className="flex items-center gap-2 text-sm font-medium">
+						<FileText className="size-4 text-muted-foreground" />
+						{file.name}
+					</div>
+				) : (
+					<p className="text-sm font-medium">Drop a CSV file here, or click to choose</p>
 				)}
+				<p className="text-xs text-muted-foreground">CSV files only</p>
 			</div>
 
-			{importMutation.isSuccess && (
-				<div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-					<div className="flex items-start gap-2">
-						<CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
-						<div className="flex-1">
-							<p className="text-sm font-medium text-green-800 dark:text-green-200">{importMutation.data.message}</p>
-							{importMutation.data.updated > 0 && (
-								<p className="text-sm text-green-600 dark:text-green-400 mt-1">
-									{importMutation.data.updated} existing contacts were updated
-								</p>
-							)}
-							{importMutation.data.errors && importMutation.data.errors.length > 0 && (
-								<details className="mt-2">
-									<summary className="text-sm text-green-700 dark:text-green-300 cursor-pointer">
-										{importMutation.data.errors.length} error(s)
-									</summary>
-									<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-400">
-										{importMutation.data.errors.map((error, idx) => (
-											<li key={idx}>
-												Row {error.row}: {error.error}
-											</li>
-										))}
-									</ul>
-								</details>
-							)}
+			<div className="flex items-center justify-end gap-2">
+				{file && !importMutation.isPending && (
+					<Button type="button" variant="outline" onClick={() => setFile(null)}>
+						Clear
+					</Button>
+				)}
+				<Button type="button" onClick={handleUpload} disabled={!file || importMutation.isPending}>
+					{importMutation.isPending ? (
+						<>
+							<Loader2 className="mr-1 size-4 animate-spin" />
+							Importing…
+						</>
+					) : (
+						<>
+							<Upload className="mr-1 size-4" />
+							Import
+						</>
+					)}
+				</Button>
+			</div>
+
+			{/* Success summary */}
+			{importMutation.isSuccess && result && (
+				<Card>
+					<CardContent className="space-y-3">
+						<div className="flex items-start gap-2">
+							<CheckCircle2 className="mt-0.5 size-5 text-primary" />
+							<div className="flex-1 space-y-2">
+								<p className="text-sm font-medium">{result.message}</p>
+								<div className="flex flex-wrap gap-2">
+									<Badge variant="secondary">{result.success} imported</Badge>
+									{result.updated > 0 && <Badge variant="secondary">{result.updated} updated</Badge>}
+									{result.skipped > 0 && <Badge variant="outline">{result.skipped} skipped</Badge>}
+									{result.failed > 0 && <Badge variant="destructive">{result.failed} failed</Badge>}
+								</div>
+								{result.errors && result.errors.length > 0 && (
+									<details className="mt-1">
+										<summary className="cursor-pointer text-sm text-muted-foreground outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] rounded">
+											{result.errors.length} error{result.errors.length === 1 ? '' : 's'}
+										</summary>
+										<ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+											{result.errors.map((error, idx) => (
+												<li key={idx}>
+													Row {error.row}: {error.error}
+												</li>
+											))}
+										</ul>
+									</details>
+								)}
+							</div>
 						</div>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 			)}
 
+			{/* Error summary */}
 			{importMutation.isError && (
-				<div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-					<div className="flex items-start gap-2">
-						<XCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
-						<div className="flex-1">
-							<p className="text-sm font-medium text-red-800 dark:text-red-200">Import failed</p>
-							<p className="text-sm text-red-600 dark:text-red-400 mt-1">
-								{importMutation.error instanceof Error ? importMutation.error.message : 'An unknown error occurred'}
-							</p>
+				<Card className="border-destructive/50">
+					<CardContent>
+						<div className="flex items-start gap-2">
+							<XCircle className="mt-0.5 size-5 text-destructive" />
+							<div className="flex-1">
+								<p className="text-sm font-medium">Import failed</p>
+								<p className="mt-1 text-sm text-muted-foreground">
+									{importMutation.error instanceof Error ? importMutation.error.message : 'An unknown error occurred'}
+								</p>
+							</div>
 						</div>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 			)}
 		</div>
 	)
