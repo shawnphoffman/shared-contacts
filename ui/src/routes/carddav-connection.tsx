@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Lock, Server, Tag, User } from 'lucide-react'
+import { AlertTriangle, Lock, Server, Tag, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
@@ -9,6 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Separator } from '../components/ui/separator'
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '../components/ui/item'
+import { PageContainer } from '../components/ui/page-container'
+import { PageHeader } from '../components/ui/page-header'
 import {
 	CopyButton,
 	fetchRuntimeConfig,
@@ -131,18 +134,19 @@ function CardDAVConnectionPage() {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="text-center">Loading connection details...</div>
-			</div>
+			<PageContainer width="wide">
+				<div className="text-center text-muted-foreground">Loading connection details…</div>
+			</PageContainer>
 		)
 	}
 
 	return (
-		<div className="container mx-auto p-6 space-y-6 max-w-7xl">
-			<div>
-				<h1 className="text-3xl font-bold mb-2">CardDAV Connection</h1>
-				<div className="text-muted-foreground">Configure your CardDAV client to sync contacts with this server.</div>
-			</div>
+		<PageContainer width="wide" className="space-y-6">
+			<PageHeader
+				icon={<Server />}
+				title="CardDAV Connection"
+				description="Server URLs, per-book accounts, and client setup for syncing contacts over CardDAV."
+			/>
 
 			{/* Server Information */}
 			<Card>
@@ -155,20 +159,24 @@ function CardDAVConnectionPage() {
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div>
-						<div className="mt-3 space-y-3 text-sm text-muted-foreground dark:text-gray-400">
+						<div className="mt-3 space-y-3 text-sm text-muted-foreground">
 							<div>
-								<div className="font-medium text-foreground dark:text-gray-100">Direct (no reverse proxy)</div>
+								<div className="font-medium text-foreground">Direct (no reverse proxy)</div>
 								<div className="mt-2 space-y-2">
 									<span className="sm:hidden block text-sm uppercase text-muted-foreground">UI</span>
 									<div className="flex items-center gap-2 ">
 										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">UI</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{directUiBaseUrl}</code>
+										<code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-sm text-muted-foreground break-all">
+											{directUiBaseUrl}
+										</code>
 										<CopyButton text={directUiBaseUrl} label="Direct UI URL" />
 									</div>
 									<span className="sm:hidden block text-sm uppercase text-muted-foreground">CardDAV</span>
 									<div className="flex items-center gap-2">
 										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">CardDAV</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{directBaseUrl}</code>
+										<code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-sm text-muted-foreground break-all">
+											{directBaseUrl}
+										</code>
 										<CopyButton text={directBaseUrl} label="Direct CardDAV URL" />
 									</div>
 								</div>
@@ -176,24 +184,25 @@ function CardDAVConnectionPage() {
 							</div>
 							<Separator />
 							<div>
-								<div className="font-medium text-foreground dark:text-gray-100">Traefik / reverse proxy</div>
+								<div className="font-medium text-foreground">Traefik / reverse proxy</div>
 								<div className="mt-2 space-y-2">
 									<span className="sm:hidden block text-sm uppercase text-muted-foreground">UI</span>
 									<div className="flex items-center gap-2">
 										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">UI</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{proxyUiBaseUrl}</code>
+										<code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-sm text-muted-foreground break-all">
+											{proxyUiBaseUrl}
+										</code>
 										<CopyButton text={proxyUiBaseUrl} label="Proxy UI URL" />
 									</div>
 									<span className="sm:hidden block text-sm uppercase text-muted-foreground">CardDAV</span>
 									<div className="flex items-center gap-2">
 										<span className="hidden sm:block w-24 text-sm uppercase text-muted-foreground">CardDAV</span>
-										<code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm break-all">{proxyBaseUrl}</code>
+										<code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-sm text-muted-foreground break-all">
+											{proxyBaseUrl}
+										</code>
 										<CopyButton text={proxyBaseUrl} label="Proxy CardDAV URL" />
 									</div>
 								</div>
-								{/* <div className="mt-1">
-									Example domains: UI at <code>https://contacts.example.com</code> and CardDAV at <code>https://carddav.example.com</code>.
-								</div> */}
 							</div>
 						</div>
 					</div>
@@ -202,12 +211,12 @@ function CardDAVConnectionPage() {
 
 					<div>
 						<div className="flex items-center gap-2 mb-2">
-							<User className="w-4 h-4 text-gray-500" />
-							<label className="text-sm font-medium">CardDAV Authentication:</label>
+							<User className="w-4 h-4 text-muted-foreground" />
+							<span className="text-sm font-medium">CardDAV Authentication</span>
 						</div>
-						<div className="text-sm text-muted-foreground dark:text-gray-400">
+						<div className="text-sm text-muted-foreground">
 							Use the username and password configured in the{' '}
-							<Link to="/radicale-users" className="text-blue-600 dark:text-blue-400 hover:underline">
+							<Link to="/radicale-users" className="text-primary hover:underline">
 								Users
 							</Link>{' '}
 							page.
@@ -216,12 +225,21 @@ function CardDAVConnectionPage() {
 
 					<div>
 						<div className="flex items-center gap-2 mb-2">
-							<Lock className="w-4 h-4 text-gray-500" />
-							<label className="text-sm font-medium">Security:</label>
+							<Lock className="w-4 h-4 text-muted-foreground" />
+							<span className="text-sm font-medium">Security</span>
 						</div>
-						<div className="text-base text-destructive-foreground">
-							DO NOT EXPOSE THIS PUBLICLY WITHOUT PROPER AUTHENTICATION AND/OR SSL/TLS.
-						</div>
+						<Item variant="muted" size="sm" className="items-start text-destructive">
+							<ItemMedia>
+								<AlertTriangle className="size-4 text-destructive" />
+							</ItemMedia>
+							<ItemContent>
+								<ItemTitle className="text-destructive">Do not expose this publicly without authentication</ItemTitle>
+								<ItemDescription className="text-destructive/90">
+									This server has no transport security of its own. Put it behind proper authentication and SSL/TLS (a reverse proxy) before
+									making it reachable from the public internet.
+								</ItemDescription>
+							</ItemContent>
+						</Item>
 					</div>
 				</CardContent>
 			</Card>
@@ -349,14 +367,16 @@ function CardDAVConnectionPage() {
 												<div className="space-y-3">
 													{/* User info */}
 													<div>
-														<div className="text-sm text-muted-foreground">{user.username}</div>
-														<div className="font-mono text-sm font-medium">{compositeUsername}</div>
+														<div className="text-sm font-medium">{user.username}</div>
+														<div className="font-mono text-sm text-muted-foreground">{compositeUsername}</div>
 													</div>
 													{/* Subscription URLs */}
 													<div className="space-y-2">
 														{urlsAreSame ? (
 															<div className="flex items-start gap-2">
-																<code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs break-all">{directUrl}</code>
+																<code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-xs text-muted-foreground break-all">
+																	{directUrl}
+																</code>
 																<CopyButton text={directUrl} label="URL" />
 															</div>
 														) : (
@@ -364,14 +384,18 @@ function CardDAVConnectionPage() {
 																<div>
 																	<div className="text-[11px] uppercase text-muted-foreground mb-1">Direct</div>
 																	<div className="flex items-start gap-2">
-																		<code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs break-all">{directUrl}</code>
+																		<code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-xs text-muted-foreground break-all">
+																			{directUrl}
+																		</code>
 																		<CopyButton text={directUrl} label="Direct URL" />
 																	</div>
 																</div>
 																<div>
 																	<div className="text-[11px] uppercase text-muted-foreground mb-1">Proxy</div>
 																	<div className="flex items-start gap-2">
-																		<code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs break-all">{proxyUrl}</code>
+																		<code className="flex-1 px-3 py-2 bg-muted rounded-md font-mono text-xs text-muted-foreground break-all">
+																			{proxyUrl}
+																		</code>
 																		<CopyButton text={proxyUrl} label="Proxy URL" />
 																	</div>
 																</div>
@@ -416,7 +440,7 @@ function CardDAVConnectionPage() {
 						<CardDescription>Create a user to enable contact synchronization</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
+						<div className="text-sm text-muted-foreground mb-4">
 							You need to create at least one user before you can sync contacts. Users are managed separately from web UI accounts.
 						</div>
 						<Button asChild>
@@ -433,7 +457,7 @@ function CardDAVConnectionPage() {
 					<CardDescription>Sample labels from docker-compose.prod.yml (contacts.example.com + carddav.example.com)</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<pre className="overflow-y-auto whitespace-pre leading-normal rounded-md bg-gray-100 dark:bg-gray-800 p-4 text-sm text-muted-foreground dark:text-gray-300">
+					<pre className="overflow-y-auto whitespace-pre leading-normal rounded-md bg-muted p-4 font-mono text-sm text-muted-foreground">
 						<code>{traefikExample}</code>
 					</pre>
 				</CardContent>
@@ -446,14 +470,14 @@ function CardDAVConnectionPage() {
 					<CardDescription>Step-by-step guides for popular CardDAV clients</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<div className="text-sm text-muted-foreground dark:text-gray-400">
+					<div className="text-sm text-muted-foreground">
 						Choose either the proxy URL or the direct URL depending on your deployment. Do not add a <code>/carddav</code> prefix.
 					</div>
 					<Accordion type="single" collapsible className="w-full">
 						<AccordionItem value="ios">
 							<AccordionTrigger>iOS Contacts</AccordionTrigger>
 							<AccordionContent>
-								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
+								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
 									<li>Open Settings → Contacts → Accounts</li>
 									<li>Tap "Add Account" → "Other"</li>
 									<li>Tap "Add CardDAV Account"</li>
@@ -482,7 +506,7 @@ function CardDAVConnectionPage() {
 						<AccordionItem value="android">
 							<AccordionTrigger>Android (DAVx⁵)</AccordionTrigger>
 							<AccordionContent>
-								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
+								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
 									<li>Install DAVx⁵ from Google Play Store</li>
 									<li>Open DAVx⁵ and tap "Login"</li>
 									<li>Select "Login with URL and user name"</li>
@@ -511,7 +535,7 @@ function CardDAVConnectionPage() {
 						<AccordionItem value="thunderbird">
 							<AccordionTrigger>Thunderbird</AccordionTrigger>
 							<AccordionContent>
-								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
+								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
 									<li>Install the "CardBook" add-on</li>
 									<li>Open CardBook → File → New → CardDAV Address Book</li>
 									<li>
@@ -541,25 +565,32 @@ function CardDAVConnectionPage() {
 						<AccordionItem value="macos">
 							<AccordionTrigger>macOS Contacts</AccordionTrigger>
 							<AccordionContent>
-								<div className="mb-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-									<div>
-										<strong>macOS Contacts Limitation:</strong> Apple Contacts on macOS has a known bug where it only shows{' '}
-										<strong>one address book per CardDAV account</strong>, even when the server exposes multiple collections. It typically
-										shows an "All" group and only syncs contacts from the first collection.
-									</div>
-									<div>
-										<strong>Solution:</strong> Each address book uses a composite username (<code>username-bookid</code>). When adding a
-										CardDAV account in Contacts, use the <strong>composite username</strong> from the table above (e.g.,{' '}
-										<code>shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>) and Server Path <code>/username-bookid/</code> (e.g.,{' '}
-										<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book appears as a separate account, avoiding
-										Apple Contacts limitations.
-									</div>
-									<div className="text-xs italic">
-										Note: iOS Contacts handles multiple collections better, but macOS Contacts requires this workaround. This is an Apple
-										limitation, not a server issue.
-									</div>
-								</div>
-								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground dark:text-gray-400">
+								<Item variant="muted" size="sm" className="mb-4 items-start">
+									<ItemMedia>
+										<AlertTriangle className="size-4 text-muted-foreground" />
+									</ItemMedia>
+									<ItemContent className="gap-2">
+										<ItemDescription className="text-foreground">
+											<strong>macOS Contacts Limitation:</strong> Apple Contacts on macOS has a known bug where it only shows{' '}
+											<strong>one address book per CardDAV account</strong>, even when the server exposes multiple collections. It typically
+											shows an "All" group and only syncs contacts from the first collection.
+										</ItemDescription>
+										<ItemDescription className="text-foreground">
+											<strong>Solution:</strong> Each address book uses a composite username (
+											<code className="font-mono">username-bookid</code>). When adding a CardDAV account in Contacts, use the{' '}
+											<strong>composite username</strong> from the table above (e.g.,{' '}
+											<code className="font-mono">shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba</code>) and Server Path{' '}
+											<code className="font-mono">/username-bookid/</code> (e.g.,{' '}
+											<code className="font-mono">/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book appears as a
+											separate account, avoiding Apple Contacts limitations.
+										</ItemDescription>
+										<ItemDescription className="text-xs italic">
+											Note: iOS Contacts handles multiple collections better, but macOS Contacts requires this workaround. This is an Apple
+											limitation, not a server issue.
+										</ItemDescription>
+									</ItemContent>
+								</Item>
+								<ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
 									<li>Open Contacts app</li>
 									<li>Go to Contacts → Settings → Accounts</li>
 									<li>Click "+" → "Other Contacts Account"</li>
@@ -580,8 +611,8 @@ function CardDAVConnectionPage() {
 											<li>
 												<strong>Server Path:</strong> Use <code>/username-bookid/</code> matching the composite username (e.g.,{' '}
 												<code>/shawn-a1bc7deb-afe8-48a4-8501-e4ea6413e6ba/</code>). Each address book uses its own composite username, so
-												each appears as a separate account. Do <strong>not</strong> use <code>/principals/user/</code> — this server does
-												not use principal paths.
+												each appears as a separate account. Do <strong>not</strong> use <code>/principals/user/</code>, this server does not
+												use principal paths.
 											</li>
 											<li>Port: 443 for HTTPS, 5232 for direct</li>
 											<li>Use SSL: on for HTTPS</li>
@@ -600,7 +631,7 @@ function CardDAVConnectionPage() {
 				<CardHeader>
 					<CardTitle>Troubleshooting</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-2 text-sm text-muted-foreground dark:text-gray-400">
+				<CardContent className="space-y-2 text-sm text-muted-foreground">
 					<div>
 						<strong>Connection fails:</strong> Verify the server URL is correct and accessible from your network.
 					</div>
@@ -617,6 +648,6 @@ function CardDAVConnectionPage() {
 					</div>
 				</CardContent>
 			</Card>
-		</div>
+		</PageContainer>
 	)
 }
