@@ -1,66 +1,58 @@
-# next-steps — cycle 1 — 2026-06-23
+# next-steps — cycle 1 — 2026-06-23 — COMPLETE
 
-Orchestrator memory for the `shared-contacts` design-unification effort.
-Integration branch: `redesign/unify` (branched from `main` @ cc40689).
+Design-unification cycle 1 for `shared-contacts`. Integration branch `redesign/unify`
+(off `main` @ cc40689). All 11 flows integrated; full verification gate GREEN.
+Resume here for cycle 2 (polish / visual QA / new-surface work).
 
 ## Discovered facts
 
-- **STACK** (`FACT-STACK`): TanStack Start (React 19 + TanStack Router v1 + TanStack Query v5) on Vite 7 / Nitro. SSR-capable. App lives in `ui/`. A separate `sync-service/` (Node) and `radicale/` (CardDAV server) round out the system but are **not** part of this UI redesign.
-- **STYLING** (`FACT-STYLE`): Tailwind CSS v4 (`@tailwindcss/vite`, CSS-first config in `ui/src/styles.css` via `@theme inline`). Design tokens are CSS custom properties in `:root` / `.dark` (oklch). shadcn/ui "new-york" style, base color zinc, lucide icons, `tw-animate-css`. `cn()` util at `@/lib/utils`. CVA for variants.
-- **DESIGN_SYSTEM_PATH** (`FACT-DS`): `ui/src/components/ui/*` (20 shadcn primitives: accordion, button, card, checkbox, dialog, field, input, item, label, select, separator, sheet, skeleton, slider, sonner, spinner, switch, table, textarea, toggle, tooltip). Tokens in `ui/src/styles.css`. These are the FROZEN shared layer after the design-system step.
-- **VERIFY_COMMANDS** (`FACT-VERIFY`) — exact, from `.github/workflows/test.yml`. Run from `ui/` unless noted:
+- **STACK**: TanStack Start (React 19 + TanStack Router v1 + TanStack Query v5), Vite 7 / Nitro, SSR-capable. App in `ui/`. `sync-service/` + `radicale/` are out of UI scope.
+- **STYLING**: Tailwind v4 (CSS-first, tokens in `ui/src/styles.css` `@theme inline`, oklch `:root`/`.dark`). shadcn "new-york", zinc base, lucide, `cn()` at `@/lib/utils`, CVA.
+- **DESIGN_SYSTEM_PATH**: `ui/src/components/ui/*`. After cycle 1 it also contains the new shared layout primitives: `page-header.tsx`, `page-container.tsx`, `confirm-dialog.tsx`, `badge.tsx`. This is the FROZEN layer.
+- **VERIFY_COMMANDS** (from `.github/workflows/test.yml`; run from `ui/` unless noted):
   - Typecheck: `npx tsc --noEmit -p tsconfig.build.json`
-  - Lint: `npm run lint` (eslint, tanstack config)
-  - Unit tests: `npm run test:unit` (vitest run)
-  - Format (from repo ROOT): `npm run format:check` (prettier --check .). Agents should run `npx prettier --write <changed files>` before reporting.
-  - No standalone `typecheck` npm script exists; use the tsc command above. Build (`vite build`) and docker-smoke exist in CI but are heavy; not part of the per-flow gate.
-- **BASELINE** (`FACT-BASE`): On `redesign/unify` base, full gate is GREEN — typecheck PASS, lint PASS (1 pre-existing warning: `routes/api/mobileconfig.test.ts:16` require-await), 181 unit tests PASS, format PASS.
-- **DO_NOT_TOUCH** (`FACT-DNT`): behavior must stay stable.
-  - `ui/src/routes/api/**` (all API route handlers — public contracts)
-  - `ui/src/lib/**` data/business layer: db, schemas, vcard, carddav, csv, merge, history, sync-service, mobileconfig-signer, validation, image, contact-helpers, history-format, logger. UI agents may READ but must not change behavior. (`cn`/`utils` styling helpers exempt — additive only.)
-  - `sync-service/**`, `radicale/**`, `migrations/**`
-  - Deploy/infra: `Dockerfile*`, `docker-compose*.yml`, `docker-entrypoint.sh`, `.env*`, `ui/nitro.config.ts`, `ui/vite.config.ts`, `ui/server/**`
-  - Prod topology: cloudflared tunnel → `https://traefik:443` (must not regress).
-- **DEAD CODE** (`FACT-DEAD`): `ui/src/components/ContactCard.tsx` is imported nowhere. Leave untouched (do not delete in this cycle; out of scope).
+  - Lint: `npm run lint`
+  - Unit tests: `npm run test:unit`
+  - Format (repo ROOT): `npm run format:check` (agents run `npx prettier --write <files>` first)
+- **FINAL GATE STATE**: typecheck PASS, lint PASS (1 PRE-EXISTING warning only: `routes/api/mobileconfig.test.ts:16` require-await), 181 unit tests PASS, format PASS.
+- **DO_NOT_TOUCH** (held all cycle): `ui/src/routes/api/**`, `ui/src/lib/**` behavior, `sync-service/**`, `radicale/**`, `migrations/**`, Docker/compose/entrypoint, `.env*`, `ui/nitro.config.ts`, `ui/vite.config.ts`, `ui/server/**`. Prod topology cloudflared→`https://traefik:443`.
+- **DEAD CODE**: `ui/src/components/ContactCard.tsx` was dead; left untouched. `ContactForm.tsx` became dead after the `/new` port and WAS deleted (its only importer was `new.tsx`).
 
-## Flow inventory (disjoint file ownership — no two flows share an editable file)
+## Sequential prerequisites — DONE
 
-Shared chrome renders every flow but lives in separate files (no conflict). `components/ui/**` is frozen for all flow agents.
+- [DONE] `REF-LANG` `ui/design-language.md` (ee6bfa5)
+- [DONE] `REF-SYS` shared primitives + `ui/design-system.md` (31fb2fe). New frozen primitives: PageHeader, PageContainer, ConfirmDialog, Badge. NO token changes were needed.
 
-- [TODO] `REF-SHELL` app-shell-and-nav — owns: `routes/__root.tsx`, `components/AppSidebar.tsx`, `components/MobileHeader.tsx`, `components/ThemeToggle.tsx`, `components/ThemeProvider.tsx`, `components/SupportDialog.tsx`
-- [TODO] `REF-LIST` contacts-list — owns: `routes/index.tsx`, `components/ContactAvatar.tsx`, `components/DeduplicateButton.tsx`, `components/MergeButton.tsx` (ContactCard dead/untouched)
-- [TODO] `REF-EDIT` contact-editor — owns: `routes/$id.tsx`, `routes/new.tsx`, `components/ContactEditPane.tsx`, `components/ContactPreview.tsx`, `components/ContactHistoryPanel.tsx`, `components/ContactForm.tsx`, `components/AddressInput.tsx`, `components/PhoneInput.tsx`, `components/MultiFieldInput.tsx`, `components/contact-form/**`. NOTE: `$id` editor was already redesigned (commit dbbf61f) — it is the NORTH STAR. This flow's job: align to the frozen system + port the still-old `routes/new.tsx` (single-column `ContactForm`) onto the new editor.
-- [TODO] `REF-BOOKS` address-books — owns: `routes/books.tsx`
-- [TODO] `REF-USERS` book-users-admin — owns: `routes/radicale-users.tsx`
-- [TODO] `REF-DAV` carddav-config-admin — owns: `routes/carddav-connection.tsx`
-- [TODO] `REF-DUP` duplicates — owns: `routes/duplicates.tsx`
-- [TODO] `REF-TRASH` trash — owns: `routes/trash.tsx`
-- [TODO] `REF-HIST` history — owns: `routes/history.tsx`
-- [TODO] `REF-IMPORT` import — owns: `routes/import.tsx`, `components/CSVUpload.tsx`
-- [TODO] `REF-INFO` help-and-about — owns: `routes/help.tsx`, `routes/about.tsx`
+## Flows — all DONE (checks PASS), disjoint file ownership
 
-## Sequential prerequisites
+- [DONE] `REF-SHELL` app-shell-and-nav checks: PASS (684bea9)
+- [DONE] `REF-LIST` contacts-list checks: PASS (bbebd36)
+- [DONE] `REF-EDIT` contact-editor + /new checks: PASS (c8ddd9c) — /new ported to two-column editor; ContactForm.tsx deleted
+- [DONE] `REF-BOOKS` address-books checks: PASS (4d8788e) — no delete endpoint exists, so no ConfirmDialog needed
+- [DONE] `REF-USERS` book-users-admin checks: PASS (7f4e062) — title relabeled "Radicale Users"→"Book Users"
+- [DONE] `REF-DAV` carddav-config-admin checks: PASS (5723102)
+- [DONE] `REF-DUP` duplicates checks: PASS (477078d) — added a merge confirm step that did not exist before
+- [DONE] `REF-TRASH` trash checks: PASS (400865b)
+- [DONE] `REF-HIST` history checks: PASS (4e66eea)
+- [DONE] `REF-IMPORT` import + CSVUpload checks: PASS (7128600)
+- [DONE] `REF-INFO` help + about checks: PASS (dfb98ed)
 
-- [DONE] `REF-LANG` design-language.md — committed ee6bfa5. `ui/design-language.md`.
-- [WIP] `REF-SYS` design-system (new shared layout components + badge + design-system.md) — BLOCKS all flows; only agent allowed to edit `components/ui/**` and token block in `styles.css`
+## Integration decisions applied (design-language §10 tensions, all resolved)
 
-## Integration decisions (orchestrator) — resolving design-language §10 tensions
-
-- D1: migrate raw palette literals (`text-gray-*`, `bg-red-50`, `bg-green-100` pills) to tokens. Flow-agents apply per screen. Keep diff red/green as dark-aware pairs (domain convention).
-- D2: new shared `PageHeader` (title + one-line muted description + right-aligned actions slot). Canonical = books.tsx header generalized.
-- D3: new shared `PageContainer` with named widths — narrow (~max-w-2xl form), standard (~max-w-5xl table), wide (~max-w-6xl detail) + consistent padding.
-- D4: new shared `ConfirmDialog` (named-consequence destructive confirm) to retire `window.confirm`/`window.alert`.
-- D5: add shadcn `badge.tsx` for tokenized status pills (variants default/secondary/destructive/outline).
-- D6: `Card` keeps token radius; `rounded-2xl` reserved for hero/preview/detail panels (document, don't change Card).
-- D7: pending ellipsis standardized to `…`.
-- FROZEN LAYER after REF-SYS = `components/ui/**` (incl. new PageHeader/PageContainer/ConfirmDialog/badge) + token block in `styles.css`. Flow-agents consume, never edit.
+D1 raw palette→tokens (done every flow). D2 PageHeader. D3 PageContainer narrow/standard/wide. D4 ConfirmDialog (retired all window.confirm/alert across list, edit, history, trash, duplicates, import). D5 Badge for status pills. D6 Card keeps token radius; rounded-2xl reserved for hero/preview/detail. D7 `…` ellipsis everywhere. Diff red/green kept as dark-aware pairs (sanctioned exception).
 
 ## Shared-change requests
 
-(none yet — flow agents file these when a primitive needs changing)
+- NONE filed across all 11 flows. The frozen design system was sufficient — strong signal it was scoped right.
 
-## Open items / risks
+## Resolved flags
 
-- Worktree node_modules: fan-out worktrees must symlink `ui/node_modules` + root `node_modules` from the main checkout so verify commands work without `npm ci`.
-- Pre-existing uncommitted change: `ui/package-lock.json` pins `nitro` `latest`→`3.0.1-alpha.2` (matches package.json). Harmless, left in working tree.
-- `styles.css` is split: token block (REF-SYS owns) vs nothing else editable by flows. Flow agents must not touch `styles.css`.
+- DAV-1: pre-existing em dash in macOS accordion copy → changed to a comma (matches user no-em-dash rule). Folded into the dav commit.
+
+## Open items / cycle-2 candidates (NOT blockers)
+
+- VISUAL QA NOT DONE: all verification was type/lint/test/format (the project's own gate, all green). No browser run — the app needs Postgres (`docker compose up`) to render data routes. Cycle 2 should stand up the stack and eyeball each screen in dark + light, especially: list table density, /new vs /$id header parity (see below), import dropzone, carddav accordions.
+- HEADER PARITY: `/$id` (edit) intentionally keeps its compact `text-lg` detail header (breadcrumb context) while `/new` uses the big `PageHeader`. Both are within the design language but create/edit look slightly different. Decide in cycle 2 whether to unify.
+- HISTORY op pills still render via `operationBadgeClass` (in `lib/history-format.ts`, do-not-touch) rather than `Badge` — kept for cross-flow consistency with ContactHistoryPanel. Revisit only if that lib helper is opened up.
+- DUP badge shows "N contacts" with variant carrying confidence; could add an explicit "High/Possible" word (copy-only).
+- Worktrees were cleaned up after integration. Per-flow branches `redesign/<flow>` deleted; `redesign/unify` retained (not yet merged to main — awaiting user review).
