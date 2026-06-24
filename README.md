@@ -91,7 +91,9 @@ Profiles are unsigned by default. In production you may want them signed so devi
 
 When enabled, the server builds the XML payload, then signs it with `openssl smime -sign -outform DER` as a subprocess and returns the DER-encoded CMS envelope. If signing is enabled but the cert or key is missing/unreadable, the server logs a warning and falls back to returning the unsigned XML rather than erroring out, so generation is never blocked by misconfiguration.
 
-Self-signed certificates work but iOS will label the profile as "Unverified". For a "Verified" badge, use a publicly-trusted code signing or client certificate chain. Provide certs and keys via Docker secrets or mounted volumes, **never baked into the image**.
+Self-signed certificates work but iOS will label the profile as "Unverified". For a "Verified" badge, use a publicly-trusted certificate chain (an ordinary Let's Encrypt leaf works — no Apple Developer account or code-signing cert is required). Provide certs and keys via Docker secrets or mounted volumes, **never baked into the image**.
+
+See **[docs/mobileconfig-signing.md](docs/mobileconfig-signing.md)** for a full setup guide, including a worked example for Traefik + Let's Encrypt (`acme.json`) deployments and certificate renewal.
 
 ## License
 
