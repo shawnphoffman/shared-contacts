@@ -95,6 +95,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `try{var p=localStorage.getItem('phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p)}catch(e){}`,
+					}}
+				/>
 			</head>
 			<body>
 				<ThemeProvider

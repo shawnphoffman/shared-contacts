@@ -91,6 +91,71 @@ code {
 	--sidebar-ring: #3f8f5a;
 }
 
+/* Phosphor variants (dark). data-phosphor on <html>; unset/green = base .dark above. */
+.dark[data-phosphor='amber'] {
+	--background: #120c04;
+	--foreground: #f3ca85;
+	--card: #170f05;
+	--card-foreground: #f3ca85;
+	--popover: #150d04;
+	--popover-foreground: #ffe2ad;
+	--primary: #ffb000;
+	--primary-foreground: #160f02;
+	--secondary: #2a1d08;
+	--secondary-foreground: #f3ca85;
+	--muted: #1a1206;
+	--muted-foreground: #b08949;
+	--accent: #2a1d08;
+	--accent-foreground: #ffe2ad;
+	--border: #2e2410;
+	--input: #4a3a1c;
+	--ring: #8f6a2f;
+	--sidebar: #100a02;
+	--sidebar-foreground: #b08949;
+	--sidebar-primary: #ffb000;
+	--sidebar-primary-foreground: #160f02;
+	--sidebar-accent: #2a1d08;
+	--sidebar-accent-foreground: #ffb000;
+	--sidebar-border: #2e2410;
+	--sidebar-ring: #8f6a2f;
+}
+.dark[data-phosphor='cyan'] {
+	--background: #050d10;
+	--foreground: #a6e9f2;
+	--card: #07121a;
+	--card-foreground: #a6e9f2;
+	--popover: #061016;
+	--popover-foreground: #c8f7ff;
+	--primary: #22d3ee;
+	--primary-foreground: #04141a;
+	--secondary: #0c2530;
+	--secondary-foreground: #a6e9f2;
+	--muted: #0a1a20;
+	--muted-foreground: #5f9fb0;
+	--accent: #0c2530;
+	--accent-foreground: #c8f7ff;
+	--border: #143038;
+	--input: #1f4a55;
+	--ring: #2f8fa5;
+	--sidebar: #040c10;
+	--sidebar-foreground: #5f9fb0;
+	--sidebar-primary: #22d3ee;
+	--sidebar-primary-foreground: #04141a;
+	--sidebar-accent: #0c2530;
+	--sidebar-accent-foreground: #22d3ee;
+	--sidebar-border: #143038;
+	--sidebar-ring: #2f8fa5;
+}
+/* Multi-accent: green base, amber accents (active/secondary), red destructive - syntax-highlight feel */
+.dark[data-phosphor='multi'] {
+	--secondary: #2a1d08;
+	--secondary-foreground: #ffd27a;
+	--accent: #2a1d08;
+	--accent-foreground: #ffb000;
+	--sidebar-accent: #122a18;
+	--sidebar-accent-foreground: #7cffb2;
+}
+
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
