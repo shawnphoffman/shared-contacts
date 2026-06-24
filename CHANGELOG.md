@@ -6,33 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.2.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.1.0...v1.2.0) (2026-06-24)
-
-### Features
-
-* **ui:** add phosphor palette switcher and terminal chrome ([655fcf4](https://github.com/shawnphoffman/shared-contacts/commit/655fcf4a9ac52a0133d5bce67799b67131fb4654))
-* **ui:** add shared design-system primitives and reference ([72a2917](https://github.com/shawnphoffman/shared-contacts/commit/72a29173345645ade619ba24dfcdbe4eccb6186a))
-* **ui:** add terminal command bar and status line to contacts list ([b91eaff](https://github.com/shawnphoffman/shared-contacts/commit/b91eaffd2affc22de652aba71d32ae3bda5e6dc4))
-* **ui:** add terminal command-footer hints and list row carets ([ca3bea1](https://github.com/shawnphoffman/shared-contacts/commit/ca3bea101d895ab983da4b5a6da5ea051eece3e4))
-* **ui:** full-width pages and readable history diffs ([71bd201](https://github.com/shawnphoffman/shared-contacts/commit/71bd201b8d50c2b420e4fb10099f7a65ebad754b))
-* **ui:** re-skin design tokens to the Terminal theme ([c0346b9](https://github.com/shawnphoffman/shared-contacts/commit/c0346b954ee4d9359b1d2e5d25fc99d02f4d031e))
-* **ui:** unify contact create with the live-preview editor ([7904434](https://github.com/shawnphoffman/shared-contacts/commit/79044342e6f25a090335065a88fff85c6316c034))
-
-### Bug Fixes
-
-* **ui:** replace native bcrypt with bcryptjs for musl compatibility ([c3053eb](https://github.com/shawnphoffman/shared-contacts/commit/c3053eb92fc5855fdacac7806b170510b6f7d4ba))
-* **ui:** tokenize history op badges and self-host the terminal font ([8ab32ea](https://github.com/shawnphoffman/shared-contacts/commit/8ab32eaec84cd0648c6729227ce9fe4195e4ec1e))
-
-### Documentation
-
-* **redesign:** add design-language.md grounded in current app ([6264b86](https://github.com/shawnphoffman/shared-contacts/commit/6264b867c5387cc5a991e3673a21f569ffbb82f9))
-* **ui:** rewrite design language and system for the Terminal theme ([1d9483d](https://github.com/shawnphoffman/shared-contacts/commit/1d9483d2bc2e51e8be1947c34f8bb003e5eff74d))
+## [1.2.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.2.0...v1.2.1) (2026-06-24)
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.2.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.2.0...v1.2.1)
+
+- 🔧 Chore(ui): remove dead ContactCard, refresh memory and add QA handoff [`a46c85e`](https://github.com/shawnphoffman/shared-contacts/commit/a46c85ed66182e4d4a904f68618f4be0c009389f)
+
 #### [v1.2.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.1.0...v1.2.0)
+
+> 24 June 2026
 
 - ✨ Feature(ui): unify contact create with the live-preview editor [`7904434`](https://github.com/shawnphoffman/shared-contacts/commit/79044342e6f25a090335065a88fff85c6316c034)
 - 🐛 Fix(ui): replace native bcrypt with bcryptjs for musl compatibility [`c3053eb`](https://github.com/shawnphoffman/shared-contacts/commit/c3053eb92fc5855fdacac7806b170510b6f7d4ba)
@@ -54,6 +40,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - ♻️ Refactor(ui): move editor tabs/actions to header, tighten card density [`87b733c`](https://github.com/shawnphoffman/shared-contacts/commit/87b733c12179b2124b457a706e93605f3a5ce4c9)
 - ♻️ Refactor(ui): align app shell and nav to the design system [`c53034e`](https://github.com/shawnphoffman/shared-contacts/commit/c53034e51305547f9d4ddb9686e0087c5c4a7756)
 - ♻️ Refactor(ui): align address books admin to the design system [`6ab8e79`](https://github.com/shawnphoffman/shared-contacts/commit/6ab8e799b60f19be0357f3588ad034d6a537ea11)
+- 🔧 Chore: release v1.2.0 [`0a21e86`](https://github.com/shawnphoffman/shared-contacts/commit/0a21e865effc5c2f00125ce9479949ecca887024)
 - 🔧 Chore(redesign): record cycle-1 discovery and flow inventory [`3de59fc`](https://github.com/shawnphoffman/shared-contacts/commit/3de59fc8f38c9c1708959cbc5288ea84f9257c50)
 - ✨ Feature(ui): full-width pages and readable history diffs [`71bd201`](https://github.com/shawnphoffman/shared-contacts/commit/71bd201b8d50c2b420e4fb10099f7a65ebad754b)
 - 🐛 Fix(ui): tokenize history op badges and self-host the terminal font [`8ab32ea`](https://github.com/shawnphoffman/shared-contacts/commit/8ab32eaec84cd0648c6729227ce9fe4195e4ec1e)
