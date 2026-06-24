@@ -149,24 +149,21 @@ export function describeSource(source: string): string {
 	}
 }
 
+// Token-only and palette-safe (works across every phosphor variant): collapse
+// operations into three buckets - constructive (primary), destructive (red), and
+// neutral (muted). The op label text still distinguishes update/merge/undo, so
+// color only needs to signal create-vs-destroy-vs-other.
 export function operationBadgeClass(op: string): string {
-	const base = 'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium'
+	const base = 'inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium'
 	switch (op) {
 		case 'create':
-			return `${base} bg-green-500/15 text-green-700 dark:text-green-400`
-		case 'update':
-			return `${base} bg-blue-500/15 text-blue-700 dark:text-blue-400`
-		case 'delete':
-			return `${base} bg-orange-500/15 text-orange-700 dark:text-orange-400`
-		case 'permanent_delete':
-			return `${base} bg-red-500/15 text-red-700 dark:text-red-400`
 		case 'restore':
-			return `${base} bg-teal-500/15 text-teal-700 dark:text-teal-400`
-		case 'merge':
-			return `${base} bg-purple-500/15 text-purple-700 dark:text-purple-400`
-		case 'undo':
-			return `${base} bg-yellow-500/15 text-yellow-700 dark:text-yellow-400`
+			return `${base} bg-primary/15 text-primary`
+		case 'delete':
+		case 'permanent_delete':
+			return `${base} bg-destructive/15 text-destructive`
 		default:
+			// update, merge, undo, system, and anything new
 			return `${base} bg-muted text-muted-foreground`
 	}
 }
