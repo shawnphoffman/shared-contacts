@@ -85,7 +85,7 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 	const [showAdvanced, setShowAdvanced] = useState(false)
 
 	return (
-		<div className="space-y-5">
+		<div className="space-y-3">
 			{/* Photo */}
 			<Card>
 				<CardHeader>
@@ -162,7 +162,7 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 
 			{/* Email */}
 			<Card>
-				<CardContent className="pt-6">
+				<CardContent>
 					<MultiFieldInput
 						label="Email"
 						fields={emails}
@@ -190,7 +190,7 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 
 			{/* Phone */}
 			<Card>
-				<CardContent className="pt-6">
+				<CardContent>
 					<MultiFieldInput
 						label="Phone"
 						fields={phones}
@@ -214,7 +214,7 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 
 			{/* Address */}
 			<Card>
-				<CardContent className="pt-6">
+				<CardContent>
 					<MultiFieldInput
 						label="Address"
 						fields={addresses}
@@ -289,7 +289,7 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 				<button
 					type="button"
 					onClick={() => setShowMore(true)}
-					className="w-full rounded-2xl border border-dashed p-5 text-left text-sm text-muted-foreground transition-colors hover:border-muted-foreground/40 hover:text-foreground"
+					className="w-full rounded-lg border border-dashed p-3 text-left text-sm text-muted-foreground transition-colors hover:border-muted-foreground/40 hover:text-foreground"
 				>
 					+ Add organization, job title, URL, or note
 				</button>
@@ -332,7 +332,7 @@ export function ContactEditPane({ form }: ContactEditPaneProps) {
 
 					{/* URLs */}
 					<Card>
-						<CardContent className="pt-6">
+						<CardContent>
 							<MultiFieldInput
 								label="URLs / Websites"
 								fields={urls}

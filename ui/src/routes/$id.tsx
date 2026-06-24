@@ -132,7 +132,37 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 					All Contacts /
 				</button>
 				<h1 className="text-lg font-semibold">{displayName}</h1>
-				{form.isDirty && <span className="rounded-full border bg-muted px-2.5 py-1 text-xs text-muted-foreground">Unsaved changes</span>}
+				{form.isDirty && <span className="rounded-sm border bg-muted px-2.5 py-1 text-xs text-muted-foreground">Unsaved changes</span>}
+				<div className="ml-auto flex flex-wrap items-center gap-3">
+					<div className="flex w-max gap-1 rounded-md border bg-card p-1">
+						<button
+							type="button"
+							onClick={() => setTab('edit')}
+							data-active={tab === 'edit'}
+							className="rounded-sm px-4 py-1 text-sm font-medium text-muted-foreground transition-colors data-[active=true]:bg-secondary data-[active=true]:text-foreground"
+						>
+							Edit
+						</button>
+						<button
+							type="button"
+							onClick={() => setTab('history')}
+							data-active={tab === 'history'}
+							className="rounded-sm px-4 py-1 text-sm font-medium text-muted-foreground transition-colors data-[active=true]:bg-secondary data-[active=true]:text-foreground"
+						>
+							History
+						</button>
+					</div>
+					{tab === 'edit' && (
+						<div className="flex gap-2">
+							<Button variant="outline" size="sm" onClick={onDiscard} disabled={!form.isDirty || updateMutation.isPending}>
+								Cancel
+							</Button>
+							<Button size="sm" onClick={handleSave} disabled={!form.isDirty || updateMutation.isPending}>
+								{updateMutation.isPending ? 'Saving…' : 'Save'}
+							</Button>
+						</div>
+					)}
+				</div>
 			</div>
 
 			{/* 1 : 1 columns */}
@@ -144,37 +174,6 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 
 				{/* Right: tabbed edit / history */}
 				<div>
-					<div className="mb-4 flex flex-wrap items-center gap-3">
-						<div className="flex w-max gap-1 rounded-xl border bg-card p-1">
-							<button
-								type="button"
-								onClick={() => setTab('edit')}
-								data-active={tab === 'edit'}
-								className="rounded-lg px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors data-[active=true]:bg-secondary data-[active=true]:text-foreground"
-							>
-								Edit
-							</button>
-							<button
-								type="button"
-								onClick={() => setTab('history')}
-								data-active={tab === 'history'}
-								className="rounded-lg px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors data-[active=true]:bg-secondary data-[active=true]:text-foreground"
-							>
-								History
-							</button>
-						</div>
-						{tab === 'edit' && (
-							<div className="ml-auto flex gap-2">
-								<Button variant="outline" size="sm" onClick={onDiscard} disabled={!form.isDirty || updateMutation.isPending}>
-									Cancel
-								</Button>
-								<Button size="sm" onClick={handleSave} disabled={!form.isDirty || updateMutation.isPending}>
-									{updateMutation.isPending ? 'Saving…' : 'Save'}
-								</Button>
-							</div>
-						)}
-					</div>
-
 					{tab === 'edit' ? <ContactEditPane form={form} /> : <ContactHistoryPanel contactId={contact.id} />}
 
 					{tab === 'edit' && (
