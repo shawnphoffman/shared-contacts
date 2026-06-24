@@ -14,7 +14,6 @@ import {
 	Phone,
 	Plus,
 	RefreshCw,
-	Search,
 	Trash2,
 	Users,
 	X,
@@ -625,13 +624,13 @@ function ContactsIndexPage() {
 			<div className="space-y-4">
 				<div className="flex flex-col sm:flex-row gap-2 sm:items-center">
 					<div className="relative flex-1">
-						<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+						<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none font-medium text-primary">❯</span>
 						<Input
 							type="text"
-							placeholder="Search contacts…"
+							placeholder="filter contacts: name, email, org…"
 							value={searchQuery}
 							onChange={e => setSearchQuery(e.target.value)}
-							className="pl-10"
+							className="pl-8"
 						/>
 					</div>
 					<div className="flex flex-row gap-2">
@@ -698,11 +697,15 @@ function ContactsIndexPage() {
 						</button>
 					)}
 				</div>
-				{(activeFilters.size > 0 || selectedBookId !== 'all' || searchQuery) && (
-					<div className="text-sm text-muted-foreground">
-						Showing {table.getRowModel().rows.length} of {contacts.length} contact{contacts.length === 1 ? '' : 's'}
-					</div>
-				)}
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+					<span>
+						<span className="text-primary">{table.getRowModel().rows.length}</span> / {contacts.length} contact
+						{contacts.length === 1 ? '' : 's'}
+					</span>
+					{showBookCount && <span>{addressBooks.length} books</span>}
+					{selectedContactIds.length > 0 && <span className="text-primary">{selectedContactIds.length} selected</span>}
+					<span className="ml-auto hidden select-none sm:inline">↑↓ navigate · ⏎ open · ⌫ delete</span>
+				</div>
 				{selectedContactIds.length >= 1 && (
 					<div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
 						<p className="text-sm text-muted-foreground">{selectedContactIds.length} selected</p>
