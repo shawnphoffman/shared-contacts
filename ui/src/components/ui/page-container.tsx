@@ -4,12 +4,14 @@ import type { VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
 
-const pageContainerVariants = cva('mx-auto w-full px-4 py-6 sm:px-6 lg:px-8', {
+// Terminal: pages are full-width always (no max-width cap). The `width` prop is
+// retained for API compatibility but no longer constrains the content width.
+const pageContainerVariants = cva('w-full px-4 py-6 sm:px-6 lg:px-8', {
 	variants: {
 		width: {
-			narrow: 'max-w-2xl',
-			standard: 'max-w-5xl',
-			wide: 'max-w-6xl',
+			narrow: '',
+			standard: '',
+			wide: '',
 		},
 	},
 	defaultVariants: {

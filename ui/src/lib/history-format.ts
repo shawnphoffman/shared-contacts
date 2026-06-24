@@ -58,23 +58,35 @@ const DIFF_HIDE_FIELDS = new Set(['vcard_data'])
 
 const MAX_VALUE_LENGTH = 160
 
+// Pull a short, human-readable label out of an object snapshot value rather
+// than dumping raw JSON. Handles the {value, type} shape used by
+// phones/emails/addresses/urls, and named records like address books
+// ({name, slug, ...}); falls back to compact JSON only when nothing readable
+// is present.
+const OBJECT_LABEL_KEYS = ['name', 'label', 'title', 'slug', 'email', 'number', 'address']
+
+function objectLabel(item: Record<string, unknown>): string {
+	if ('value' in item && (typeof item.value === 'string' || typeof item.value === 'number')) {
+		const type = typeof item.type === 'string' ? item.type : undefined
+		return type ? `${item.value} (${type})` : String(item.value)
+	}
+	for (const key of OBJECT_LABEL_KEYS) {
+		const candidate = item[key]
+		if (typeof candidate === 'string' && candidate.trim() !== '') return candidate
+	}
+	return JSON.stringify(item)
+}
+
 // Render a stored snapshot value as a short, human-readable string. Handles the
-// {value, type} shape used by phones/emails/addresses/urls, plain arrays, and
+// {value, type} shape, named records (address books), plain arrays, and
 // scalars, collapses empty values to a dash, and truncates very long values.
 export function formatValue(value: unknown): string {
 	if (value === null || value === undefined || value === '') return '—'
 	let text: string
 	if (Array.isArray(value)) {
-		const parts = value.map(item => {
-			if (item && typeof item === 'object' && 'value' in item) {
-				const field = item as { value: string; type?: string }
-				return field.type ? `${field.value} (${field.type})` : field.value
-			}
-			return typeof item === 'object' ? JSON.stringify(item) : String(item)
-		})
-		text = parts.join(', ')
+		text = value.map(item => (item && typeof item === 'object' ? objectLabel(item as Record<string, unknown>) : String(item))).join(', ')
 	} else if (typeof value === 'object') {
-		text = JSON.stringify(value)
+		text = objectLabel(value as Record<string, unknown>)
 	} else {
 		text = String(value)
 	}
