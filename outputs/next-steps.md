@@ -1,59 +1,66 @@
-# next-steps — cycle 1 — 2026-06-23 — COMPLETE
+# next-steps — shared-contacts UI — 2026-06-23
 
-Design-unification cycle 1 for `shared-contacts`. Integration branch `redesign/unify`
-(off `main` @ cc40689). All 11 flows integrated; full verification gate GREEN.
-Resume here for cycle 2 (polish / visual QA / new-surface work).
+State of the UI redesign effort. All work is landed on **local `main`** (not yet
+pushed to `origin/main`).
+
+## What happened (in order)
+
+1. **Cycle 1 - design unification (zinc/shadcn).** Built a shared design system
+   (`PageHeader`, `PageContainer`, `ConfirmDialog`, `Badge`) and aligned all 11
+   flows onto it (tokens, no `window.confirm`/`alert`, ported `/new` onto the
+   two-column editor, deleted the then-dead `ContactForm.tsx`).
+2. **bcrypt/musl fix.** Replaced native `bcrypt` with `bcryptjs` so the dockerized
+   UI stops 500ing under Alpine. `docker compose up` now serves HTTP 200.
+3. **Cycle 2 - "Terminal" visual identity (CURRENT).** After HTML design
+   exploration the user chose direction **B, The Terminal**, applied across the
+   whole app: JetBrains Mono everywhere, phosphor-on-near-black tokens, sharp
+   radius, command bar + status line + `~/` nav + hover carets + command
+   footers + bracketed badges. Added a **phosphor palette switcher**
+   (green/amber/cyan/multi via `data-phosphor`, sidebar `PhosphorToggle`). Pages
+   are full-width; history diffs render readable labels (not raw JSON); op badges
+   tokenized; editor tabs/actions moved into the header; `Card` density tightened;
+   font self-hosted via `@fontsource/jetbrains-mono`; dead `ContactCard.tsx`
+   removed.
+
+## Source of truth
+
+- **Design docs:** `ui/design-language.md` + `ui/design-system.md` (rewritten for
+  Terminal; describe tokens, the `data-phosphor` mechanism, and signature
+  patterns). Read these before touching UI.
 
 ## Discovered facts
 
-- **STACK**: TanStack Start (React 19 + TanStack Router v1 + TanStack Query v5), Vite 7 / Nitro, SSR-capable. App in `ui/`. `sync-service/` + `radicale/` are out of UI scope.
-- **STYLING**: Tailwind v4 (CSS-first, tokens in `ui/src/styles.css` `@theme inline`, oklch `:root`/`.dark`). shadcn "new-york", zinc base, lucide, `cn()` at `@/lib/utils`, CVA.
-- **DESIGN_SYSTEM_PATH**: `ui/src/components/ui/*`. After cycle 1 it also contains the new shared layout primitives: `page-header.tsx`, `page-container.tsx`, `confirm-dialog.tsx`, `badge.tsx`. This is the FROZEN layer.
-- **VERIFY_COMMANDS** (from `.github/workflows/test.yml`; run from `ui/` unless noted):
-  - Typecheck: `npx tsc --noEmit -p tsconfig.build.json`
-  - Lint: `npm run lint`
-  - Unit tests: `npm run test:unit`
-  - Format (repo ROOT): `npm run format:check` (agents run `npx prettier --write <files>` first)
-- **FINAL GATE STATE**: typecheck PASS, lint PASS (1 PRE-EXISTING warning only: `routes/api/mobileconfig.test.ts:16` require-await), 181 unit tests PASS, format PASS.
-- **DO_NOT_TOUCH** (held all cycle): `ui/src/routes/api/**`, `ui/src/lib/**` behavior, `sync-service/**`, `radicale/**`, `migrations/**`, Docker/compose/entrypoint, `.env*`, `ui/nitro.config.ts`, `ui/vite.config.ts`, `ui/server/**`. Prod topology cloudflared→`https://traefik:443`.
-- **DEAD CODE**: `ui/src/components/ContactCard.tsx` was dead; left untouched. `ContactForm.tsx` became dead after the `/new` port and WAS deleted (its only importer was `new.tsx`).
+- STACK: TanStack Start (React 19), Vite 7 / Nitro, app in `ui/`. Tailwind v4
+  (CSS-first, tokens in `ui/src/styles.css`), shadcn primitives in
+  `ui/src/components/ui/`, lucide icons.
+- VERIFY (from `ui/`): `npx tsc --noEmit -p tsconfig.build.json`, `npm run lint`,
+  `npm run test:unit`; from repo ROOT `npm run format:check`. Optional:
+  `npm run build` (validates the font `@import`). Lint has 1 PRE-EXISTING warning
+  (`routes/api/mobileconfig.test.ts:16` require-await) - not ours.
+- DO-NOT-TOUCH: `ui/src/routes/api/**`, `ui/src/lib/**` behavior, `sync-service/`,
+  `radicale/`, `migrations/`, Docker/compose/env. Prod topology cloudflared ->
+  `https://traefik:443`.
 
-## Sequential prerequisites — DONE
+## Status
 
-- [DONE] `REF-LANG` `ui/design-language.md` (ee6bfa5)
-- [DONE] `REF-SYS` shared primitives + `ui/design-system.md` (31fb2fe). New frozen primitives: PageHeader, PageContainer, ConfirmDialog, Badge. NO token changes were needed.
+- [DONE] terminal theme across all screens (token-driven), gate GREEN, prod build GREEN.
+- [DONE] phosphor switcher (green/amber/cyan/multi), self-hosted font, full-width
+  pages, readable history diffs, tokenized op badges, editor header layout, denser
+  cards, dead-code removal.
+- [TODO] **PUSH**: local `main` is ahead of `origin/main`. Blocked for the agent by
+  a `Bash(git push*)` deny rule - the user must `git push origin main` (or open a PR).
+- [TODO] **Visual QA sweep** of the new theme - see `outputs/terminal-qa-handoff.md`.
+  Verified so far: contacts list, `$id` editor, `/new`, books, history (dark;
+  green/amber/cyan). NOT yet eyeballed: trash, duplicates, import, CardDAV config,
+  book-users, help, about; light "paper terminal" mode; the `multi` palette;
+  mobile/responsive.
 
-## Flows — all DONE (checks PASS), disjoint file ownership
+## Open risks / notes
 
-- [DONE] `REF-SHELL` app-shell-and-nav checks: PASS (684bea9)
-- [DONE] `REF-LIST` contacts-list checks: PASS (bbebd36)
-- [DONE] `REF-EDIT` contact-editor + /new checks: PASS (c8ddd9c) — /new ported to two-column editor; ContactForm.tsx deleted
-- [DONE] `REF-BOOKS` address-books checks: PASS (4d8788e) — no delete endpoint exists, so no ConfirmDialog needed
-- [DONE] `REF-USERS` book-users-admin checks: PASS (7f4e062) — title relabeled "Radicale Users"→"Book Users"
-- [DONE] `REF-DAV` carddav-config-admin checks: PASS (5723102)
-- [DONE] `REF-DUP` duplicates checks: PASS (477078d) — added a merge confirm step that did not exist before
-- [DONE] `REF-TRASH` trash checks: PASS (400865b)
-- [DONE] `REF-HIST` history checks: PASS (4e66eea)
-- [DONE] `REF-IMPORT` import + CSVUpload checks: PASS (7128600)
-- [DONE] `REF-INFO` help + about checks: PASS (dfb98ed)
-
-## Integration decisions applied (design-language §10 tensions, all resolved)
-
-D1 raw palette→tokens (done every flow). D2 PageHeader. D3 PageContainer narrow/standard/wide. D4 ConfirmDialog (retired all window.confirm/alert across list, edit, history, trash, duplicates, import). D5 Badge for status pills. D6 Card keeps token radius; rounded-2xl reserved for hero/preview/detail. D7 `…` ellipsis everywhere. Diff red/green kept as dark-aware pairs (sanctioned exception).
-
-## Shared-change requests
-
-- NONE filed across all 11 flows. The frozen design system was sufficient — strong signal it was scoped right.
-
-## Resolved flags
-
-- DAV-1: pre-existing em dash in macOS accordion copy → changed to a comma (matches user no-em-dash rule). Folded into the dav commit.
-
-## Open items / cycle-2 candidates (NOT blockers)
-
-- VISUAL QA DONE (2026-06-23): browsed every screen in a real browser, dark + light. Setup was a HYBRID — dockerized Postgres (full schema + 16 sample contacts) published on host port 5433 via a throwaway override `/tmp/sc-pgport.yml`, UI run on the HOST (`ui/.env.local` → localhost:5433) because the dockerized UI 500s on a PRE-EXISTING bcrypt/Alpine native-module issue (`unsupported relocation type 7`, glibc prebuild under musl) that also affects main and is unrelated to this redesign. Findings: list, /new (ported editor, confirmed), /$id editor, books, book-users, carddav, duplicates, history, import, about all render correctly; ConfirmDialog (history Undo) verified working; zero console errors; light mode correct (primary → near-black, not green). To reproduce: `docker compose -f docker-compose.yml -f /tmp/sc-pgport.yml up -d postgres`, then `cd ui && npm run dev`.
-- KNOWN INFRA BUG (pre-existing, not from redesign): dockerized `ui` container cannot load bcrypt native binary on Alpine/musl. Worth a separate fix (rebuild bcrypt from source in the image, or swap to bcryptjs) so `docker compose up` works end-to-end.
-- HEADER PARITY: `/$id` (edit) intentionally keeps its compact `text-lg` detail header (breadcrumb context) while `/new` uses the big `PageHeader`. Both are within the design language but create/edit look slightly different. Decide in cycle 2 whether to unify.
-- HISTORY op pills still render via `operationBadgeClass` (in `lib/history-format.ts`, do-not-touch) rather than `Badge` — kept for cross-flow consistency with ContactHistoryPanel. Revisit only if that lib helper is opened up.
-- DUP badge shows "N contacts" with variant carrying confidence; could add an explicit "High/Possible" word (copy-only).
-- Worktrees were cleaned up after integration. Per-flow branches `redesign/<flow>` deleted; `redesign/unify` retained (not yet merged to main — awaiting user review).
+- `sync-service` still uses native `bcrypt` in its own container (didn't error, but
+  same latent musl risk) - optional follow-up.
+- Light theme (`:root`, "paper terminal") is defined but lightly tested.
+- Local QA used a hybrid: dockerized Postgres published on host `:5433` + host
+  `npm run dev`, because the docker UI image needs a rebuild to pick up bcryptjs.
+  These services have been torn down; `ui/.env.local` (DATABASE_URL -> :5433) and
+  throwaway override `/tmp/sc-pgport.yml` may remain locally.
