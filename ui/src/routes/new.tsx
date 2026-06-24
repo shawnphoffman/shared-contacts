@@ -91,6 +91,10 @@ function NewContactPage() {
 					</div>
 
 					<ContactEditPane form={form} />
+
+					<p className="select-none pt-1 text-right text-xs text-muted-foreground">
+						<span className="text-primary">:w</span> create · <span className="text-primary">esc</span> cancel
+					</p>
 				</div>
 			</div>
 		</PageContainer>

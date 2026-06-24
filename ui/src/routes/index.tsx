@@ -213,7 +213,13 @@ function ContactsIndexPage() {
 					const contact = row.original
 					const { firstName } = getNameParts(contact)
 					return (
-						<div className="flex items-center gap-3">
+						<div className="flex items-center gap-2">
+							<span
+								className="w-2 shrink-0 select-none text-primary opacity-0 transition-opacity group-hover:opacity-100"
+								aria-hidden="true"
+							>
+								›
+							</span>
 							<ContactAvatar contact={contact} className="h-8 w-8 text-xs" />
 							<div className="min-w-0">
 								<div className="font-medium">{firstName || 'Unnamed Contact'}</div>
@@ -774,7 +780,7 @@ function ContactsIndexPage() {
 											}}
 											tabIndex={0}
 											aria-label={`View ${contact.full_name || 'contact'}`}
-											className="cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
+											className="group cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
 										>
 											{row.getVisibleCells().map(cell => (
 												<TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
