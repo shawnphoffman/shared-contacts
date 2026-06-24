@@ -1,134 +1,81 @@
-# Shared Contacts - Design System (implementer reference)
+# Shared Contacts - Design System (Terminal, implementer reference)
 
-This is the FROZEN shared layer that flow agents consume. It implements the vocabulary in `design-language.md` and resolves its §10 tensions. Do not author new shared primitives this cycle. Compose what is here.
+The shared layer that every screen consumes. It implements the vocabulary in `design-language.md` (the Terminal identity). Compose what is here; do not hand-roll parallel widgets or hardcode colors.
 
-All primitives live in `ui/src/components/ui/` and follow the same authoring style: CVA for variants, `cn` from `@/lib/utils`, `data-slot` attributes, plain function components (no `forwardRef`), token-backed colors only.
-
----
-
-## Primitives → principle
-
-| Primitive                                  | Serves                                   | Reach for this when...                                                                                                 |
-| ------------------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `Button` (`button.tsx`)                    | §3 primary/secondary, §6 variants        | any action. One `default` per region, `outline` for secondary/row actions, `destructive` only for confirmed data loss. |
-| `Card` (`card.tsx`)                        | §3 hierarchy                             | a group is an object the user reasons about. Keeps its token radius (see D6).                                          |
-| `Dialog` (`dialog.tsx`)                    | §6 modal flows                           | create/configure/confirm flows that are modal by nature.                                                               |
-| `Field` (`field.tsx`)                      | §3 field hierarchy, §8 labels            | every labeled input. `FieldLabel htmlFor` + `FieldContent`.                                                            |
-| `Table` (`table.tsx`)                      | §7 admin list pattern                    | tabular data. First column `font-medium`, right-aligned Actions column.                                                |
-| `Item` (`item.tsx`)                        | §3, §9 admin explainers                  | note/explainer blocks and list rows that are not a full table.                                                         |
-| `Skeleton` / `Spinner`                     | §6 loading                               | first-load of list/table content (skeleton) vs inline waits (spinner).                                                 |
-| **`PageHeader`** (`page-header.tsx`)       | §7 header convention, §10 #2             | every top-level page title row. Generalizes the Books header.                                                          |
-| **`PageContainer`** (`page-container.tsx`) | §2 density, §10 #3                       | the outermost page wrapper. Named width + consistent padding.                                                          |
-| **`ConfirmDialog`** (`confirm-dialog.tsx`) | §1/§6 named-consequence confirms, §10 #4 | any destructive confirmation. Replaces `window.confirm`/`alert`.                                                       |
-| **`Badge`** (`badge.tsx`)                  | §4 status pills, §10 #1                  | status pills. Replaces raw `bg-green-100`/`bg-gray-100` pills with tokenized variants.                                 |
+All primitives live in `ui/src/components/ui/` and follow the same authoring style: CVA for variants, `cn` from `@/lib/utils`, `data-slot` attributes, plain function components, token-backed colors only.
 
 ---
 
-## Canonical usage
+## Theme foundation (`src/styles.css`)
 
-### PageHeader
+- **Font:** JetBrains Mono globally (`body`), with `font-feature-settings: 'liga' 0`. Loaded via Google Fonts `@import`. (If you need offline/self-hosted builds, bundle the font and drop the remote import - tracked as a follow-up.)
+- **Radius:** `--radius: 0.125rem` (near-zero). Sharp corners everywhere.
+- **Tokens:** the standard shadcn token set (`--background`, `--foreground`, `--card`, `--primary`, `--secondary`, `--muted`, `--accent`, `--destructive`, `--border`, `--input`, `--ring`, `--sidebar-*`) mapped to Tailwind via `@theme inline`. Light (`:root`) is a "paper terminal"; dark (`.dark`) is phosphor green.
+- **Phosphor variants:** `data-phosphor` on `<html>` selects the accent palette in dark mode:
+  - unset / `green` -> base `.dark` (phosphor green)
+  - `amber` -> `.dark[data-phosphor='amber']` (amber on warm black)
+  - `cyan` -> `.dark[data-phosphor='cyan']` (cyan/ice on near-black)
+  - `multi` -> `.dark[data-phosphor='multi']` (green base, amber accents, red destructive)
+    Each variant only overrides token values - all primitives inherit automatically. Add a new palette by adding one `.dark[data-phosphor='x'] { ... }` block; nothing else changes.
+- The value is persisted to `localStorage('phosphor')` and re-applied pre-paint by an inline script in `__root.tsx` (no flash), then driven at runtime by `PhosphorToggle`.
 
-```tsx
-import { PageHeader } from '@/components/ui/page-header'
-;<PageHeader
-	title="Address Books"
-	description="Manage address books and view connection details."
-	actions={
-		<Button onClick={() => setOpen(true)}>
-			<Plus className="mr-2 h-4 w-4" />
-			New Book
-		</Button>
-	}
-/>
-```
-
-- `title` type step is fixed at `text-2xl font-bold tracking-tight sm:text-3xl` - do not override it.
-- `description` is one line, `text-sm text-muted-foreground`.
-- `icon` is optional and decorative (muted, `size-6`/`size-7`); pass a lucide node.
-- `actions` (or `children`) is the right-aligned, `shrink-0` slot. Put the single primary action here.
-
-### PageContainer
-
-```tsx
-import { PageContainer } from '@/components/ui/page-container'
-
-<PageContainer width="standard">
-	<PageHeader ... />
-	{/* page body */}
-</PageContainer>
-```
-
-- `width`: `narrow` (`max-w-2xl`, single narrow form/table) | `standard` (`max-w-5xl`, default, admin tables) | `wide` (`max-w-6xl`, two-column detail).
-- Padding is fixed at `px-4 py-6 sm:px-6 lg:px-8` plus `mx-auto w-full`. Do not re-add page padding/centering on children.
-- `className` is merged via `cn` for body spacing (e.g. `className="space-y-6"`).
-
-### ConfirmDialog
-
-```tsx
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-;<ConfirmDialog
-	open={open}
-	onOpenChange={setOpen}
-	title={`Delete ${name}?`}
-	description="This cannot be undone."
-	confirmLabel="Delete"
-	pendingLabel="Deleting…"
-	onConfirm={() => deleteMutation.mutateAsync(id)}
-	pending={deleteMutation.isPending}
-/>
-```
-
-- Controlled: `open` + `onOpenChange`.
-- Always name the object and consequence in `title`/`description`.
-- `variant` defaults to `destructive` (confirm button). Use `default` for non-destructive confirms.
-- `confirmLabel` defaults to `Delete`, `cancelLabel` to `Cancel`.
-- `pending` disables both buttons and relabels confirm. Pass `pendingLabel` for the present-progressive form (`Deleting…`); if omitted it falls back to `confirmLabel` + `…`.
-- `onConfirm` may be async. The dialog does not auto-close - close it in your mutation `onSuccess` (or via `onOpenChange`).
-- Footer order is fixed: Cancel (outline, left) then confirm (right).
-
-### Badge
-
-```tsx
-import { Badge } from '@/components/ui/badge'
-
-<Badge variant="secondary">Public</Badge>
-<Badge variant="outline">Private</Badge>
-<Badge variant="destructive">Read-only</Badge>
-```
-
-- Variants: `default` | `secondary` | `destructive` | `outline`.
-- Per §4, a pill states a fact. Use a neutral variant (`secondary`/`outline`) for neutral facts; reserve `destructive`/`default` color for facts the admin should react to. Do not celebrate routine status with primary color.
+**Rule:** never write a raw hex/color utility (`text-green-400`, `bg-[#...]`). Always use token utilities (`text-primary`, `bg-card`, `text-muted-foreground`, `border-border`) so all four palettes and both themes work. The only sanctioned exception is the history diff red/green, which must use dark-aware pairs.
 
 ---
 
-## Conventions (resolved tensions - flow agents must follow)
+## Primitives -> principle
 
-### Token-only colors (§4, §10 #1)
+| Primitive                               | Serves | Reach for this when...                                                                                               |
+| --------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- | --------- | ----------- | --------- |
+| `Button` (`button.tsx`)                 | §3, §6 | any action. One `default` per region; `outline` for secondary/row actions; `destructive` only for confirmed loss.    |
+| `Card` (`card.tsx`)                     | §3     | a group is an object the user reasons about. Keeps the sharp token radius - no soft cards.                           |
+| `Dialog` (`dialog.tsx`)                 | §6     | modal create/configure/confirm flows.                                                                                |
+| `ConfirmDialog` (`confirm-dialog.tsx`)  | §6     | any destructive confirmation. Replaces `window.confirm`/`alert`. Does not auto-close; close in mutation `onSuccess`. |
+| `Field` (`field.tsx`)                   | §3, §8 | every labeled input (`FieldLabel htmlFor` + `FieldContent`).                                                         |
+| `Table` (`table.tsx`)                   | §2, §7 | collections. First column `font-medium`; right-aligned actions.                                                      |
+| `Badge` (`badge.tsx`)                   | §4     | status tags. Renders bracketed (`[ Public ]`) for the terminal feel. Variants `default                               | secondary | destructive | outline`. |
+| `Item` (`item.tsx`)                     | §9     | explainer/note blocks before risky admin actions.                                                                    |
+| `Skeleton` / `Spinner`                  | §6     | first-load lists (skeleton) vs inline waits (spinner).                                                               |
+| `PageHeader` (`page-header.tsx`)        | §7     | every top-level page title row.                                                                                      |
+| `PageContainer` (`page-container.tsx`)  | §2, §7 | the outermost page wrapper. `width`: `narrow                                                                         | standard  | wide`.      |
+| `PhosphorToggle` (`PhosphorToggle.tsx`) | §0     | the sidebar accent-palette switcher (green -> amber -> cyan -> multi).                                               |
 
-Never ship raw palette utilities. Migrate on sight:
+---
 
-| Raw                                                       | Token                                |
-| --------------------------------------------------------- | ------------------------------------ |
-| `text-gray-400`, `text-gray-500`                          | `text-muted-foreground`              |
-| `text-red-600 bg-red-50` (and `dark:bg-red-950` variants) | `text-destructive bg-destructive/10` |
-| `bg-green-100 / bg-gray-100 / bg-yellow-100` status pills | `<Badge>` with a semantic variant    |
+## Signature patterns (terminal flourishes)
 
-Soft destructive surfaces use opacity tints on the token (`bg-destructive/10`, `hover:bg-destructive/10`).
+These are conventions, not always components. Apply them for the terminal identity:
 
-**The one sanctioned exception:** diff red/green in history (`ContactHistoryPanel.tsx`). Removed = red strike-through, added = green, and it MUST use dark-mode-aware pairs (`text-red-700 dark:text-red-400`, `text-green-700 dark:text-green-400`). This is a domain convention, not a general palette - do not reuse these literals anywhere else.
+- **Command bar.** Prefix a primary search/filter input with a phosphor prompt and command-style placeholder:
+  ```tsx
+  <div className="relative flex-1">
+    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none font-medium text-primary">❯</span>
+    <Input className="pl-8" placeholder="filter contacts: name, email, org…" ... />
+  </div>
+  ```
+- **Status line.** An always-on row below collection controls - counts left, keyboard hints right:
+  ```tsx
+  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+  	<span>
+  		<span className="text-primary">{shown}</span> / {total} contacts
+  	</span>
+  	<span className="ml-auto hidden select-none sm:inline">↑↓ navigate · ⏎ open · ⌫ delete</span>
+  </div>
+  ```
+- **Hover caret.** Navigable rows reveal `›` (add `group` to the row, caret uses `opacity-0 group-hover:opacity-100 text-primary`, `aria-hidden`).
+- **Command footer.** End editing surfaces with a dim hint: `<p className="text-right text-xs text-muted-foreground"><span className="text-primary">:w</span> save · <span className="text-primary">esc</span> cancel</p>`.
+- **Terminal nav.** Sidebar groups are paths (`~/contacts`, `~/books`, `~/help`); brand is `shared·contacts`.
+- **Bracketed status.** Use `Badge` (auto-bracketed) for fact tags; neutral variants for neutral facts, `destructive`/`default` only for facts the user should react to.
 
-### Header convention (§7, §10 #2)
+Decorative glyphs (`❯`, `›`, status hints) are `select-none` and `aria-hidden` (or non-semantic) so they do not pollute screen readers or copy.
 
-Every top-level page uses `PageHeader` (title + one-line muted description + right-aligned primary action). Never hand-roll an `<h1>` page title. Set page width with `PageContainer` (`narrow`/`standard`/`wide`), never ad-hoc `max-w-*` + padding on the page root.
+---
 
-### Destructive / confirm convention (§6, §10 #4)
+## Conventions (must follow)
 
-Use `ConfirmDialog` for destructive confirmations. No `window.confirm`, no `window.alert`. Report outcomes with toasts (sonner): `toast.success(...)` on success, `toast.error(message)` on failure (reuse the server's `error.message`, do not wrap it).
-
-### Pending label convention (§6, §10 #6)
-
-While an action is pending: disable the control and swap its label to a present-progressive verb with the ellipsis character `…` (`Saving…`, `Deleting…`, `Creating…`). Never the three-dot `...`. Gate on real state (`disabled={!form.isDirty || mutation.isPending}`).
-
-### Card radius rule - D6 (§0, §10 #5)
-
-`Card` keeps its token radius (`rounded-xl`, driven by `--radius`). The larger `rounded-2xl` is reserved for hero / live-preview / detail panels (`ContactPreview.tsx`, `ContactHistoryPanel.tsx`) - hand-rolled `rounded-2xl border bg-card` panels, not `Card`. Do not bump `Card`'s radius, and do not use `rounded-2xl` for ordinary content cards.
+- **Token-only colors** (§0/§4). No raw palette utilities; migrate on sight. Diff red/green is the one exception (dark-aware pairs).
+- **Header + width** via `PageHeader` + `PageContainer`; never ad-hoc `<h1>` + `max-w-*` page padding.
+- **Destructive / confirm** via `ConfirmDialog`; report outcomes with sonner toasts. No `window.confirm`/`alert`.
+- **Pending labels:** disable + present-progressive verb + `…` (`Saving…`). Gate on real state.
+- **Sharp corners:** do not reintroduce large radii; the terminal is rectilinear.
+- **Every palette:** review new UI in green, amber, and cyan (toggle in the sidebar). If it only works in one, it is using a non-token color.
