@@ -6,15 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.2.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.2.0...v1.2.1) (2026-06-24)
+## [1.3.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.2.1...v1.3.0) (2026-08-04)
+
+### Features
+
+* **api:** add relationship endpoints and graph lib ([c5f8d8b](https://github.com/shawnphoffman/shared-contacts/commit/c5f8d8bb0894d95b5a161a68e4b00df998e7b080))
+* **db:** add relationship graph schema ([7b55012](https://github.com/shawnphoffman/shared-contacts/commit/7b55012da1b7cda41fc634b3d0fa630a23bfd61a))
+* **ui:** add relationship canvas page and Relations tab ([d2d49e0](https://github.com/shawnphoffman/shared-contacts/commit/d2d49e005326e83b18574dc57d361e729286eddf))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.3.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.2.1...v1.3.0)
+
+- ✨ Feature(ui): add relationship canvas page and Relations tab [`d2d49e0`](https://github.com/shawnphoffman/shared-contacts/commit/d2d49e005326e83b18574dc57d361e729286eddf)
+- ✨ Feature(api): add relationship endpoints and graph lib [`c5f8d8b`](https://github.com/shawnphoffman/shared-contacts/commit/c5f8d8bb0894d95b5a161a68e4b00df998e7b080)
+- 💄 Style: format relationship files with prettier [`fad9a83`](https://github.com/shawnphoffman/shared-contacts/commit/fad9a83370dc5626a1b2bc07011e00e1be4ae29d)
+- ✨ Feature(db): add relationship graph schema [`7b55012`](https://github.com/shawnphoffman/shared-contacts/commit/7b55012da1b7cda41fc634b3d0fa630a23bfd61a)
+
 #### [v1.2.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.2.0...v1.2.1)
 
+> 24 June 2026
+
 - 🔧 Chore(ui): remove dead ContactCard, refresh memory and add QA handoff [`a46c85e`](https://github.com/shawnphoffman/shared-contacts/commit/a46c85ed66182e4d4a904f68618f4be0c009389f)
+- 🔧 Chore: release v1.2.1 [`7316f85`](https://github.com/shawnphoffman/shared-contacts/commit/7316f856f50b29355565364f9975d937a4bf914b)
 
 #### [v1.2.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.1.0...v1.2.0)
 
