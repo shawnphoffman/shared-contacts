@@ -806,6 +806,51 @@ export async function ensureMergeEdgeRepair(): Promise<void> {
 	return mergeEdgeRepairPromise
 }
 
+// ---------------------------------------------------------------------------
+// Permanent-delete cleanup
+//
+// Hard-deleting a contact cascades its edges away at the DB layer, which
+// bypasses the per-edge placeholder GC in deleteRelationship and leaves the
+// neighbours' vCards naming someone who no longer exists. Callers snapshot
+// the neighbours BEFORE deleting (the cascade erases the evidence), then
+// sweep and refresh afterwards.
+// ---------------------------------------------------------------------------
+
+/** Contact ids on the other end of any edge touching the given contacts. */
+export async function contactEdgeNeighborIds(contactIds: Array<string>): Promise<Array<string>> {
+	if (contactIds.length === 0 || !(await relationshipsEnabled())) return []
+	const pool = getPool()
+	const result = await pool.query(
+		'SELECT a_contact_id, b_contact_id FROM contact_relationships WHERE a_contact_id = ANY($1) OR b_contact_id = ANY($1)',
+		[contactIds]
+	)
+	const purged = new Set(contactIds)
+	const neighbors = new Set<string>()
+	for (const row of result.rows as Array<{ a_contact_id: string | null; b_contact_id: string | null }>) {
+		for (const id of [row.a_contact_id, row.b_contact_id]) {
+			if (id && !purged.has(id)) neighbors.add(id)
+		}
+	}
+	return [...neighbors]
+}
+
+/**
+ * Delete placeholders no edge references any more. Placeholders are only
+ * ever created together with an edge, so an edgeless one is always garbage.
+ */
+export async function deleteOrphanPlaceholders(): Promise<number> {
+	if (!(await relationshipsEnabled())) return 0
+	const pool = getPool()
+	const result = await pool.query(
+		`DELETE FROM relationship_placeholders p
+		 WHERE NOT EXISTS (
+		   SELECT 1 FROM contact_relationships r
+		   WHERE r.a_placeholder_id = p.id OR r.b_placeholder_id = p.id
+		 )`
+	)
+	return result.rowCount ?? 0
+}
+
 // Safety caps for the ego-graph walk. Family components are tiny in practice;
 // these only guard against pathological data.
 const MAX_GRAPH_NODES = 400
