@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrashRouteImport } from './routes/trash'
+import { Route as RelationshipsRouteImport } from './routes/relationships'
 import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ImportRouteImport } from './routes/import'
@@ -24,6 +25,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUserBookAssignmentsRouteImport } from './routes/api/user-book-assignments'
 import { Route as ApiSettingsRouteImport } from './routes/api/settings'
 import { Route as ApiRuntimeConfigRouteImport } from './routes/api/runtime-config'
+import { Route as ApiRelationshipsRouteImport } from './routes/api/relationships'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
 import { Route as ApiMobileconfigRouteImport } from './routes/api/mobileconfig'
 import { Route as ApiHistoryRouteImport } from './routes/api/history'
@@ -31,6 +33,7 @@ import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiContactsRouteImport } from './routes/api/contacts'
 import { Route as ApiAddressBooksRouteImport } from './routes/api/address-books'
 import { Route as ApiAboutRouteImport } from './routes/api/about'
+import { Route as ApiRelationshipsIdRouteImport } from './routes/api/relationships.$id'
 import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
 import { Route as ApiContactsTrashRouteImport } from './routes/api/contacts.trash'
 import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
@@ -44,11 +47,17 @@ import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/add
 import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-books.$id'
 import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
 import { Route as ApiHistoryIdUndoRouteImport } from './routes/api/history.$id.undo'
+import { Route as ApiContactsIdRelationshipsRouteImport } from './routes/api/contacts.$id.relationships'
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
 
 const TrashRoute = TrashRouteImport.update({
   id: '/trash',
   path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelationshipsRoute = RelationshipsRouteImport.update({
+  id: '/relationships',
+  path: '/relationships',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RadicaleUsersRoute = RadicaleUsersRouteImport.update({
@@ -121,6 +130,11 @@ const ApiRuntimeConfigRoute = ApiRuntimeConfigRouteImport.update({
   path: '/api/runtime-config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRelationshipsRoute = ApiRelationshipsRouteImport.update({
+  id: '/api/relationships',
+  path: '/api/relationships',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
   id: '/api/radicale-users',
   path: '/api/radicale-users',
@@ -155,6 +169,11 @@ const ApiAboutRoute = ApiAboutRouteImport.update({
   id: '/api/about',
   path: '/api/about',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRelationshipsIdRoute = ApiRelationshipsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiRelationshipsRoute,
 } as any)
 const ApiRadicaleUsersUsernameRoute =
   ApiRadicaleUsersUsernameRouteImport.update({
@@ -224,6 +243,12 @@ const ApiHistoryIdUndoRoute = ApiHistoryIdUndoRouteImport.update({
   path: '/$id/undo',
   getParentRoute: () => ApiHistoryRoute,
 } as any)
+const ApiContactsIdRelationshipsRoute =
+  ApiContactsIdRelationshipsRouteImport.update({
+    id: '/relationships',
+    path: '/relationships',
+    getParentRoute: () => ApiContactsIdRoute,
+  } as any)
 const ApiContactsIdPhotoRoute = ApiContactsIdPhotoRouteImport.update({
   id: '/photo',
   path: '/photo',
@@ -242,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/relationships': typeof RelationshipsRoute
   '/trash': typeof TrashRoute
   '/api/about': typeof ApiAboutRoute
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
@@ -250,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/api/history': typeof ApiHistoryRouteWithChildren
   '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
@@ -264,7 +291,9 @@ export interface FileRoutesByFullPath {
   '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/contacts/trash': typeof ApiContactsTrashRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
+  '/api/relationships/$id': typeof ApiRelationshipsIdRoute
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+  '/api/contacts/$id/relationships': typeof ApiContactsIdRelationshipsRoute
   '/api/history/$id/undo': typeof ApiHistoryIdUndoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
@@ -280,6 +309,7 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/relationships': typeof RelationshipsRoute
   '/trash': typeof TrashRoute
   '/api/about': typeof ApiAboutRoute
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
@@ -288,6 +318,7 @@ export interface FileRoutesByTo {
   '/api/history': typeof ApiHistoryRouteWithChildren
   '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
@@ -302,7 +333,9 @@ export interface FileRoutesByTo {
   '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/contacts/trash': typeof ApiContactsTrashRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
+  '/api/relationships/$id': typeof ApiRelationshipsIdRoute
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+  '/api/contacts/$id/relationships': typeof ApiContactsIdRelationshipsRoute
   '/api/history/$id/undo': typeof ApiHistoryIdUndoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
@@ -319,6 +352,7 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/new': typeof NewRoute
   '/radicale-users': typeof RadicaleUsersRoute
+  '/relationships': typeof RelationshipsRoute
   '/trash': typeof TrashRoute
   '/api/about': typeof ApiAboutRoute
   '/api/address-books': typeof ApiAddressBooksRouteWithChildren
@@ -327,6 +361,7 @@ export interface FileRoutesById {
   '/api/history': typeof ApiHistoryRouteWithChildren
   '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
@@ -341,7 +376,9 @@ export interface FileRoutesById {
   '/api/contacts/merge': typeof ApiContactsMergeRoute
   '/api/contacts/trash': typeof ApiContactsTrashRoute
   '/api/radicale-users/$username': typeof ApiRadicaleUsersUsernameRouteWithChildren
+  '/api/relationships/$id': typeof ApiRelationshipsIdRoute
   '/api/contacts/$id/photo': typeof ApiContactsIdPhotoRoute
+  '/api/contacts/$id/relationships': typeof ApiContactsIdRelationshipsRoute
   '/api/history/$id/undo': typeof ApiHistoryIdUndoRoute
   '/api/radicale-users/$username/backfill': typeof ApiRadicaleUsersUsernameBackfillRoute
 }
@@ -359,6 +396,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/relationships'
     | '/trash'
     | '/api/about'
     | '/api/address-books'
@@ -367,6 +405,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
     | '/api/user-book-assignments'
@@ -381,7 +420,9 @@ export interface FileRouteTypes {
     | '/api/contacts/merge'
     | '/api/contacts/trash'
     | '/api/radicale-users/$username'
+    | '/api/relationships/$id'
     | '/api/contacts/$id/photo'
+    | '/api/contacts/$id/relationships'
     | '/api/history/$id/undo'
     | '/api/radicale-users/$username/backfill'
   fileRoutesByTo: FileRoutesByTo
@@ -397,6 +438,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/relationships'
     | '/trash'
     | '/api/about'
     | '/api/address-books'
@@ -405,6 +447,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
     | '/api/user-book-assignments'
@@ -419,7 +462,9 @@ export interface FileRouteTypes {
     | '/api/contacts/merge'
     | '/api/contacts/trash'
     | '/api/radicale-users/$username'
+    | '/api/relationships/$id'
     | '/api/contacts/$id/photo'
+    | '/api/contacts/$id/relationships'
     | '/api/history/$id/undo'
     | '/api/radicale-users/$username/backfill'
   id:
@@ -435,6 +480,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/new'
     | '/radicale-users'
+    | '/relationships'
     | '/trash'
     | '/api/about'
     | '/api/address-books'
@@ -443,6 +489,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
     | '/api/user-book-assignments'
@@ -457,7 +504,9 @@ export interface FileRouteTypes {
     | '/api/contacts/merge'
     | '/api/contacts/trash'
     | '/api/radicale-users/$username'
+    | '/api/relationships/$id'
     | '/api/contacts/$id/photo'
+    | '/api/contacts/$id/relationships'
     | '/api/history/$id/undo'
     | '/api/radicale-users/$username/backfill'
   fileRoutesById: FileRoutesById
@@ -474,6 +523,7 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   NewRoute: typeof NewRoute
   RadicaleUsersRoute: typeof RadicaleUsersRoute
+  RelationshipsRoute: typeof RelationshipsRoute
   TrashRoute: typeof TrashRoute
   ApiAboutRoute: typeof ApiAboutRoute
   ApiAddressBooksRoute: typeof ApiAddressBooksRouteWithChildren
@@ -482,6 +532,7 @@ export interface RootRouteChildren {
   ApiHistoryRoute: typeof ApiHistoryRouteWithChildren
   ApiMobileconfigRoute: typeof ApiMobileconfigRoute
   ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
+  ApiRelationshipsRoute: typeof ApiRelationshipsRouteWithChildren
   ApiRuntimeConfigRoute: typeof ApiRuntimeConfigRoute
   ApiSettingsRoute: typeof ApiSettingsRoute
   ApiUserBookAssignmentsRoute: typeof ApiUserBookAssignmentsRoute
@@ -494,6 +545,13 @@ declare module '@tanstack/react-router' {
       path: '/trash'
       fullPath: '/trash'
       preLoaderRoute: typeof TrashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relationships': {
+      id: '/relationships'
+      path: '/relationships'
+      fullPath: '/relationships'
+      preLoaderRoute: typeof RelationshipsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/radicale-users': {
@@ -594,6 +652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRuntimeConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/relationships': {
+      id: '/api/relationships'
+      path: '/api/relationships'
+      fullPath: '/api/relationships'
+      preLoaderRoute: typeof ApiRelationshipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/radicale-users': {
       id: '/api/radicale-users'
       path: '/api/radicale-users'
@@ -642,6 +707,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/about'
       preLoaderRoute: typeof ApiAboutRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/relationships/$id': {
+      id: '/api/relationships/$id'
+      path: '/$id'
+      fullPath: '/api/relationships/$id'
+      preLoaderRoute: typeof ApiRelationshipsIdRouteImport
+      parentRoute: typeof ApiRelationshipsRoute
     }
     '/api/radicale-users/$username': {
       id: '/api/radicale-users/$username'
@@ -734,6 +806,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHistoryIdUndoRouteImport
       parentRoute: typeof ApiHistoryRoute
     }
+    '/api/contacts/$id/relationships': {
+      id: '/api/contacts/$id/relationships'
+      path: '/relationships'
+      fullPath: '/api/contacts/$id/relationships'
+      preLoaderRoute: typeof ApiContactsIdRelationshipsRouteImport
+      parentRoute: typeof ApiContactsIdRoute
+    }
     '/api/contacts/$id/photo': {
       id: '/api/contacts/$id/photo'
       path: '/photo'
@@ -760,10 +839,12 @@ const ApiAddressBooksRouteWithChildren = ApiAddressBooksRoute._addFileChildren(
 
 interface ApiContactsIdRouteChildren {
   ApiContactsIdPhotoRoute: typeof ApiContactsIdPhotoRoute
+  ApiContactsIdRelationshipsRoute: typeof ApiContactsIdRelationshipsRoute
 }
 
 const ApiContactsIdRouteChildren: ApiContactsIdRouteChildren = {
   ApiContactsIdPhotoRoute: ApiContactsIdPhotoRoute,
+  ApiContactsIdRelationshipsRoute: ApiContactsIdRelationshipsRoute,
 }
 
 const ApiContactsIdRouteWithChildren = ApiContactsIdRoute._addFileChildren(
@@ -834,6 +915,17 @@ const ApiRadicaleUsersRouteChildren: ApiRadicaleUsersRouteChildren = {
 const ApiRadicaleUsersRouteWithChildren =
   ApiRadicaleUsersRoute._addFileChildren(ApiRadicaleUsersRouteChildren)
 
+interface ApiRelationshipsRouteChildren {
+  ApiRelationshipsIdRoute: typeof ApiRelationshipsIdRoute
+}
+
+const ApiRelationshipsRouteChildren: ApiRelationshipsRouteChildren = {
+  ApiRelationshipsIdRoute: ApiRelationshipsIdRoute,
+}
+
+const ApiRelationshipsRouteWithChildren =
+  ApiRelationshipsRoute._addFileChildren(ApiRelationshipsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdRoute: IdRoute,
@@ -846,6 +938,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   NewRoute: NewRoute,
   RadicaleUsersRoute: RadicaleUsersRoute,
+  RelationshipsRoute: RelationshipsRoute,
   TrashRoute: TrashRoute,
   ApiAboutRoute: ApiAboutRoute,
   ApiAddressBooksRoute: ApiAddressBooksRouteWithChildren,
@@ -854,6 +947,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHistoryRoute: ApiHistoryRouteWithChildren,
   ApiMobileconfigRoute: ApiMobileconfigRoute,
   ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
+  ApiRelationshipsRoute: ApiRelationshipsRouteWithChildren,
   ApiRuntimeConfigRoute: ApiRuntimeConfigRoute,
   ApiSettingsRoute: ApiSettingsRoute,
   ApiUserBookAssignmentsRoute: ApiUserBookAssignmentsRoute,

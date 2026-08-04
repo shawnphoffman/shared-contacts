@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { ContactEditPane } from '../components/ContactEditPane'
 import { ContactHistoryPanel } from '../components/ContactHistoryPanel'
 import { ContactPreview } from '../components/ContactPreview'
+import { RelationshipPanel } from '../components/relationships/RelationshipPanel'
 import { useContactForm } from '../components/contact-form/useContactForm'
 import { Button } from '../components/ui/button'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
@@ -20,6 +21,9 @@ export const Route = createFileRoute('/$id')({
 			throw notFound()
 		}
 	},
+	validateSearch: (search: Record<string, unknown>): { tab?: 'history' | 'relations' } => ({
+		tab: search.tab === 'history' || search.tab === 'relations' ? search.tab : undefined,
+	}),
 	component: ContactDetailPage,
 })
 
@@ -81,13 +85,14 @@ function ContactDetailPage() {
 	return <ContactEditor key={`${String(contact.updated_at)}-${resetNonce}`} contact={contact} onDiscard={() => setResetNonce(n => n + 1)} />
 }
 
-type Tab = 'edit' | 'history'
+type Tab = 'edit' | 'relations' | 'history'
 
 function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: () => void }) {
 	const navigate = useNavigate()
 	const queryClient = useQueryClient()
+	const { tab: initialTab } = Route.useSearch()
 	const form = useContactForm(contact)
-	const [tab, setTab] = useState<Tab>('edit')
+	const [tab, setTab] = useState<Tab>(initialTab ?? 'edit')
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
 	const updateMutation = useMutation({
@@ -145,6 +150,14 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 						</button>
 						<button
 							type="button"
+							onClick={() => setTab('relations')}
+							data-active={tab === 'relations'}
+							className="rounded-sm px-4 py-1 text-sm font-medium text-muted-foreground transition-colors data-[active=true]:bg-secondary data-[active=true]:text-foreground"
+						>
+							Relations
+						</button>
+						<button
+							type="button"
 							onClick={() => setTab('history')}
 							data-active={tab === 'history'}
 							className="rounded-sm px-4 py-1 text-sm font-medium text-muted-foreground transition-colors data-[active=true]:bg-secondary data-[active=true]:text-foreground"
@@ -165,7 +178,14 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 				</div>
 			</div>
 
-			{/* 1 : 1 columns */}
+			{/* Relations gets the full width for the tree; edit/history keep the 1:1 preview layout */}
+			{tab === 'relations' ? (
+				<RelationshipPanel
+					contactId={contact.id}
+					focusName={displayName}
+					onFocusContact={id => navigate({ to: '/$id', params: { id }, search: { tab: 'relations' } })}
+				/>
+			) : (
 			<div className="grid items-start gap-6 lg:grid-cols-2">
 				{/* Left: sticky live preview */}
 				<div className="lg:sticky lg:top-6">
@@ -183,6 +203,7 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 					)}
 				</div>
 			</div>
+			)}
 
 			<ConfirmDialog
 				open={showDeleteDialog}

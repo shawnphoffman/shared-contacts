@@ -8,6 +8,7 @@ import {
 	History,
 	Info,
 	Link as LinkIcon,
+	Network,
 	NotebookTabs,
 	Trash2,
 	Upload,
@@ -59,6 +60,10 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 					>
 						<ContactRound className="size-4 shrink-0" />
 						All Contacts
+					</Link>
+					<Link to="/relationships" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
+						<Network className="size-4 shrink-0" />
+						Relationships
 					</Link>
 					<Link to="/import" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Upload className="size-4 shrink-0" />

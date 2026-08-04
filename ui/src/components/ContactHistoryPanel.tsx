@@ -101,6 +101,9 @@ export function ContactHistoryPanel({ contactId }: ContactHistoryPanelProps) {
 
 							{undone && <div className="mt-1 text-xs italic text-muted-foreground">Undone {formatHistoryDate(row.undone_at!)}</div>}
 
+							{/* Operations without field diffs (relationship ops, merges) carry their detail in the summary. */}
+							{row.summary && changes.length === 0 && <div className="mt-1.5 text-xs text-muted-foreground">{row.summary}</div>}
+
 							{changes.length > 0 && (
 								<div className="mt-3 space-y-1.5 font-mono text-xs">
 									{visibleChanges.map(change => (
