@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { canonicalizeEndpoints, deriveSiblings, describeRelationship, parseKey, refKey } from './relationships'
+import {
+	canonicalizeEndpoints,
+	deriveSiblings,
+	describeRelationship,
+	parseKey,
+	planParentPropagation,
+	planSiblingPropagation,
+	refKey,
+} from './relationships'
 import type { GraphEdge, NodeRef } from './relationships'
 
 const contact = (id: string): NodeRef => ({ kind: 'contact', id })
@@ -83,6 +91,99 @@ describe('deriveSiblings', () => {
 	it('works through placeholder parents', () => {
 		const edges = [edge('p:grandpa', 'c:kid1', 'parent'), edge('p:grandpa', 'c:kid2', 'parent')]
 		expect(deriveSiblings(edges)).toEqual([{ a: 'c:kid1', b: 'c:kid2', sharedParents: 1 }])
+	})
+})
+
+// ---------------------------------------------------------------------------
+// Auto-link propagation planning
+// ---------------------------------------------------------------------------
+describe('planSiblingPropagation', () => {
+	const base = { a: contact('A'), b: contact('B'), newEdgeId: 'edge-1' }
+
+	it('copies parents to the parentless side and drops the now-derived edge', () => {
+		const plan = planSiblingPropagation({
+			...base,
+			parentsOfA: [contact('dad'), placeholder('mom')],
+			parentsOfB: [],
+			explicitSiblingsOfA: [],
+			explicitSiblingsOfB: [],
+		})
+		expect(plan.addParentEdges).toEqual([
+			{ parent: contact('dad'), child: contact('B') },
+			{ parent: placeholder('mom'), child: contact('B') },
+		])
+		expect(plan.removeEdgeIds).toEqual(['edge-1'])
+		expect(plan.addSiblingEdges).toEqual([])
+	})
+
+	it('does nothing automatic when both sides have differing parents', () => {
+		const plan = planSiblingPropagation({
+			...base,
+			parentsOfA: [contact('dad')],
+			parentsOfB: [contact('other-dad')],
+			explicitSiblingsOfA: [],
+			explicitSiblingsOfB: [],
+		})
+		expect(plan.addParentEdges).toEqual([])
+		expect(plan.addSiblingEdges).toEqual([])
+		expect(plan.removeEdgeIds).toEqual([])
+	})
+
+	it('drops a redundant edge when both sides already share identical parents', () => {
+		const plan = planSiblingPropagation({
+			...base,
+			parentsOfA: [contact('dad')],
+			parentsOfB: [contact('dad')],
+			explicitSiblingsOfA: [],
+			explicitSiblingsOfB: [],
+		})
+		expect(plan.removeEdgeIds).toEqual(['edge-1'])
+		expect(plan.addParentEdges).toEqual([])
+	})
+
+	it('spreads sibling links transitively when no parents exist anywhere', () => {
+		const plan = planSiblingPropagation({
+			...base,
+			parentsOfA: [],
+			parentsOfB: [],
+			explicitSiblingsOfA: [contact('C')],
+			explicitSiblingsOfB: [contact('D')],
+		})
+		expect(plan.addSiblingEdges).toEqual([
+			[contact('C'), contact('B')],
+			[contact('D'), contact('A')],
+		])
+		expect(plan.removeEdgeIds).toEqual([])
+	})
+})
+
+describe('planParentPropagation', () => {
+	it('propagates a new parent to full siblings and drops explicit edges', () => {
+		const plan = planParentPropagation({
+			parent: placeholder('dad'),
+			child: contact('A'),
+			childParentsBefore: [],
+			siblings: [
+				{ ref: contact('B'), parents: [], explicitEdgeId: 'sib-edge' },
+				{ ref: contact('C'), parents: [contact('other')], explicitEdgeId: null },
+			],
+		})
+		expect(plan.addParentEdges).toEqual([{ parent: placeholder('dad'), child: contact('B') }])
+		expect(plan.removeEdgeIds).toEqual(['sib-edge'])
+	})
+
+	it('propagates to derived full siblings but never to half siblings', () => {
+		const plan = planParentPropagation({
+			parent: contact('mom'),
+			child: contact('A'),
+			childParentsBefore: [contact('dad')],
+			siblings: [
+				{ ref: contact('full'), parents: [contact('dad')], explicitEdgeId: null },
+				{ ref: contact('half'), parents: [contact('dad'), contact('step')], explicitEdgeId: null },
+			],
+		})
+		expect(plan.addParentEdges).toEqual([{ parent: contact('mom'), child: contact('full') }])
+		expect(plan.removeEdgeIds).toEqual([])
 	})
 })
 

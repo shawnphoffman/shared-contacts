@@ -9,10 +9,13 @@ import {
 	UnknownEndpointError,
 	createRelationship,
 	describeRelationship,
+	endpointA,
+	endpointB,
 	getEndpointNames,
 	refKey,
 	relationshipsEnabled,
 } from '../../lib/relationships'
+import type { NodeRef } from '../../lib/relationships'
 
 export const Route = createFileRoute('/api/relationships')({
 	server: {
@@ -37,20 +40,25 @@ export const Route = createFileRoute('/api/relationships')({
 					// with the other contact in related_contact_ids so the entry shows
 					// on both contacts' history tabs (the per-contact query matches
 					// either column). Placeholder-only endpoints are named in the summary.
-					const { relationship, a, b } = result
-					const names = await getEndpointNames([a, b])
-					const aName = names.get(refKey(a)) ?? 'Unknown'
-					const bName = names.get(refKey(b)) ?? 'Unknown'
+					const { relationship, a, b, autoAdded, autoRemoved } = result
+					const nameRefs = [a, b]
+					for (const row of [...autoAdded, ...autoRemoved]) nameRefs.push(endpointA(row), endpointB(row))
+					const names = await getEndpointNames(nameRefs)
+					const nameOf = (ref: NodeRef) => names.get(refKey(ref)) ?? 'Unknown'
+					const edgeSentence = (row: typeof relationship) => {
+						const rowA = endpointA(row)
+						const rowB = endpointB(row)
+						return row.type === 'parent'
+							? `${nameOf(rowA)} is a ${describeRelationship('parent', row.qualifier, false)} of ${nameOf(rowB)}`
+							: `${nameOf(rowA)} and ${nameOf(rowB)} are ${describeRelationship(row.type, row.qualifier, false)}s`
+					}
 					const actor = actorFromRequest(request)
-					const summary =
-						relationship.type === 'parent'
-							? `Added relationship: ${aName} is a ${describeRelationship('parent', relationship.qualifier, false)} of ${bName}`
-							: `Added relationship: ${aName} and ${bName} are ${describeRelationship(relationship.type, relationship.qualifier, false)}s`
-					const contactEndpoints = [a, b].filter(ref => ref.kind === 'contact')
-					if (contactEndpoints.length > 0) {
-						await recordHistory({
+					const record = (row: typeof relationship, operation: 'relationship_add' | 'relationship_remove', summary: string) => {
+						const contactEndpoints = [endpointA(row), endpointB(row)].filter(ref => ref.kind === 'contact')
+						if (contactEndpoints.length === 0) return Promise.resolve(null)
+						return recordHistory({
 							contactId: contactEndpoints[0].id,
-							operation: 'relationship_add',
+							operation,
 							source: actor.source,
 							actor: actor.actor,
 							actorType: actor.actorType,
@@ -58,11 +66,34 @@ export const Route = createFileRoute('/api/relationships')({
 							clientIp: actor.clientIp,
 							summary,
 							relatedContactIds: contactEndpoints.slice(1).map(other => other.id),
-							metadata: { relationship_id: relationship.id, type: relationship.type, qualifier: relationship.qualifier },
+							metadata: { relationship_id: row.id, type: row.type, qualifier: row.qualifier },
 						})
 					}
 
-					return json({ relationship, created_placeholders: result.createdPlaceholders }, { status: 201 })
+					await record(relationship, 'relationship_add', `Added relationship: ${edgeSentence(relationship)}`)
+					const autoSummaries: Array<string> = []
+					for (const row of autoAdded) {
+						const sentence = edgeSentence(row)
+						autoSummaries.push(sentence)
+						await record(row, 'relationship_add', `Auto-linked: ${sentence}`)
+					}
+					// The manual edge itself being absorbed into derived form isn't a
+					// user-meaningful removal, so it gets no history row.
+					for (const row of autoRemoved) {
+						if (row.id === relationship.id) continue
+						await record(row, 'relationship_remove', `Auto-removed (now derived from shared parents): ${edgeSentence(row)}`)
+					}
+
+					return json(
+						{
+							relationship,
+							created_placeholders: result.createdPlaceholders,
+							auto_added: autoAdded,
+							auto_added_summaries: autoSummaries,
+							auto_removed: autoRemoved.length,
+						},
+						{ status: 201 }
+					)
 				} catch (error) {
 					if (error instanceof DuplicateRelationshipError) {
 						return json({ error: error.message }, { status: 409 })

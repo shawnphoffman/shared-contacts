@@ -156,6 +156,93 @@ export function deriveSiblings(edges: Array<GraphEdge>): Array<DerivedSibling> {
 // Persistence
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Auto-link propagation
+//
+// "Link parents and siblings when it makes sense": adding a sibling copies
+// parents across when exactly one side has them (the edge then becomes
+// derived and is dropped); with no parents anywhere, sibling links spread
+// transitively. Adding a parent propagates to siblings whose parent set was
+// identical to the child's (full siblings), never to half/step siblings.
+// Removal is always per-edge - a wrong auto-link is corrected on that one
+// person without cascading.
+// ---------------------------------------------------------------------------
+
+export interface PropagationPlan {
+	addParentEdges: Array<{ parent: NodeRef; child: NodeRef }>
+	addSiblingEdges: Array<[NodeRef, NodeRef]>
+	removeEdgeIds: Array<string>
+}
+
+const EMPTY_PLAN: PropagationPlan = { addParentEdges: [], addSiblingEdges: [], removeEdgeIds: [] }
+
+function sameRefSet(a: Array<NodeRef>, b: Array<NodeRef>): boolean {
+	if (a.length !== b.length) return false
+	const keys = new Set(a.map(refKey))
+	return b.every(ref => keys.has(refKey(ref)))
+}
+
+export function planSiblingPropagation(input: {
+	a: NodeRef
+	b: NodeRef
+	newEdgeId: string
+	parentsOfA: Array<NodeRef>
+	parentsOfB: Array<NodeRef>
+	explicitSiblingsOfA: Array<NodeRef>
+	explicitSiblingsOfB: Array<NodeRef>
+}): PropagationPlan {
+	const { a, b, parentsOfA, parentsOfB } = input
+	if (parentsOfA.length > 0 && parentsOfB.length === 0) {
+		return { addParentEdges: parentsOfA.map(parent => ({ parent, child: b })), addSiblingEdges: [], removeEdgeIds: [input.newEdgeId] }
+	}
+	if (parentsOfB.length > 0 && parentsOfA.length === 0) {
+		return { addParentEdges: parentsOfB.map(parent => ({ parent, child: a })), addSiblingEdges: [], removeEdgeIds: [input.newEdgeId] }
+	}
+	if (parentsOfA.length > 0 && parentsOfB.length > 0) {
+		// Both sides already have recorded parents: equalizing could be wrong
+		// (half/step families), so nothing is automatic. A fully redundant
+		// edge (identical parents, already derived) is dropped.
+		return sameRefSet(parentsOfA, parentsOfB) ? { ...EMPTY_PLAN, removeEdgeIds: [input.newEdgeId] } : EMPTY_PLAN
+	}
+	// No parents anywhere: sibling links spread transitively.
+	const pairKey = (x: NodeRef, y: NodeRef) => [refKey(x), refKey(y)].sort().join('|')
+	const seen = new Set<string>([pairKey(a, b)])
+	const addSiblingEdges: Array<[NodeRef, NodeRef]> = []
+	for (const [others, target] of [
+		[input.explicitSiblingsOfA, b],
+		[input.explicitSiblingsOfB, a],
+	] as Array<[Array<NodeRef>, NodeRef]>) {
+		for (const other of others) {
+			const key = pairKey(other, target)
+			if (refKey(other) === refKey(target) || seen.has(key)) continue
+			seen.add(key)
+			addSiblingEdges.push([other, target])
+		}
+	}
+	return { addParentEdges: [], addSiblingEdges, removeEdgeIds: [] }
+}
+
+export function planParentPropagation(input: {
+	parent: NodeRef
+	child: NodeRef
+	childParentsBefore: Array<NodeRef>
+	siblings: Array<{ ref: NodeRef; parents: Array<NodeRef>; explicitEdgeId: string | null }>
+}): PropagationPlan {
+	const addParentEdges: Array<{ parent: NodeRef; child: NodeRef }> = []
+	const removeEdgeIds: Array<string> = []
+	const seen = new Set<string>()
+	for (const sibling of input.siblings) {
+		const key = refKey(sibling.ref)
+		if (seen.has(key) || key === refKey(input.child)) continue
+		seen.add(key)
+		if (!sameRefSet(sibling.parents, input.childParentsBefore)) continue
+		addParentEdges.push({ parent: input.parent, child: sibling.ref })
+		// Sharing the new parent makes an explicit edge derived - drop it.
+		if (sibling.explicitEdgeId) removeEdgeIds.push(sibling.explicitEdgeId)
+	}
+	return { addParentEdges, addSiblingEdges: [], removeEdgeIds }
+}
+
 export class DuplicateRelationshipError extends Error {
 	constructor() {
 		super('This relationship already exists')
@@ -178,6 +265,12 @@ export async function getRelationship(id: string): Promise<RelationshipRow | nul
 	const pool = getPool()
 	const result = await pool.query('SELECT * FROM contact_relationships WHERE id = $1', [id])
 	return result.rows[0] ?? null
+}
+
+export async function listPlaceholders(): Promise<Array<PlaceholderPerson>> {
+	const pool = getPool()
+	const result = await pool.query('SELECT * FROM relationship_placeholders ORDER BY name')
+	return result.rows
 }
 
 export async function getPlaceholdersByIds(ids: Array<string>): Promise<Array<PlaceholderPerson>> {
@@ -205,6 +298,10 @@ export interface CreateRelationshipResult {
 	a: NodeRef
 	b: NodeRef
 	createdPlaceholders: Array<PlaceholderPerson>
+	/** Edges created by auto-link propagation (see PropagationPlan docs). */
+	autoAdded: Array<RelationshipRow>
+	/** Edges removed because propagation made them derivable (redundant explicit siblings). */
+	autoRemoved: Array<RelationshipRow>
 }
 
 /**
@@ -241,6 +338,74 @@ export async function createRelationship(input: CreateRelationshipInput): Promis
 		const rawB = await resolve(input.b, 'b')
 		const [a, b] = canonicalizeEndpoints(rawA, rawB, input.type)
 
+		const endpointFilter = (prefix: 'a' | 'b', ref: NodeRef, params: Array<unknown>): string => {
+			params.push(ref.id)
+			return `${prefix}_${ref.kind === 'contact' ? 'contact' : 'placeholder'}_id = $${params.length}`
+		}
+		const parentEdgesOf = async (ref: NodeRef): Promise<Array<RelationshipRow>> => {
+			const params: Array<unknown> = []
+			const where = endpointFilter('b', ref, params)
+			const result = await client.query(`SELECT * FROM contact_relationships WHERE type = 'parent' AND ${where}`, params)
+			return result.rows
+		}
+		const explicitSiblingEdgesOf = async (ref: NodeRef): Promise<Array<{ edge: RelationshipRow; other: NodeRef }>> => {
+			const params: Array<unknown> = []
+			const whereA = endpointFilter('a', ref, params)
+			const whereB = endpointFilter('b', ref, params)
+			const result = await client.query(`SELECT * FROM contact_relationships WHERE type = 'sibling' AND (${whereA} OR ${whereB})`, params)
+			return (result.rows as Array<RelationshipRow>).map(edge => ({
+				edge,
+				other: refKey(endpointA(edge)) === refKey(ref) ? endpointB(edge) : endpointA(edge),
+			}))
+		}
+
+		// Gather propagation context BEFORE inserting so "parents before this
+		// edge" is what the plan reasons about.
+		let plan: PropagationPlan = { addParentEdges: [], addSiblingEdges: [], removeEdgeIds: [] }
+		let planAfterInsert: ((newEdgeId: string) => PropagationPlan) | null = null
+		if (input.type === 'sibling') {
+			const [parentsOfA, parentsOfB, siblingsOfA, siblingsOfB] = await Promise.all([
+				parentEdgesOf(a),
+				parentEdgesOf(b),
+				explicitSiblingEdgesOf(a),
+				explicitSiblingEdgesOf(b),
+			])
+			planAfterInsert = newEdgeId =>
+				planSiblingPropagation({
+					a,
+					b,
+					newEdgeId,
+					parentsOfA: parentsOfA.map(endpointA),
+					parentsOfB: parentsOfB.map(endpointA),
+					explicitSiblingsOfA: siblingsOfA.map(entry => entry.other),
+					explicitSiblingsOfB: siblingsOfB.map(entry => entry.other),
+				})
+		} else if (input.type === 'parent') {
+			// Siblings of the child: explicit edges plus anyone sharing a parent.
+			const childParents = (await parentEdgesOf(b)).map(endpointA)
+			const explicitSiblings = await explicitSiblingEdgesOf(b)
+			const siblings = new Map<string, { ref: NodeRef; parents: Array<NodeRef>; explicitEdgeId: string | null }>()
+			for (const entry of explicitSiblings) {
+				siblings.set(refKey(entry.other), {
+					ref: entry.other,
+					parents: (await parentEdgesOf(entry.other)).map(endpointA),
+					explicitEdgeId: entry.edge.id,
+				})
+			}
+			for (const parentRef of childParents) {
+				const params: Array<unknown> = []
+				const where = endpointFilter('a', parentRef, params)
+				const children = await client.query(`SELECT * FROM contact_relationships WHERE type = 'parent' AND ${where}`, params)
+				for (const row of children.rows as Array<RelationshipRow>) {
+					const childRef = endpointB(row)
+					const key = refKey(childRef)
+					if (key === refKey(b) || siblings.has(key)) continue
+					siblings.set(key, { ref: childRef, parents: (await parentEdgesOf(childRef)).map(endpointA), explicitEdgeId: null })
+				}
+			}
+			plan = planParentPropagation({ parent: a, child: b, childParentsBefore: childParents, siblings: [...siblings.values()] })
+		}
+
 		const inserted = await client.query(
 			`INSERT INTO contact_relationships (a_contact_id, a_placeholder_id, b_contact_id, b_placeholder_id, type, qualifier)
 			 VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -253,9 +418,44 @@ export async function createRelationship(input: CreateRelationshipInput): Promis
 				input.qualifier ?? null,
 			]
 		)
+		const mainRow: RelationshipRow = inserted.rows[0]
+		if (planAfterInsert) plan = planAfterInsert(mainRow.id)
+
+		const insertAuto = async (rawX: NodeRef, rawY: NodeRef, type: RelationshipType): Promise<RelationshipRow | null> => {
+			const [x, y] = canonicalizeEndpoints(rawX, rawY, type)
+			const result = await client.query(
+				`INSERT INTO contact_relationships (a_contact_id, a_placeholder_id, b_contact_id, b_placeholder_id, type)
+				 VALUES ($1, $2, $3, $4, $5)
+				 ON CONFLICT (a_contact_id, a_placeholder_id, b_contact_id, b_placeholder_id, type) DO NOTHING
+				 RETURNING *`,
+				[
+					x.kind === 'contact' ? x.id : null,
+					x.kind === 'placeholder' ? x.id : null,
+					y.kind === 'contact' ? y.id : null,
+					y.kind === 'placeholder' ? y.id : null,
+					type,
+				]
+			)
+			return result.rows[0] ?? null
+		}
+
+		const autoAdded: Array<RelationshipRow> = []
+		for (const { parent, child } of plan.addParentEdges) {
+			const row = await insertAuto(parent, child, 'parent')
+			if (row) autoAdded.push(row)
+		}
+		for (const [x, y] of plan.addSiblingEdges) {
+			const row = await insertAuto(x, y, 'sibling')
+			if (row) autoAdded.push(row)
+		}
+		const autoRemoved: Array<RelationshipRow> = []
+		if (plan.removeEdgeIds.length > 0) {
+			const removed = await client.query('DELETE FROM contact_relationships WHERE id = ANY($1) RETURNING *', [plan.removeEdgeIds])
+			autoRemoved.push(...removed.rows)
+		}
 
 		await client.query('COMMIT')
-		return { relationship: inserted.rows[0], a, b, createdPlaceholders }
+		return { relationship: mainRow, a, b, createdPlaceholders, autoAdded, autoRemoved }
 	} catch (error) {
 		await client.query('ROLLBACK')
 		if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === '23505') {
