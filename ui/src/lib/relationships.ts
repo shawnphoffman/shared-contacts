@@ -1,4 +1,5 @@
-import { getPool, tableExists } from './db'
+import { getAppSetting, getPool, setAppSetting, tableExists } from './db'
+import { logger } from './logger'
 
 // One canonical relationship graph; every tree view is a projection of it.
 // Edges live between two endpoints (contact or placeholder person) and are
@@ -720,6 +721,89 @@ export async function restoreTransferredEdges(
 		}
 	}
 	return { restored, skipped }
+}
+
+// ---------------------------------------------------------------------------
+// One-time repair of merges that predate edge transfer
+//
+// Before transferRelationshipEdges existed, merging left edges attached to the
+// soft-deleted consumed contacts - invisible to ego graphs and unreachable
+// from the UI. Replaying recorded merges through the transfer moves those
+// edges onto the surviving contacts. Idempotent: consumed contacts with no
+// edges left are a no-op.
+// ---------------------------------------------------------------------------
+
+const MERGE_EDGE_REPAIR_SENTINEL = 'relationship_merge_edge_repair_done'
+let mergeEdgeRepairPromise: Promise<void> | null = null
+
+export interface MergeEdgeRepairResult {
+	mergesRepaired: number
+	repointed: number
+	dropped: number
+}
+
+export async function repairDanglingMergeEdges(): Promise<MergeEdgeRepairResult> {
+	const result: MergeEdgeRepairResult = { mergesRepaired: 0, repointed: 0, dropped: 0 }
+	if (!(await relationshipsEnabled()) || !(await tableExists('contact_history'))) return result
+	const pool = getPool()
+
+	// Oldest-first so chained merges (A into B, then B into C) walk their
+	// edges forward one hop at a time.
+	const merges = await pool.query(
+		`SELECT id, contact_id, related_contact_ids FROM contact_history
+		 WHERE operation = 'merge' AND undone_at IS NULL
+		   AND contact_id IS NOT NULL AND related_contact_ids IS NOT NULL
+		 ORDER BY created_at ASC`
+	)
+
+	const seeds = new Set<string>()
+	for (const row of merges.rows as Array<{ id: string; contact_id: string; related_contact_ids: Array<string> }>) {
+		if (row.related_contact_ids.length === 0) continue
+		// The surviving contact may itself have been permanently deleted since;
+		// repointing at a missing row would violate the FK.
+		const primaryExists = await pool.query('SELECT 1 FROM contacts WHERE id = $1', [row.contact_id])
+		if (primaryExists.rowCount === 0) continue
+
+		const transfer = await transferRelationshipEdges(row.contact_id, row.related_contact_ids)
+		if (transfer.repointed.length === 0 && transfer.dropped.length === 0) continue
+		result.mergesRepaired++
+		result.repointed += transfer.repointed.length
+		result.dropped += transfer.dropped.length
+		seeds.add(row.contact_id)
+
+		// Retrofit the undo metadata so unmerging this old merge also restores
+		// its edges. Never clobbers transfers a post-fix merge already wrote.
+		await pool.query(
+			`UPDATE contact_history
+			 SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('relationshipTransfers', $2::jsonb)
+			 WHERE id = $1 AND (metadata IS NULL OR NOT metadata ? 'relationshipTransfers')`,
+			[row.id, JSON.stringify({ repointed: transfer.repointed.map(edge => edge.before), dropped: transfer.dropped })]
+		)
+	}
+
+	if (seeds.size > 0) await refreshRelatedNamesVcards([...seeds])
+	return result
+}
+
+/**
+ * Lazy one-time trigger for repairDanglingMergeEdges: an app_settings
+ * sentinel makes it once per deployment, and the in-process promise makes
+ * every later call free. Never throws - a failed attempt is logged and
+ * retried on the next call.
+ */
+export async function ensureMergeEdgeRepair(): Promise<void> {
+	mergeEdgeRepairPromise ??= (async () => {
+		if ((await getAppSetting(MERGE_EDGE_REPAIR_SENTINEL)) !== null) return
+		const result = await repairDanglingMergeEdges()
+		await setAppSetting(MERGE_EDGE_REPAIR_SENTINEL, new Date().toISOString())
+		if (result.mergesRepaired > 0) {
+			logger.info(result, 'Repaired relationship edges left dangling by pre-transfer merges')
+		}
+	})().catch(error => {
+		mergeEdgeRepairPromise = null
+		logger.error({ err: error }, 'Failed to repair dangling merge relationship edges')
+	})
+	return mergeEdgeRepairPromise
 }
 
 // Safety caps for the ego-graph walk. Family components are tiny in practice;

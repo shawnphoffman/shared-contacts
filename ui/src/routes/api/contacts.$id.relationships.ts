@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { getEgoGraph, relationshipsEnabled } from '../../lib/relationships'
+import { ensureMergeEdgeRepair, getEgoGraph, relationshipsEnabled } from '../../lib/relationships'
 
 export const Route = createFileRoute('/api/contacts/$id/relationships')({
 	server: {
@@ -11,6 +11,10 @@ export const Route = createFileRoute('/api/contacts/$id/relationships')({
 					if (!(await relationshipsEnabled())) {
 						return json({ error: 'Relationships are not available (migration pending)' }, { status: 503 })
 					}
+					// One-time, sentinel-guarded: heal edges left dangling by merges
+					// that predate merge-time edge transfer, so the first graph view
+					// after deploying already shows them.
+					await ensureMergeEdgeRepair()
 					const graph = await getEgoGraph(params.id)
 					if (!graph) return json({ error: 'Contact not found' }, { status: 404 })
 					return json(graph)
