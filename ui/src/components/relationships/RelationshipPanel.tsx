@@ -146,7 +146,12 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 	const queryClient = useQueryClient()
 	const [openPicker, setOpenPicker] = useState<AddSection | null>(null)
 
-	const { data: graph, isLoading, isPlaceholderData, error } = useQuery({
+	const {
+		data: graph,
+		isLoading,
+		isPlaceholderData,
+		error,
+	} = useQuery({
 		queryKey: ['relationships', contactId],
 		queryFn: () => fetchGraph(contactId),
 		placeholderData: keepPreviousData,
@@ -191,7 +196,7 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 	})
 
 	if (error) {
-		return <div className="rounded-sm border bg-card p-8 text-center text-sm text-destructive">{(error).message}</div>
+		return <div className="rounded-sm border bg-card p-8 text-center text-sm text-destructive">{error.message}</div>
 	}
 
 	if (isLoading || !graph) {
@@ -220,7 +225,9 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 
 	const parentEdges = graph.edges.filter(edge => edge.type === 'parent' && edge.b === focus)
 	const childEdges = graph.edges.filter(edge => edge.type === 'parent' && edge.a === focus)
-	const partnerEdges = graph.edges.filter(edge => (edge.type === 'spouse' || edge.type === 'partner') && (edge.a === focus || edge.b === focus))
+	const partnerEdges = graph.edges.filter(
+		edge => (edge.type === 'spouse' || edge.type === 'partner') && (edge.a === focus || edge.b === focus)
+	)
 	const explicitSiblingEdges = graph.edges.filter(edge => edge.type === 'sibling' && (edge.a === focus || edge.b === focus))
 	const derivedSiblingPairs = graph.derivedSiblings.filter(pair => pair.a === focus || pair.b === focus)
 
@@ -287,7 +294,10 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 								node={node}
 								right={
 									<>
-										<Select value={edge.qualifier ?? 'biological'} onValueChange={value => patchMutation.mutate({ id: edge.id, qualifier: value === 'biological' ? null : value })}>
+										<Select
+											value={edge.qualifier ?? 'biological'}
+											onValueChange={value => patchMutation.mutate({ id: edge.id, qualifier: value === 'biological' ? null : value })}
+										>
 											<SelectTrigger className="h-7 w-[110px] text-xs">
 												<SelectValue />
 											</SelectTrigger>

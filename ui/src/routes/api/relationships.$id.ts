@@ -5,7 +5,6 @@ import { zodError } from '../../lib/contact-helpers'
 import { UpdateRelationshipSchema } from '../../lib/schemas'
 import { actorFromRequest, recordHistory } from '../../lib/history'
 import {
-	
 	deleteRelationship,
 	describeRelationship,
 	endpointA,
@@ -14,9 +13,9 @@ import {
 	getRelationship,
 	refKey,
 	relationshipsEnabled,
-	updateRelationshipQualifier
+	updateRelationshipQualifier,
 } from '../../lib/relationships'
-import type {RelationshipRow} from '../../lib/relationships';
+import type { RelationshipRow } from '../../lib/relationships'
 import type { HistoryOperation } from '../../lib/history'
 
 // One history row per edge, anchored on the first contact endpoint; the other

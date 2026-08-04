@@ -186,23 +186,23 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 					onFocusContact={id => navigate({ to: '/$id', params: { id }, search: { tab: 'relations' } })}
 				/>
 			) : (
-			<div className="grid items-start gap-6 lg:grid-cols-2">
-				{/* Left: sticky live preview */}
-				<div className="lg:sticky lg:top-6">
-					<ContactPreview form={form} contact={contact} onDelete={() => setShowDeleteDialog(true)} />
-				</div>
+				<div className="grid items-start gap-6 lg:grid-cols-2">
+					{/* Left: sticky live preview */}
+					<div className="lg:sticky lg:top-6">
+						<ContactPreview form={form} contact={contact} onDelete={() => setShowDeleteDialog(true)} />
+					</div>
 
-				{/* Right: tabbed edit / history */}
-				<div>
-					{tab === 'edit' ? <ContactEditPane form={form} /> : <ContactHistoryPanel contactId={contact.id} />}
+					{/* Right: tabbed edit / history */}
+					<div>
+						{tab === 'edit' ? <ContactEditPane form={form} /> : <ContactHistoryPanel contactId={contact.id} />}
 
-					{tab === 'edit' && (
-						<p className="select-none pt-1 text-right text-xs text-muted-foreground">
-							<span className="text-primary">:w</span> save · <span className="text-primary">esc</span> cancel
-						</p>
-					)}
+						{tab === 'edit' && (
+							<p className="select-none pt-1 text-right text-xs text-muted-foreground">
+								<span className="text-primary">:w</span> save · <span className="text-primary">esc</span> cancel
+							</p>
+						)}
+					</div>
 				</div>
-			</div>
 			)}
 
 			<ConfirmDialog

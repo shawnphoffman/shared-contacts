@@ -56,7 +56,12 @@ describe('canonicalizeEndpoints', () => {
 // ---------------------------------------------------------------------------
 describe('deriveSiblings', () => {
 	it('derives full siblings from two shared parents', () => {
-		const edges = [edge('c:dad', 'c:kid1', 'parent'), edge('c:mom', 'c:kid1', 'parent'), edge('c:dad', 'c:kid2', 'parent'), edge('c:mom', 'c:kid2', 'parent')]
+		const edges = [
+			edge('c:dad', 'c:kid1', 'parent'),
+			edge('c:mom', 'c:kid1', 'parent'),
+			edge('c:dad', 'c:kid2', 'parent'),
+			edge('c:mom', 'c:kid2', 'parent'),
+		]
 		expect(deriveSiblings(edges)).toEqual([{ a: 'c:kid1', b: 'c:kid2', sharedParents: 2 }])
 	})
 
