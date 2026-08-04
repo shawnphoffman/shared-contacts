@@ -12,11 +12,23 @@ import {
 	getEndpointNames,
 	getRelationship,
 	refKey,
+	refreshRelatedNamesVcards,
 	relationshipsEnabled,
 	updateRelationshipQualifier,
 } from '../../lib/relationships'
 import type { RelationshipRow } from '../../lib/relationships'
 import type { HistoryOperation } from '../../lib/history'
+
+// Best-effort vCard refresh after a committed mutation - failure only delays
+// the CardDAV export, so it never fails the request.
+async function refreshEdgeVcards(row: RelationshipRow): Promise<void> {
+	try {
+		const contactSeeds = [endpointA(row), endpointB(row)].filter(ref => ref.kind === 'contact').map(ref => ref.id)
+		await refreshRelatedNamesVcards(contactSeeds)
+	} catch (error) {
+		logger.error({ err: error, relationshipId: row.id }, 'Failed to refresh related names in vCards')
+	}
+}
 
 // One history row per edge, anchored on the first contact endpoint; the other
 // contact rides in related_contact_ids so the entry shows on both history tabs.
@@ -66,6 +78,7 @@ export const Route = createFileRoute('/api/relationships/$id')({
 					if (!updated) return json({ error: 'Relationship not found' }, { status: 404 })
 
 					await recordEdgeHistory(request, updated, 'relationship_update', await edgeSummary(updated, 'Updated'))
+					await refreshEdgeVcards(updated)
 					return json({ relationship: updated })
 				} catch (error) {
 					logger.error({ err: error, relationshipId: params.id }, 'Error updating relationship')
@@ -87,6 +100,7 @@ export const Route = createFileRoute('/api/relationships/$id')({
 					if (!deleted) return json({ error: 'Relationship not found' }, { status: 404 })
 
 					await recordEdgeHistory(request, deleted, 'relationship_remove', summary)
+					await refreshEdgeVcards(deleted)
 					return json({ message: 'Relationship removed' })
 				} catch (error) {
 					logger.error({ err: error, relationshipId: params.id }, 'Error deleting relationship')

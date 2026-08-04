@@ -13,6 +13,7 @@ import {
 	endpointB,
 	getEndpointNames,
 	refKey,
+	refreshRelatedNamesVcards,
 	relationshipsEnabled,
 } from '../../lib/relationships'
 import type { NodeRef } from '../../lib/relationships'
@@ -82,6 +83,16 @@ export const Route = createFileRoute('/api/relationships')({
 					for (const row of autoRemoved) {
 						if (row.id === relationship.id) continue
 						await record(row, 'relationship_remove', `Auto-removed (now derived from shared parents): ${edgeSentence(row)}`)
+					}
+
+					// Reflect the new graph into the affected contacts' vCards so
+					// CardDAV clients pick it up on next sync. Best-effort: the edge
+					// is already committed, so a failure here only delays the export.
+					try {
+						const contactSeeds = nameRefs.filter(ref => ref.kind === 'contact').map(ref => ref.id)
+						await refreshRelatedNamesVcards(contactSeeds)
+					} catch (refreshError) {
+						logger.error({ err: refreshError }, 'Failed to refresh related names in vCards')
 					}
 
 					return json(

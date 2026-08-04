@@ -629,6 +629,221 @@ export async function getEndpointNames(refs: Array<NodeRef>): Promise<Map<string
 	return names
 }
 
+// ---------------------------------------------------------------------------
+// vCard "related names" export (write-only)
+//
+// Relationships are reflected into each contact's stored vcard_data as
+// Apple-style grouped properties so CardDAV clients show them:
+//
+//   screl1.X-ABRELATEDNAMES:Carol Hoffman
+//   screl1.X-ABLabel:_$!<Parent>!$_
+//
+// The DB graph stays authoritative: the sync-service parser drops grouped
+// X- properties on inbound parse, so client-side edits to related names are
+// ignored and overwritten on the next regeneration. The `screl` group prefix
+// is ours alone, which lets injectRelatedNames strip and rewrite exactly its
+// own lines while preserving everything else in the stored vCard.
+// ---------------------------------------------------------------------------
+
+export interface RelatedName {
+	label: string
+	name: string
+}
+
+/** Apple canonical label wrappers where a gender-neutral one exists; plain text otherwise. */
+export function relatedNameLabel(type: RelationshipType, qualifier: string | null, focusIsParentSide: boolean): string {
+	switch (type) {
+		case 'parent': {
+			const base = focusIsParentSide ? 'child' : 'parent'
+			if (qualifier && qualifier !== 'biological') return `${qualifier}-${base}`
+			return focusIsParentSide ? '_$!<Child>!$_' : '_$!<Parent>!$_'
+		}
+		case 'spouse':
+			return qualifier === 'ex' ? 'ex-spouse' : '_$!<Spouse>!$_'
+		case 'partner':
+			return '_$!<Partner>!$_'
+		case 'sibling':
+			return 'sibling'
+	}
+}
+
+/** Related names for one focal node, from direct edges plus derived siblings. */
+export function relatedNamesForFocus(
+	focusKey: string,
+	edges: Array<GraphEdge>,
+	derivedSiblings: Array<DerivedSibling>,
+	names: Map<string, string>
+): Array<RelatedName> {
+	const related: Array<RelatedName> = []
+	const seen = new Set<string>()
+	const push = (label: string, otherKey: string) => {
+		const name = names.get(otherKey)
+		if (!name) return
+		const dedupeKey = `${label}|${name}`
+		if (seen.has(dedupeKey)) return
+		seen.add(dedupeKey)
+		related.push({ label, name })
+	}
+	for (const edge of edges) {
+		if (edge.a === focusKey) push(relatedNameLabel(edge.type, edge.qualifier, edge.type === 'parent'), edge.b)
+		else if (edge.b === focusKey) push(relatedNameLabel(edge.type, edge.qualifier, false), edge.a)
+	}
+	for (const pair of derivedSiblings) {
+		if (pair.a === focusKey) push('sibling', pair.b)
+		else if (pair.b === focusKey) push('sibling', pair.a)
+	}
+	// Deterministic order keeps regenerated vCards byte-stable (hash-based
+	// sync change detection).
+	related.sort((x, y) => x.label.localeCompare(y.label) || x.name.localeCompare(y.name))
+	return related
+}
+
+/** Contact ids of every graph component that touches one of the seed contacts. */
+export function expandToComponents(edges: Array<GraphEdge>, seedContactIds: Array<string>): Set<string> {
+	const adjacency = new Map<string, Array<string>>()
+	for (const edge of edges) {
+		adjacency.set(edge.a, [...(adjacency.get(edge.a) ?? []), edge.b])
+		adjacency.set(edge.b, [...(adjacency.get(edge.b) ?? []), edge.a])
+	}
+	const contactIds = new Set<string>(seedContactIds)
+	const visited = new Set<string>()
+	let frontier = seedContactIds.map(id => `c:${id}`)
+	while (frontier.length > 0) {
+		const upcoming: Array<string> = []
+		for (const key of frontier) {
+			if (visited.has(key)) continue
+			visited.add(key)
+			if (key.startsWith('c:')) contactIds.add(key.slice(2))
+			for (const neighbor of adjacency.get(key) ?? []) {
+				if (!visited.has(neighbor)) upcoming.push(neighbor)
+			}
+		}
+		frontier = upcoming
+	}
+	return contactIds
+}
+
+const RELATED_GROUP_PREFIX = /^screl\d+\./i
+
+function sanitizeVCardValue(value: string): string {
+	return value.replace(/[\r\n]+/g, ' ').trim()
+}
+
+/**
+ * Replace this module's related-name lines inside an existing vCard string,
+ * leaving every other line (including client-authored properties) untouched.
+ */
+export function injectRelatedNames(vcard: string, related: Array<RelatedName>): string {
+	const lines = vcard.split(/\r\n|\r|\n/)
+	const kept: Array<string> = []
+	let skippingFolded = false
+	for (const line of lines) {
+		if (RELATED_GROUP_PREFIX.test(line)) {
+			skippingFolded = true
+			continue
+		}
+		if (skippingFolded && /^[ \t]/.test(line)) continue
+		skippingFolded = false
+		kept.push(line)
+	}
+
+	const additions: Array<string> = []
+	related.forEach((entry, index) => {
+		additions.push(`screl${index + 1}.X-ABRELATEDNAMES:${sanitizeVCardValue(entry.name)}`)
+		additions.push(`screl${index + 1}.X-ABLabel:${sanitizeVCardValue(entry.label)}`)
+	})
+
+	// Drop a trailing empty line so the insert lands directly before END:VCARD
+	// and repeated injections stay byte-identical.
+	while (kept.length > 0 && kept[kept.length - 1] === '') kept.pop()
+	const endIndex = kept.findIndex(line => line.trim().toUpperCase() === 'END:VCARD')
+	if (endIndex === -1) return [...kept, ...additions].join('\r\n')
+	kept.splice(endIndex, 0, ...additions)
+	return kept.join('\r\n')
+}
+
+async function loadAllGraphEdges(): Promise<Array<GraphEdge>> {
+	const pool = getPool()
+	const result = await pool.query('SELECT * FROM contact_relationships')
+	return (result.rows as Array<RelationshipRow>).map(row => ({
+		id: row.id,
+		type: row.type,
+		qualifier: row.qualifier,
+		a: refKey(endpointA(row)),
+		b: refKey(endpointB(row)),
+	}))
+}
+
+async function relatedNamesFromEdges(edges: Array<GraphEdge>, contactIds?: Array<string>): Promise<Map<string, Array<RelatedName>>> {
+	const derived = deriveSiblings(edges)
+	const refs: Array<NodeRef> = []
+	const refKeys = new Set<string>()
+	for (const edge of edges) {
+		for (const key of [edge.a, edge.b]) {
+			if (refKeys.has(key)) continue
+			refKeys.add(key)
+			const ref = parseKey(key)
+			if (ref) refs.push(ref)
+		}
+	}
+	const names = await getEndpointNames(refs)
+	const focusIds = contactIds ?? refs.filter(ref => ref.kind === 'contact').map(ref => ref.id)
+	const result = new Map<string, Array<RelatedName>>()
+	for (const id of focusIds) {
+		result.set(id, relatedNamesForFocus(`c:${id}`, edges, derived, names))
+	}
+	return result
+}
+
+/** Related names for a set of contacts (or every related contact when omitted). */
+export async function getRelatedNamesByContact(contactIds?: Array<string>): Promise<Map<string, Array<RelatedName>>> {
+	return relatedNamesFromEdges(await loadAllGraphEdges(), contactIds)
+}
+
+/**
+ * Choke point for every vcard_data writer (updateContact): keeps related
+ * names present in whatever vCard is being stored. Returns null when the
+ * vCard is already correct. Cheap for the common case - contacts without
+ * edges only cost one indexed existence check.
+ */
+export async function maybeInjectRelatedNames(contactId: string, vcard: string): Promise<string | null> {
+	if (!(await relationshipsEnabled())) return null
+	const pool = getPool()
+	const hasEdges = await pool.query('SELECT 1 FROM contact_relationships WHERE a_contact_id = $1 OR b_contact_id = $1 LIMIT 1', [contactId])
+	const related = hasEdges.rowCount === 0 ? [] : ((await getRelatedNamesByContact([contactId])).get(contactId) ?? [])
+	const injected = injectRelatedNames(vcard, related)
+	return injected === vcard ? null : injected
+}
+
+/**
+ * Re-inject related names into the stored vCards of every contact whose
+ * component touches one of the seeds. Derived facts (a new sibling appearing
+ * for everyone in the family) change vCards well beyond the mutated edge's
+ * endpoints, so the whole component is refreshed - the contacts trigger
+ * bumps updated_at, which queues the Radicale push.
+ */
+export async function refreshRelatedNamesVcards(seedContactIds: Array<string>): Promise<number> {
+	const seeds = [...new Set(seedContactIds)]
+	if (seeds.length === 0) return 0
+	const { getContactById, updateContact } = await import('./db')
+	const { generateVCard } = await import('./vcard')
+	const edges = await loadAllGraphEdges()
+	const affected = expandToComponents(edges, seeds)
+	const relatedByContact = await relatedNamesFromEdges(edges, [...affected])
+	let changed = 0
+	for (const contactId of affected) {
+		const contact = await getContactById(contactId)
+		if (!contact) continue
+		const base = contact.vcard_data || generateVCard(contact)
+		const next = injectRelatedNames(base, relatedByContact.get(contactId) ?? [])
+		if (next !== contact.vcard_data) {
+			await updateContact(contactId, { vcard_data: next })
+			changed++
+		}
+	}
+	return changed
+}
+
 /**
  * Human labels for a node's edge set relative to a focal node, used in
  * history summaries and the tree's relation captions. Gender-neutral by

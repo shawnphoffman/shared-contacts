@@ -3,10 +3,13 @@ import {
 	canonicalizeEndpoints,
 	deriveSiblings,
 	describeRelationship,
+	expandToComponents,
+	injectRelatedNames,
 	parseKey,
 	planParentPropagation,
 	planSiblingPropagation,
 	refKey,
+	relatedNamesForFocus,
 } from './relationships'
 import type { GraphEdge, NodeRef } from './relationships'
 
@@ -184,6 +187,85 @@ describe('planParentPropagation', () => {
 		})
 		expect(plan.addParentEdges).toEqual([{ parent: contact('mom'), child: contact('full') }])
 		expect(plan.removeEdgeIds).toEqual([])
+	})
+})
+
+// ---------------------------------------------------------------------------
+// vCard related-names export
+// ---------------------------------------------------------------------------
+describe('relatedNamesForFocus', () => {
+	const names = new Map([
+		['c:dad', 'Miguel Delgado'],
+		['c:kid', 'Sofia Delgado'],
+		['c:sib', 'Marcus Delgado'],
+		['c:wife', 'Anna Delgado'],
+		['p:grandpa', 'Roberto Delgado'],
+	])
+
+	it('maps direct edges and derived siblings with Apple labels, sorted and deduped', () => {
+		const edges = [edge('c:dad', 'c:kid', 'parent'), edge('c:dad', 'c:wife', 'spouse'), edge('p:grandpa', 'c:dad', 'parent', 'step')]
+		const derived = [{ a: 'c:kid', b: 'c:sib', sharedParents: 2 }]
+		expect(relatedNamesForFocus('c:kid', edges, derived, names)).toEqual([
+			{ label: '_$!<Parent>!$_', name: 'Miguel Delgado' },
+			{ label: 'sibling', name: 'Marcus Delgado' },
+		])
+		expect(relatedNamesForFocus('c:dad', edges, derived, names)).toEqual([
+			{ label: '_$!<Child>!$_', name: 'Sofia Delgado' },
+			{ label: '_$!<Spouse>!$_', name: 'Anna Delgado' },
+			{ label: 'step-parent', name: 'Roberto Delgado' },
+		])
+	})
+
+	it('labels ex-spouses and partners', () => {
+		const edges = [edge('c:dad', 'c:wife', 'spouse', 'ex'), edge('c:dad', 'c:sib', 'partner')]
+		expect(relatedNamesForFocus('c:dad', edges, [], names)).toEqual([
+			{ label: '_$!<Partner>!$_', name: 'Marcus Delgado' },
+			{ label: 'ex-spouse', name: 'Anna Delgado' },
+		])
+	})
+})
+
+describe('injectRelatedNames', () => {
+	const BASE = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:Sofia Delgado', 'END:VCARD'].join('\r\n')
+
+	it('inserts grouped lines before END:VCARD', () => {
+		const result = injectRelatedNames(BASE, [{ label: '_$!<Parent>!$_', name: 'Miguel Delgado' }])
+		expect(result).toBe(
+			[
+				'BEGIN:VCARD',
+				'VERSION:3.0',
+				'FN:Sofia Delgado',
+				'screl1.X-ABRELATEDNAMES:Miguel Delgado',
+				'screl1.X-ABLabel:_$!<Parent>!$_',
+				'END:VCARD',
+			].join('\r\n')
+		)
+	})
+
+	it('is idempotent and replaces stale lines', () => {
+		const first = injectRelatedNames(BASE, [{ label: 'sibling', name: 'Marcus Delgado' }])
+		const second = injectRelatedNames(first, [{ label: 'sibling', name: 'Marcus Delgado' }])
+		expect(second).toBe(first)
+		const replaced = injectRelatedNames(first, [{ label: 'sibling', name: 'Zane Delgado' }])
+		expect(replaced).not.toContain('Marcus Delgado')
+		expect(replaced).toContain('screl1.X-ABRELATEDNAMES:Zane Delgado')
+	})
+
+	it('strips all related lines when the list is empty and preserves other properties', () => {
+		const withOther = injectRelatedNames(BASE.replace('FN:Sofia Delgado', 'FN:Sofia Delgado\r\nitem1.URL:https://example.com'), [
+			{ label: 'sibling', name: 'Marcus Delgado' },
+		])
+		const stripped = injectRelatedNames(withOther, [])
+		expect(stripped).not.toContain('screl')
+		expect(stripped).toContain('item1.URL:https://example.com')
+	})
+})
+
+describe('expandToComponents', () => {
+	it('collects contact ids across the whole component, hopping placeholders', () => {
+		const edges = [edge('c:a', 'c:b', 'parent'), edge('p:x', 'c:b', 'parent'), edge('p:x', 'c:c', 'parent'), edge('c:d', 'c:e', 'spouse')]
+		expect([...expandToComponents(edges, ['a'])].sort()).toEqual(['a', 'b', 'c'])
+		expect([...expandToComponents(edges, ['d'])].sort()).toEqual(['d', 'e'])
 	})
 })
 

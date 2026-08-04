@@ -705,6 +705,20 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 export async function updateContact(id: string, contact: Partial<Contact>): Promise<Contact> {
 	const dbPool = getPool()
 
+	// Any writer that regenerates vcard_data would otherwise wipe the
+	// relationship-derived related-name lines - re-inject them here so every
+	// write path (edit, merge, dedupe, undo) stays consistent. Best-effort:
+	// never let this block the update. Dynamic import avoids a module cycle.
+	if (typeof contact.vcard_data === 'string' && contact.vcard_data.length > 0) {
+		try {
+			const { maybeInjectRelatedNames } = await import('./relationships')
+			const injected = await maybeInjectRelatedNames(id, contact.vcard_data)
+			if (injected !== null) contact = { ...contact, vcard_data: injected }
+		} catch {
+			// Relationships tables missing or query failed - store as provided.
+		}
+	}
+
 	// Check which columns exist in the database (cached)
 	const existingColumns = await getContactColumns()
 
