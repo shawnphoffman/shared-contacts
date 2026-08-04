@@ -501,6 +501,227 @@ export async function deleteRelationship(id: string): Promise<RelationshipRow | 
 	return row
 }
 
+// ---------------------------------------------------------------------------
+// Merge edge transfer
+//
+// Merging contacts soft-deletes the consumed rows, so ON DELETE CASCADE never
+// fires and their edges would otherwise dangle (ego graphs drop edges that
+// touch deleted contacts). Repointing moves each surviving fact onto the
+// primary contact; edges that would self-reference or duplicate an existing
+// fact after repointing are dropped instead.
+// ---------------------------------------------------------------------------
+
+/** The endpoint/type columns of an edge, as stored in merge history metadata. */
+export interface TransferredEdgeSnapshot {
+	id: string
+	a_contact_id: string | null
+	a_placeholder_id: string | null
+	b_contact_id: string | null
+	b_placeholder_id: string | null
+	type: RelationshipType
+	qualifier: string | null
+}
+
+export interface EdgeTransferPlan {
+	/** Edges to keep, with their new canonical endpoints. */
+	repoint: Array<{ id: string; a: NodeRef; b: NodeRef }>
+	/** Edges that would self-reference or duplicate after repointing. */
+	dropIds: Array<string>
+}
+
+export interface EdgeTransferResult {
+	repointed: Array<{ before: TransferredEdgeSnapshot; after: RelationshipRow }>
+	dropped: Array<TransferredEdgeSnapshot>
+}
+
+/** Shape stored under metadata.relationshipTransfers on merge history rows. */
+export interface EdgeTransferSnapshotSet {
+	repointed: Array<TransferredEdgeSnapshot>
+	dropped: Array<TransferredEdgeSnapshot>
+}
+
+/** The five columns of idx_contact_relationships_unique as a comparable key. */
+function edgeIndexKey(a: NodeRef, b: NodeRef, type: RelationshipType): string {
+	return [
+		a.kind === 'contact' ? a.id : '',
+		a.kind === 'placeholder' ? a.id : '',
+		b.kind === 'contact' ? b.id : '',
+		b.kind === 'placeholder' ? b.id : '',
+		type,
+	].join('|')
+}
+
+function snapshotEdge(row: RelationshipRow): TransferredEdgeSnapshot {
+	return {
+		id: row.id,
+		a_contact_id: row.a_contact_id,
+		a_placeholder_id: row.a_placeholder_id,
+		b_contact_id: row.b_contact_id,
+		b_placeholder_id: row.b_placeholder_id,
+		type: row.type,
+		qualifier: row.qualifier,
+	}
+}
+
+/**
+ * Decide, for every edge touching the merge, whether it moves to the primary
+ * contact or is dropped. `edges` must include the primary's own edges - they
+ * seed the duplicate check. Duplicates collide on the same five columns as the
+ * unique index (qualifier intentionally excluded), and symmetric types are
+ * canonicalized first so a duplicate in either direction is caught.
+ */
+export function planEdgeTransfer(edges: Array<RelationshipRow>, primaryContactId: string, consumedContactIds: Array<string>): EdgeTransferPlan {
+	const consumed = new Set(consumedContactIds)
+	consumed.delete(primaryContactId)
+	const mapRef = (ref: NodeRef): NodeRef =>
+		ref.kind === 'contact' && consumed.has(ref.id) ? { kind: 'contact', id: primaryContactId } : ref
+
+	const touched: Array<{ row: RelationshipRow; a: NodeRef; b: NodeRef }> = []
+	const seen = new Set<string>()
+	for (const row of edges) {
+		const a = endpointA(row)
+		const b = endpointB(row)
+		const mappedA = mapRef(a)
+		const mappedB = mapRef(b)
+		if (mappedA === a && mappedB === b) {
+			// Untouched edges stay put but still occupy their slot in the index.
+			seen.add(edgeIndexKey(a, b, row.type))
+			continue
+		}
+		touched.push({ row, a: mappedA, b: mappedB })
+	}
+
+	const plan: EdgeTransferPlan = { repoint: [], dropIds: [] }
+	for (const { row, a, b } of touched) {
+		if (refKey(a) === refKey(b)) {
+			plan.dropIds.push(row.id)
+			continue
+		}
+		const [canonicalA, canonicalB] = canonicalizeEndpoints(a, b, row.type)
+		const key = edgeIndexKey(canonicalA, canonicalB, row.type)
+		if (seen.has(key)) {
+			plan.dropIds.push(row.id)
+			continue
+		}
+		seen.add(key)
+		plan.repoint.push({ id: row.id, a: canonicalA, b: canonicalB })
+	}
+	return plan
+}
+
+/**
+ * Apply planEdgeTransfer for a merge, atomically. Returns before/after rows so
+ * the merge history entry can record enough to undo the transfer. No-op (and
+ * no queries beyond the feature check) when relationships aren't enabled.
+ */
+export async function transferRelationshipEdges(primaryContactId: string, consumedContactIds: Array<string>): Promise<EdgeTransferResult> {
+	const empty: EdgeTransferResult = { repointed: [], dropped: [] }
+	const consumedIds = consumedContactIds.filter(id => id !== primaryContactId)
+	if (consumedIds.length === 0 || !(await relationshipsEnabled())) return empty
+
+	const pool = getPool()
+	const client = await pool.connect()
+	try {
+		await client.query('BEGIN')
+		const result = await client.query('SELECT * FROM contact_relationships WHERE a_contact_id = ANY($1) OR b_contact_id = ANY($1)', [
+			[primaryContactId, ...consumedIds],
+		])
+		const rows = result.rows as Array<RelationshipRow>
+		const plan = planEdgeTransfer(rows, primaryContactId, consumedIds)
+		const rowById = new Map(rows.map(row => [row.id, row]))
+
+		// Deletes first so a repoint can never transiently collide with a row
+		// that is on its way out.
+		const dropped: Array<TransferredEdgeSnapshot> = []
+		if (plan.dropIds.length > 0) {
+			const removed = await client.query('DELETE FROM contact_relationships WHERE id = ANY($1) RETURNING *', [plan.dropIds])
+			dropped.push(...(removed.rows as Array<RelationshipRow>).map(snapshotEdge))
+		}
+
+		const repointed: Array<{ before: TransferredEdgeSnapshot; after: RelationshipRow }> = []
+		for (const edge of plan.repoint) {
+			const updated = await client.query(
+				`UPDATE contact_relationships
+				 SET a_contact_id = $1, a_placeholder_id = $2, b_contact_id = $3, b_placeholder_id = $4, updated_at = NOW()
+				 WHERE id = $5 RETURNING *`,
+				[
+					edge.a.kind === 'contact' ? edge.a.id : null,
+					edge.a.kind === 'placeholder' ? edge.a.id : null,
+					edge.b.kind === 'contact' ? edge.b.id : null,
+					edge.b.kind === 'placeholder' ? edge.b.id : null,
+					edge.id,
+				]
+			)
+			if (updated.rows[0]) repointed.push({ before: snapshotEdge(rowById.get(edge.id)!), after: updated.rows[0] })
+		}
+
+		await client.query('COMMIT')
+		return { repointed, dropped }
+	} catch (error) {
+		await client.query('ROLLBACK')
+		throw error
+	} finally {
+		client.release()
+	}
+}
+
+/**
+ * Rewrite contact endpoints through an id map. Used by unmerge: a consumed
+ * contact that was permanently deleted comes back under a new id, so restored
+ * edges must follow it.
+ */
+export function remapEdgeContactIds(snapshot: TransferredEdgeSnapshot, contactIdMap: Map<string, string>): TransferredEdgeSnapshot {
+	const remap = (id: string | null) => (id !== null ? (contactIdMap.get(id) ?? id) : null)
+	return { ...snapshot, a_contact_id: remap(snapshot.a_contact_id), b_contact_id: remap(snapshot.b_contact_id) }
+}
+
+/**
+ * Undo a merge's edge transfer: repoint surviving edges back to the restored
+ * contacts and re-insert edges the merge dropped. Post-merge edits win - an
+ * edge that was deleted since the merge stays deleted, and a restore that
+ * would collide with an edge added since the merge is skipped.
+ */
+export async function restoreTransferredEdges(
+	transfer: EdgeTransferSnapshotSet,
+	contactIdMap: Map<string, string>
+): Promise<{ restored: number; skipped: number }> {
+	if (!(await relationshipsEnabled())) return { restored: 0, skipped: 0 }
+	const pool = getPool()
+	let restored = 0
+	let skipped = 0
+	for (const before of transfer.repointed) {
+		const target = remapEdgeContactIds(before, contactIdMap)
+		try {
+			const result = await pool.query(
+				`UPDATE contact_relationships
+				 SET a_contact_id = $1, a_placeholder_id = $2, b_contact_id = $3, b_placeholder_id = $4, updated_at = NOW()
+				 WHERE id = $5 RETURNING id`,
+				[target.a_contact_id, target.a_placeholder_id, target.b_contact_id, target.b_placeholder_id, target.id]
+			)
+			if (result.rowCount) restored++
+			else skipped++
+		} catch {
+			skipped++
+		}
+	}
+	for (const before of transfer.dropped) {
+		const target = remapEdgeContactIds(before, contactIdMap)
+		try {
+			const result = await pool.query(
+				`INSERT INTO contact_relationships (id, a_contact_id, a_placeholder_id, b_contact_id, b_placeholder_id, type, qualifier)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7)
+				 ON CONFLICT DO NOTHING RETURNING id`,
+				[target.id, target.a_contact_id, target.a_placeholder_id, target.b_contact_id, target.b_placeholder_id, target.type, target.qualifier]
+			)
+			if (result.rowCount) restored++
+			else skipped++
+		} catch {
+			skipped++
+		}
+	}
+	return { restored, skipped }
+}
+
 // Safety caps for the ego-graph walk. Family components are tiny in practice;
 // these only guard against pathological data.
 const MAX_GRAPH_NODES = 400

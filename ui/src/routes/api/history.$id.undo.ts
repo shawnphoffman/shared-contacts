@@ -4,6 +4,8 @@ import { logger } from '../../lib/logger'
 import { createContact, deleteContact, getContactById, restoreContact, updateContact } from '../../lib/db'
 import { actorFromRequest, getHistoryById, markHistoryUndone, recordHistory } from '../../lib/history'
 import { generateVCard } from '../../lib/vcard'
+import { refreshRelatedNamesVcards, restoreTransferredEdges } from '../../lib/relationships'
+import type { EdgeTransferSnapshotSet } from '../../lib/relationships'
 import type { Contact } from '../../lib/db'
 
 /**
@@ -145,6 +147,9 @@ export const Route = createFileRoute('/api/history/$id/undo')({
 						})
 
 						// Restore consumed contacts (which were soft-deleted at merge time).
+						// A recreated contact comes back under a new id, so keep an
+						// original-to-restored map for the edge restore below.
+						const restoredIdByOriginal = new Map<string, string>()
 						const consumedIds = entry.related_contact_ids ?? []
 						for (let i = 0; i < consumedIds.length; i++) {
 							const consumedId = consumedIds[i]
@@ -162,6 +167,7 @@ export const Route = createFileRoute('/api/history/$id/undo')({
 									})
 								}
 								restoredIds.push(consumedId)
+								restoredIdByOriginal.set(consumedId, consumedId)
 							} else if (consumedSnapshot) {
 								// Permanently gone — recreate from the snapshot.
 								const created = await createContact({
@@ -170,6 +176,25 @@ export const Route = createFileRoute('/api/history/$id/undo')({
 									last_synced_to_radicale_at: null,
 								})
 								restoredIds.push(created.id)
+								restoredIdByOriginal.set(consumedId, created.id)
+							}
+						}
+
+						// Put relationship edges back where they were before the merge:
+						// repoint transferred edges to the restored contacts and re-insert
+						// dropped ones. Post-merge edits win over the restore; best-effort
+						// because the contacts themselves are already back.
+						const rawTransfers = entry.metadata?.relationshipTransfers as EdgeTransferSnapshotSet | undefined
+						if (rawTransfers && Array.isArray(rawTransfers.repointed) && Array.isArray(rawTransfers.dropped)) {
+							try {
+								const idMap = new Map<string, string>()
+								for (const [originalId, restoredId] of restoredIdByOriginal) {
+									if (originalId !== restoredId) idMap.set(originalId, restoredId)
+								}
+								await restoreTransferredEdges(rawTransfers, idMap)
+								await refreshRelatedNamesVcards([entry.contact_id, ...restoredIds])
+							} catch (restoreError) {
+								logger.error({ err: restoreError, historyId: entry.id }, 'Failed to restore relationship edges during unmerge')
 							}
 						}
 

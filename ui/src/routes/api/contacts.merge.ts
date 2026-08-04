@@ -7,6 +7,8 @@ import { mergeContacts } from '../../lib/merge'
 import { sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { MergeContactsSchema } from '../../lib/schemas'
 import { actorFromRequest, recordHistory, snapshotContact } from '../../lib/history'
+import { refreshRelatedNamesVcards, transferRelationshipEdges } from '../../lib/relationships'
+import type { EdgeTransferSnapshotSet } from '../../lib/relationships'
 
 export const Route = createFileRoute('/api/contacts/merge')({
 	server: {
@@ -59,6 +61,24 @@ export const Route = createFileRoute('/api/contacts/merge')({
 						deletedIds.push(contact.id)
 					}
 
+					// Move relationship edges off the soft-deleted contacts so they
+					// don't silently vanish from ego graphs. Best-effort: a failure
+					// here leaves the edges recoverable (still attached to the
+					// soft-deleted rows) rather than blocking the merge.
+					let relationshipTransfers: EdgeTransferSnapshotSet | null = null
+					try {
+						const transfer = await transferRelationshipEdges(primaryContact.id, deletedIds)
+						if (transfer.repointed.length > 0 || transfer.dropped.length > 0) {
+							relationshipTransfers = {
+								repointed: transfer.repointed.map(edge => edge.before),
+								dropped: transfer.dropped,
+							}
+							await refreshRelatedNamesVcards([primaryContact.id])
+						}
+					} catch (transferError) {
+						logger.error({ err: transferError, primaryContactId: primaryContact.id }, 'Failed to transfer relationship edges during merge')
+					}
+
 					const primaryAfter = await getContactById(primaryContact.id)
 					const meta = actorFromRequest(request)
 					await recordHistory({
@@ -76,6 +96,7 @@ export const Route = createFileRoute('/api/contacts/merge')({
 						metadata: {
 							consumedContacts: sorted.slice(1).map(c => snapshotContact(c)),
 							mergedBookIds: Array.from(mergedBookIds),
+							...(relationshipTransfers ? { relationshipTransfers } : {}),
 						},
 					})
 

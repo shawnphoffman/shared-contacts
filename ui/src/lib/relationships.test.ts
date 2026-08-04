@@ -6,12 +6,14 @@ import {
 	expandToComponents,
 	injectRelatedNames,
 	parseKey,
+	planEdgeTransfer,
 	planParentPropagation,
 	planSiblingPropagation,
 	refKey,
 	relatedNamesForFocus,
+	remapEdgeContactIds,
 } from './relationships'
-import type { GraphEdge, NodeRef } from './relationships'
+import type { GraphEdge, NodeRef, RelationshipRow, TransferredEdgeSnapshot } from './relationships'
 
 const contact = (id: string): NodeRef => ({ kind: 'contact', id })
 const placeholder = (id: string): NodeRef => ({ kind: 'placeholder', id })
@@ -187,6 +189,136 @@ describe('planParentPropagation', () => {
 		})
 		expect(plan.addParentEdges).toEqual([{ parent: contact('mom'), child: contact('full') }])
 		expect(plan.removeEdgeIds).toEqual([])
+	})
+})
+
+// ---------------------------------------------------------------------------
+// Merge edge transfer
+// ---------------------------------------------------------------------------
+const row = (a: NodeRef, b: NodeRef, type: GraphEdge['type'], qualifier: string | null = null): RelationshipRow => ({
+	id: `${refKey(a)}|${refKey(b)}|${type}`,
+	a_contact_id: a.kind === 'contact' ? a.id : null,
+	a_placeholder_id: a.kind === 'placeholder' ? a.id : null,
+	b_contact_id: b.kind === 'contact' ? b.id : null,
+	b_placeholder_id: b.kind === 'placeholder' ? b.id : null,
+	type,
+	qualifier,
+	created_at: new Date(0),
+	updated_at: new Date(0),
+})
+
+describe('planEdgeTransfer', () => {
+	const PRIMARY = 'primary'
+	const DUP = 'dup'
+
+	it('repoints consumed endpoints on either side to the primary', () => {
+		const parentEdge = row(contact(DUP), contact('kid'), 'parent')
+		const childEdge = row(contact('grandma'), contact(DUP), 'parent')
+		const plan = planEdgeTransfer([parentEdge, childEdge], PRIMARY, [DUP])
+		expect(plan.repoint).toEqual([
+			{ id: parentEdge.id, a: contact(PRIMARY), b: contact('kid') },
+			{ id: childEdge.id, a: contact('grandma'), b: contact(PRIMARY) },
+		])
+		expect(plan.dropIds).toEqual([])
+	})
+
+	it('leaves untouched edges out of the plan entirely', () => {
+		const unrelated = row(contact('x'), contact('y'), 'spouse')
+		const plan = planEdgeTransfer([unrelated], PRIMARY, [DUP])
+		expect(plan.repoint).toEqual([])
+		expect(plan.dropIds).toEqual([])
+	})
+
+	it('canonicalizes symmetric edges after repointing', () => {
+		// 'ann' < 'primary', so the repointed spouse edge must flip endpoints.
+		const spouseEdge = row(contact(DUP), contact('ann'), 'spouse')
+		const plan = planEdgeTransfer([spouseEdge], PRIMARY, [DUP])
+		expect(plan.repoint).toEqual([{ id: spouseEdge.id, a: contact('ann'), b: contact(PRIMARY) }])
+	})
+
+	it('keeps the contact endpoint of placeholder edges canonical too', () => {
+		const sibEdge = row(placeholder('ghost'), contact(DUP), 'sibling')
+		const plan = planEdgeTransfer([sibEdge], PRIMARY, [DUP])
+		expect(plan.repoint).toEqual([{ id: sibEdge.id, a: contact(PRIMARY), b: placeholder('ghost') }])
+	})
+
+	it('drops edges that would self-reference: primary-to-consumed and consumed-to-consumed', () => {
+		const linked = row(contact(PRIMARY), contact(DUP), 'sibling')
+		const betweenDups = row(contact(DUP), contact('dup2'), 'spouse')
+		const plan = planEdgeTransfer([linked, betweenDups], PRIMARY, [DUP, 'dup2'])
+		expect(plan.repoint).toEqual([])
+		expect(plan.dropIds).toEqual([linked.id, betweenDups.id])
+	})
+
+	it('drops a repointed edge that duplicates an existing edge of the primary', () => {
+		const existing = row(contact('mom'), contact(PRIMARY), 'parent')
+		const duplicate = row(contact('mom'), contact(DUP), 'parent')
+		const plan = planEdgeTransfer([existing, duplicate], PRIMARY, [DUP])
+		expect(plan.repoint).toEqual([])
+		expect(plan.dropIds).toEqual([duplicate.id])
+	})
+
+	it('detects symmetric duplicates regardless of stored direction', () => {
+		// Both rows canonicalize to (ann, primary) once dup is repointed.
+		const existing = row(contact('ann'), contact(PRIMARY), 'spouse')
+		const duplicate = row(contact('ann'), contact(DUP), 'spouse')
+		const plan = planEdgeTransfer([existing, duplicate], PRIMARY, [DUP])
+		expect(plan.repoint).toEqual([])
+		expect(plan.dropIds).toEqual([duplicate.id])
+	})
+
+	it('treats qualifier differences as duplicates, matching the unique index', () => {
+		const existing = row(contact('mom'), contact(PRIMARY), 'parent', 'biological')
+		const duplicate = row(contact('mom'), contact(DUP), 'parent', 'step')
+		const plan = planEdgeTransfer([existing, duplicate], PRIMARY, [DUP])
+		expect(plan.dropIds).toEqual([duplicate.id])
+	})
+
+	it('keeps opposite parent directions as distinct facts', () => {
+		const parentOf = row(contact(DUP), contact('ann'), 'parent')
+		const childOf = row(contact('ann'), contact(DUP), 'parent')
+		const plan = planEdgeTransfer([parentOf, childOf], PRIMARY, [DUP])
+		expect(plan.repoint).toEqual([
+			{ id: parentOf.id, a: contact(PRIMARY), b: contact('ann') },
+			{ id: childOf.id, a: contact('ann'), b: contact(PRIMARY) },
+		])
+		expect(plan.dropIds).toEqual([])
+	})
+
+	it('dedupes collisions within the repointed set itself', () => {
+		const first = row(contact('mom'), contact(DUP), 'parent')
+		const second = row(contact('mom'), contact('dup2'), 'parent')
+		const plan = planEdgeTransfer([first, second], PRIMARY, [DUP, 'dup2'])
+		expect(plan.repoint).toEqual([{ id: first.id, a: contact('mom'), b: contact(PRIMARY) }])
+		expect(plan.dropIds).toEqual([second.id])
+	})
+
+	it('ignores the primary appearing in the consumed list', () => {
+		const spouseEdge = row(contact(PRIMARY), contact('ann'), 'spouse')
+		const plan = planEdgeTransfer([spouseEdge], PRIMARY, [PRIMARY])
+		expect(plan.repoint).toEqual([])
+		expect(plan.dropIds).toEqual([])
+	})
+})
+
+describe('remapEdgeContactIds', () => {
+	const snapshot: TransferredEdgeSnapshot = {
+		id: 'edge-1',
+		a_contact_id: 'old-a',
+		a_placeholder_id: null,
+		b_contact_id: null,
+		b_placeholder_id: 'ghost',
+		type: 'parent',
+		qualifier: 'step',
+	}
+
+	it('rewrites mapped contact ids and leaves everything else alone', () => {
+		const remapped = remapEdgeContactIds(snapshot, new Map([['old-a', 'new-a']]))
+		expect(remapped).toEqual({ ...snapshot, a_contact_id: 'new-a' })
+	})
+
+	it('is a no-op for unmapped ids and placeholder endpoints', () => {
+		expect(remapEdgeContactIds(snapshot, new Map([['ghost', 'nope']]))).toEqual(snapshot)
 	})
 })
 

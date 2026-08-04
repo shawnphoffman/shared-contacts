@@ -4,6 +4,8 @@ import { logger } from '../../lib/logger'
 import { deleteContact, getAllContacts, getContactById, updateContact } from '../../lib/db'
 import { extractUID, generateVCard } from '../../lib/vcard'
 import { actorFromRequest, recordHistory, snapshotContact } from '../../lib/history'
+import { refreshRelatedNamesVcards, transferRelationshipEdges } from '../../lib/relationships'
+import type { EdgeTransferSnapshotSet } from '../../lib/relationships'
 import type { Contact } from '../../lib/db'
 
 /**
@@ -31,6 +33,28 @@ function mergeContacts(primary: Contact, duplicate: Contact): Partial<Contact> {
 		photo_height: primary.photo_height || duplicate.photo_height,
 		photo_updated_at: primary.photo_updated_at || duplicate.photo_updated_at,
 		photo_hash: primary.photo_hash || duplicate.photo_hash,
+	}
+}
+
+/**
+ * Move relationship edges off the soft-deleted duplicates onto the primary
+ * contact so they don't silently vanish from ego graphs. Best-effort: a
+ * failure leaves the edges recoverable (still attached to the soft-deleted
+ * rows) rather than failing the dedup pass. Returns the snapshot set for the
+ * merge history entry, or null when nothing moved.
+ */
+async function transferEdgesForDedup(primaryId: string, consumedIds: Array<string>): Promise<EdgeTransferSnapshotSet | null> {
+	try {
+		const transfer = await transferRelationshipEdges(primaryId, consumedIds)
+		if (transfer.repointed.length === 0 && transfer.dropped.length === 0) return null
+		await refreshRelatedNamesVcards([primaryId])
+		return {
+			repointed: transfer.repointed.map(edge => edge.before),
+			dropped: transfer.dropped,
+		}
+	} catch (error) {
+		logger.error({ err: error, primaryContactId: primaryId }, 'Failed to transfer relationship edges during dedup')
+		return null
 	}
 }
 
@@ -108,6 +132,11 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 
 								results.merged += duplicates.length
 
+								const relationshipTransfers = await transferEdgesForDedup(
+									primary.id,
+									duplicates.map(d => d.id)
+								)
+
 								const primaryAfter = await getContactById(primary.id)
 								await recordHistory({
 									contactId: primary.id,
@@ -121,7 +150,11 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 									previousState: primary,
 									newState: primaryAfter,
 									relatedContactIds: duplicates.map(d => d.id),
-									metadata: { consumedContacts: duplicates.map(d => snapshotContact(d)), reason: 'email-duplicate' },
+									metadata: {
+										consumedContacts: duplicates.map(d => snapshotContact(d)),
+										reason: 'email-duplicate',
+										...(relationshipTransfers ? { relationshipTransfers } : {}),
+									},
 								})
 							} catch (error) {
 								results.errors.push({
@@ -175,6 +208,11 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 
 									results.merged += duplicates.length
 
+									const relationshipTransfers = await transferEdgesForDedup(
+										primary.id,
+										duplicates.map(d => d.id)
+									)
+
 									const primaryAfter = await getContactById(primary.id)
 									await recordHistory({
 										contactId: primary.id,
@@ -188,7 +226,11 @@ export const Route = createFileRoute('/api/contacts/deduplicate')({
 										previousState: primary,
 										newState: primaryAfter,
 										relatedContactIds: duplicates.map(d => d.id),
-										metadata: { consumedContacts: duplicates.map(d => snapshotContact(d)), reason: 'name-phone-duplicate' },
+										metadata: {
+											consumedContacts: duplicates.map(d => snapshotContact(d)),
+											reason: 'name-phone-duplicate',
+											...(relationshipTransfers ? { relationshipTransfers } : {}),
+										},
 									})
 								} catch (error) {
 									results.errors.push({
