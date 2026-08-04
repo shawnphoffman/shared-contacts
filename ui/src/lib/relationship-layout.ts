@@ -180,6 +180,16 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 		parentsOf.set(edge.b, [...(parentsOf.get(edge.b) ?? []), edge.a])
 	}
 
+	// Sibling adjacency (explicit edges + derived pairs) is used to seat
+	// parentless people next to the person that anchors them in the row.
+	const siblingAdj = new Map<string, Array<string>>()
+	const addSiblingAdj = (a: string, b: string) => {
+		siblingAdj.set(a, [...(siblingAdj.get(a) ?? []), b])
+		siblingAdj.set(b, [...(siblingAdj.get(b) ?? []), a])
+	}
+	for (const edge of graph.edges) if (edge.type === 'sibling') addSiblingAdj(edge.a, edge.b)
+	for (const pair of graph.derivedSiblings) addSiblingAdj(pair.a, pair.b)
+
 	const rows = new Map<number, Array<string>>()
 	for (const node of graph.nodes) {
 		const gen = generations.get(node.key)!
@@ -210,9 +220,10 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 			clustered.push(cluster)
 		}
 
-		// Order clusters under their parents where possible (mean parent x from
-		// the rows above), falling back to name order.
-		const clusterSortKey = (cluster: Array<string>): number => {
+		// Order clusters under their parents (mean parent x from the rows
+		// above). Sibling groups thereby land contiguously, keeping each
+		// child bar short instead of spanning unrelated people.
+		const parentKeyOf = (cluster: Array<string>): number | null => {
 			const parentXs: Array<number> = []
 			for (const key of cluster) {
 				for (const parent of parentsOf.get(key) ?? []) {
@@ -220,15 +231,36 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 					if (pos) parentXs.push(pos.x + CARD_W / 2)
 				}
 			}
-			if (parentXs.length === 0) return Number.POSITIVE_INFINITY
+			if (parentXs.length === 0) return null
 			return parentXs.reduce((sum, x) => sum + x, 0) / parentXs.length
 		}
-		clustered.sort((a, b) => clusterSortKey(a) - clusterSortKey(b))
+
+		const entries = clustered.map(cluster => ({ cluster, key: parentKeyOf(cluster) }))
+		// Parentless clusters (a spouse's sibling, an in-law) borrow the sort
+		// key of a cluster they connect to via partner/sibling edges, so they
+		// sit beside their anchor instead of being dumped at the row's end.
+		const clusterIndexByMember = new Map<string, number>()
+		entries.forEach((entry, index) => entry.cluster.forEach(member => clusterIndexByMember.set(member, index)))
+		for (const entry of entries) {
+			if (entry.key !== null) continue
+			for (const member of entry.cluster) {
+				for (const neighbor of [...(partnerOf.get(member) ?? []), ...(siblingAdj.get(member) ?? [])]) {
+					const neighborIndex = clusterIndexByMember.get(neighbor)
+					const neighborKey = neighborIndex !== undefined ? entries[neighborIndex].key : null
+					if (neighborKey !== null) {
+						entry.key = neighborKey + 1
+						break
+					}
+				}
+				if (entry.key !== null) break
+			}
+		}
+		entries.sort((a, b) => (a.key ?? Number.POSITIVE_INFINITY) - (b.key ?? Number.POSITIVE_INFINITY))
 
 		const y = PADDING + rowIndex * (CARD_H + V_GAP)
 		let cursor = PADDING
 		const rowKeys: Array<string> = []
-		for (const cluster of clustered) {
+		for (const { cluster } of entries) {
 			for (const key of cluster) {
 				positions.set(key, { x: cursor, y })
 				rowKeys.push(key)
@@ -252,6 +284,36 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 	const segments: Array<LayoutSegment> = []
 	const midY = (pos: Positioned) => pos.y + CARD_H / 2
 
+	// True when another card in the same row sits between the two endpoints,
+	// which would put a straight mid-height line behind it.
+	const sameRowBlocked = (left: Positioned, right: Positioned): boolean => {
+		for (const pos of positions.values()) {
+			if (pos.y !== left.y || pos === left || pos === right) continue
+			if (pos.x + CARD_W > left.x + CARD_W && pos.x < right.x) return true
+		}
+		return false
+	}
+
+	// Non-adjacent same-row pairs are routed through the channel just below
+	// the row (above the child bars) instead of straight through other cards.
+	const ELBOW_DROP = 16
+	const routeSameRow = (a: Positioned, b: Positioned, dashed: boolean): Positioned => {
+		const [left, right] = a.x <= b.x ? [a, b] : [b, a]
+		if (!sameRowBlocked(left, right)) {
+			const y = midY(left)
+			segments.push({ x1: left.x + CARD_W, y1: y, x2: right.x, y2: y, dashed })
+			return { x: (left.x + CARD_W + right.x) / 2, y }
+		}
+		const bottom = left.y + CARD_H
+		const channelY = bottom + ELBOW_DROP
+		const leftX = left.x + CARD_W / 2
+		const rightX = right.x + CARD_W / 2
+		segments.push({ x1: leftX, y1: bottom, x2: leftX, y2: channelY, dashed })
+		segments.push({ x1: leftX, y1: channelY, x2: rightX, y2: channelY, dashed })
+		segments.push({ x1: rightX, y1: channelY, x2: rightX, y2: bottom, dashed })
+		return { x: (leftX + rightX) / 2, y: channelY }
+	}
+
 	// Union bars between couples.
 	const unionAnchor = new Map<string, Positioned>()
 	const coupleKey = (a: string, b: string) => (a <= b ? `${a}|${b}` : `${b}|${a}`)
@@ -259,10 +321,7 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 		const posA = positions.get(edge.a)
 		const posB = positions.get(edge.b)
 		if (!posA || !posB) continue
-		const [left, right] = posA.x <= posB.x ? [posA, posB] : [posB, posA]
-		const y = midY(left)
-		segments.push({ x1: left.x + CARD_W, y1: y, x2: right.x, y2: y, dashed: edge.qualifier === 'ex' })
-		unionAnchor.set(coupleKey(edge.a, edge.b), { x: (left.x + CARD_W + right.x) / 2, y })
+		unionAnchor.set(coupleKey(edge.a, edge.b), routeSameRow(posA, posB, edge.qualifier === 'ex'))
 	}
 
 	// Parent drops: group children by their exact parent set.
@@ -301,14 +360,19 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 		}
 	}
 
-	// Explicit sibling edges (no shared parent in the graph) render dashed.
+	// Explicit sibling edges (no shared parent in the graph) render dashed,
+	// routed around intermediate cards like unions.
 	for (const edge of graph.edges) {
 		if (edge.type !== 'sibling') continue
 		const posA = positions.get(edge.a)
 		const posB = positions.get(edge.b)
 		if (!posA || !posB) continue
-		const [left, right] = posA.x <= posB.x ? [posA, posB] : [posB, posA]
-		segments.push({ x1: left.x + CARD_W, y1: midY(left), x2: right.x, y2: midY(right), dashed: true })
+		if (posA.y === posB.y) {
+			routeSameRow(posA, posB, true)
+		} else {
+			const [top, bottom] = posA.y <= posB.y ? [posA, posB] : [posB, posA]
+			segments.push({ x1: top.x + CARD_W / 2, y1: top.y + CARD_H, x2: bottom.x + CARD_W / 2, y2: bottom.y, dashed: true })
+		}
 	}
 
 	const layoutNodes: Array<LayoutNode> = graph.nodes.map(node => {
