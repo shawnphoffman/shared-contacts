@@ -16,6 +16,8 @@ interface RelationshipPanelProps {
 	focusName?: string
 	/** Called when the user clicks another contact's node to refocus. */
 	onFocusContact?: (contactId: string) => void
+	/** Fill the parent's height (tri-pane page) instead of using a viewport-based fallback. */
+	fullHeight?: boolean
 }
 
 type EndpointBody = { contact_id: string } | { placeholder_id: string } | { new_placeholder: { name: string } }
@@ -142,7 +144,7 @@ type AddSection = 'parent' | 'partner' | 'child' | 'sibling'
  * Relations tab. Edits always write to the shared graph - the focal person
  * only determines the projection.
  */
-export function RelationshipPanel({ contactId, focusName, onFocusContact }: RelationshipPanelProps) {
+export function RelationshipPanel({ contactId, focusName, onFocusContact, fullHeight }: RelationshipPanelProps) {
 	const queryClient = useQueryClient()
 	const [openPicker, setOpenPicker] = useState<AddSection | null>(null)
 
@@ -164,9 +166,16 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 
 	const addMutation = useMutation({
 		mutationFn: (body: CreateBody) => requestJson('/api/relationships', { method: 'POST', body: JSON.stringify(body) }),
-		onSuccess: () => {
+		onSuccess: response => {
 			invalidate()
 			setOpenPicker(null)
+			queryClient.invalidateQueries({ queryKey: ['relationship-placeholders'] })
+			const summaries = (response as { auto_added_summaries?: Array<string> }).auto_added_summaries ?? []
+			if (summaries.length > 0) {
+				toast.success(`Auto-linked ${summaries.length} ${summaries.length === 1 ? 'relationship' : 'relationships'}`, {
+					description: summaries.join(' · '),
+				})
+			}
 		},
 		onError: (err: Error) => toast.error(err.message),
 	})
@@ -199,9 +208,13 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 		return <div className="rounded-sm border bg-card p-8 text-center text-sm text-destructive">{error.message}</div>
 	}
 
+	// Tree pane height: fill the parent on the tri-pane page, otherwise size
+	// to the viewport so the tree gets as much room as the page allows.
+	const treePaneHeight = fullHeight ? 'h-full min-h-[320px]' : 'h-[calc(100vh-16rem)] min-h-[420px]'
+
 	if (isLoading || !graph) {
 		return (
-			<div className="grid items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+			<div className={`grid items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)] ${fullHeight ? 'h-full lg:items-stretch' : ''}`}>
 				<div className="space-y-2">
 					<Skeleton className="h-4 w-24" />
 					<Skeleton className="h-9 w-full" />
@@ -209,7 +222,7 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 					<Skeleton className="h-4 w-32" />
 					<Skeleton className="h-9 w-full" />
 				</div>
-				<div className="flex h-[520px] items-center justify-center rounded-sm border bg-card">
+				<div className={`flex items-center justify-center rounded-sm border bg-card ${treePaneHeight}`}>
 					<div className="flex flex-col items-center gap-2 text-xs text-muted-foreground">
 						<BrailleSpinner className="text-xl text-primary" />
 						<span>building tree{focusName ? ` for ${focusName}` : ''}…</span>
@@ -231,13 +244,10 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 	const explicitSiblingEdges = graph.edges.filter(edge => edge.type === 'sibling' && (edge.a === focus || edge.b === focus))
 	const derivedSiblingPairs = graph.derivedSiblings.filter(pair => pair.a === focus || pair.b === focus)
 
-	const sectionContactIds = (edges: Array<GraphEdge>): Set<string> => {
-		const ids = new Set<string>([contactId])
-		for (const edge of edges) {
-			const node = nodesByKey.get(otherKey(edge))
-			if (node?.kind === 'contact') ids.add(node.id)
-		}
-		return ids
+	const sectionKeys = (edges: Array<GraphEdge>): Set<string> => {
+		const keys = new Set<string>([focus])
+		for (const edge of edges) keys.add(otherKey(edge))
+		return keys
 	}
 
 	const addFromPick = (section: AddSection, pick: PersonPick) => {
@@ -272,7 +282,7 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 	const picker = (section: AddSection, edges: Array<GraphEdge>, placeholder: string) =>
 		openPicker === section ? (
 			<PersonPicker
-				excludeContactIds={sectionContactIds(edges)}
+				excludeKeys={sectionKeys(edges)}
 				placeholder={placeholder}
 				onPick={pick => addFromPick(section, pick)}
 				onCancel={() => setOpenPicker(null)}
@@ -280,9 +290,11 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 		) : null
 
 	return (
-		<div className="grid items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+		<div className={`grid items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)] ${fullHeight ? 'h-full min-h-0 lg:items-stretch' : ''}`}>
 			{/* Form pane */}
-			<div className={isPlaceholderData ? 'pointer-events-none opacity-40' : undefined}>
+			<div
+				className={`${isPlaceholderData ? 'pointer-events-none opacity-40' : ''} ${fullHeight ? 'min-h-0 lg:overflow-y-auto lg:pr-1' : ''}`}
+			>
 				<SectionHeading>Parents</SectionHeading>
 				<div className="space-y-1.5">
 					{parentEdges.map(edge => {
@@ -298,7 +310,7 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 											value={edge.qualifier ?? 'biological'}
 											onValueChange={value => patchMutation.mutate({ id: edge.id, qualifier: value === 'biological' ? null : value })}
 										>
-											<SelectTrigger className="h-7 w-[110px] text-xs">
+											<SelectTrigger className="h-7 w-[130px] text-xs">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -329,7 +341,7 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 								right={
 									<>
 										<Select value={partnerSelectValue(edge)} onValueChange={value => onPartnerTypeChange(edge, value)}>
-											<SelectTrigger className="h-7 w-[110px] text-xs">
+											<SelectTrigger className="h-7 w-[130px] text-xs">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -391,9 +403,9 @@ export function RelationshipPanel({ contactId, focusName, onFocusContact }: Rela
 			</div>
 
 			{/* Tree preview pane */}
-			<div className="overflow-hidden rounded-sm border bg-card">
-				<div className="border-b px-3 py-2 text-xs text-muted-foreground">auto-layout preview · click a node to refocus</div>
-				<div className="relative h-[520px]">
+			<div className={`overflow-hidden rounded-sm border bg-card ${fullHeight ? 'flex h-full min-h-0 flex-col' : ''}`}>
+				<div className="shrink-0 border-b px-3 py-2 text-xs text-muted-foreground">auto-layout preview · click a node to refocus</div>
+				<div className={`relative ${fullHeight ? 'min-h-0 flex-1' : treePaneHeight}`}>
 					<RelationshipTree graph={graph} onContactClick={onFocusContact} />
 					{isPlaceholderData && (
 						<div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/85 text-xs text-muted-foreground">

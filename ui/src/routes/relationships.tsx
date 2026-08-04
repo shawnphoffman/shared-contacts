@@ -55,16 +55,16 @@ function RelationshipsPage() {
 	const selected = roster.find(contact => contact.id === selectedId) ?? (contacts ?? []).find(contact => contact.id === selectedId) ?? null
 
 	return (
-		<PageContainer width="wide">
-			<div className="mb-6 flex flex-wrap items-center gap-3">
+		<PageContainer width="wide" className="flex h-full min-h-0 flex-col">
+			<div className="mb-6 flex shrink-0 flex-wrap items-center gap-3">
 				<h1 className="text-lg font-semibold">Relationships</h1>
 				<p className="text-sm text-muted-foreground">one shared graph · every tree is a projection</p>
 			</div>
 
-			<div className="flex flex-col items-start gap-6 lg:flex-row">
+			<div className="flex min-h-0 flex-1 flex-col items-stretch gap-6 lg:flex-row">
 				{/* Roster */}
-				<aside className="w-full shrink-0 overflow-hidden rounded-sm border bg-card lg:w-60">
-					<div className="space-y-2 border-b p-3">
+				<aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-sm border bg-card lg:h-full lg:w-60">
+					<div className="shrink-0 space-y-2 border-b p-3">
 						<Select value={bookId} onValueChange={setBookId}>
 							<SelectTrigger className="h-8 w-full text-xs">
 								<SelectValue placeholder="Select a book" />
@@ -80,7 +80,7 @@ function RelationshipsPage() {
 						</Select>
 						<Input value={search} onChange={event => setSearch(event.target.value)} placeholder="filter people…" className="h-8 text-xs" />
 					</div>
-					<ul className="max-h-[520px] overflow-y-auto p-1.5">
+					<ul className="min-h-0 max-h-64 flex-1 overflow-y-auto p-1.5 lg:max-h-none">
 						{isLoading && <li className="px-2 py-4 text-center text-xs text-muted-foreground">Loading contacts…</li>}
 						{!isLoading && roster.length === 0 && (
 							<li className="px-2 py-4 text-center text-xs text-muted-foreground">No contacts in this book.</li>
@@ -99,17 +99,17 @@ function RelationshipsPage() {
 							</li>
 						))}
 					</ul>
-					<div className="border-t border-dashed px-3 py-2 text-[10px] leading-snug text-muted-foreground">
+					<div className="shrink-0 border-t border-dashed px-3 py-2 text-[10px] leading-snug text-muted-foreground">
 						click a person to load their tree · placeholder people appear only in trees
 					</div>
 				</aside>
 
 				{/* Panel */}
-				<div className="min-w-0 flex-1">
+				<div className="min-h-0 min-w-0 flex-1 lg:h-full">
 					{selected ? (
-						<RelationshipPanel contactId={selected.id} focusName={contactName(selected)} onFocusContact={setSelectedId} />
+						<RelationshipPanel contactId={selected.id} focusName={contactName(selected)} onFocusContact={setSelectedId} fullHeight />
 					) : (
-						<div className="flex h-[520px] items-center justify-center rounded-sm border bg-card p-8 text-center text-sm text-muted-foreground">
+						<div className="flex h-full min-h-64 items-center justify-center rounded-sm border bg-card p-8 text-center text-sm text-muted-foreground">
 							Select a person to view and build their relationship tree.
 						</div>
 					)}

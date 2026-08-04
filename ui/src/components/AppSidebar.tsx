@@ -10,6 +10,7 @@ import {
 	Link as LinkIcon,
 	Network,
 	NotebookTabs,
+	PanelLeftClose,
 	Trash2,
 	Upload,
 	Users,
@@ -28,9 +29,11 @@ const groupLabelClass = 'mb-1 px-3 text-xs text-sidebar-foreground/50'
 
 interface AppSidebarProps {
 	onNavigate?: () => void
+	/** Desktop only: renders a collapse control in the branding row. */
+	onCollapse?: () => void
 }
 
-export function AppSidebar({ onNavigate }: AppSidebarProps) {
+export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
 	const [supportOpen, setSupportOpen] = useState(false)
 
 	return (
@@ -41,6 +44,16 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
 				<span className="text-base font-semibold tracking-tight">
 					shared<span className="text-sidebar-foreground/40">·</span>contacts
 				</span>
+				{onCollapse && (
+					<button
+						type="button"
+						onClick={onCollapse}
+						aria-label="Collapse sidebar"
+						className="ml-auto flex h-7 w-7 items-center justify-center rounded-sm text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+					>
+						<PanelLeftClose className="size-4" />
+					</button>
+				)}
 			</div>
 
 			<Separator className="bg-sidebar-border" />
