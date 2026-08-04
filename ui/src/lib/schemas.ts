@@ -128,3 +128,37 @@ export const PaginationSchema = z.object({
 	limit: z.coerce.number().int().min(1).max(500).optional().default(100),
 	offset: z.coerce.number().int().min(0).optional().default(0),
 })
+
+// ---------------------------------------------------------------------------
+// Relationships
+// ---------------------------------------------------------------------------
+
+const relationshipYear = z.number().int().min(1000).max(9999).nullish()
+
+/** One edge endpoint: an existing contact, an existing placeholder, or a placeholder to create inline. */
+export const RelationshipEndpointSchema = z
+	.object({
+		contact_id: z.string().uuid().optional(),
+		placeholder_id: z.string().uuid().optional(),
+		new_placeholder: z
+			.object({
+				name: z.string().trim().min(1, 'Placeholder name is required'),
+				birth_year: relationshipYear,
+				death_year: relationshipYear,
+			})
+			.optional(),
+	})
+	.refine(data => [data.contact_id, data.placeholder_id, data.new_placeholder].filter(Boolean).length === 1, {
+		message: 'Endpoint must be exactly one of contact_id, placeholder_id, or new_placeholder',
+	})
+
+export const CreateRelationshipSchema = z.object({
+	a: RelationshipEndpointSchema,
+	b: RelationshipEndpointSchema,
+	type: z.enum(['parent', 'spouse', 'partner', 'sibling']),
+	qualifier: z.string().trim().max(40).nullish(),
+})
+
+export const UpdateRelationshipSchema = z.object({
+	qualifier: z.string().trim().max(40).nullable(),
+})

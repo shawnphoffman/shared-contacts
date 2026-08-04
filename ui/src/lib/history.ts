@@ -2,7 +2,19 @@ import { getPool, tableExists } from './db'
 import { logger } from './logger'
 import type { Contact } from './db'
 
-export type HistoryOperation = 'create' | 'update' | 'delete' | 'restore' | 'permanent_delete' | 'merge' | 'unmerge' | 'import' | 'undo'
+export type HistoryOperation =
+	| 'create'
+	| 'update'
+	| 'delete'
+	| 'restore'
+	| 'permanent_delete'
+	| 'merge'
+	| 'unmerge'
+	| 'import'
+	| 'undo'
+	| 'relationship_add'
+	| 'relationship_update'
+	| 'relationship_remove'
 
 export type HistorySource = 'web' | 'api' | 'carddav' | 'sync' | 'import' | 'merge' | 'dedup' | 'system'
 
