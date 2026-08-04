@@ -26,6 +26,7 @@ import { Route as ApiUserBookAssignmentsRouteImport } from './routes/api/user-bo
 import { Route as ApiSettingsRouteImport } from './routes/api/settings'
 import { Route as ApiRuntimeConfigRouteImport } from './routes/api/runtime-config'
 import { Route as ApiRelationshipsRouteImport } from './routes/api/relationships'
+import { Route as ApiRelationshipPlaceholdersRouteImport } from './routes/api/relationship-placeholders'
 import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
 import { Route as ApiMobileconfigRouteImport } from './routes/api/mobileconfig'
 import { Route as ApiHistoryRouteImport } from './routes/api/history'
@@ -135,6 +136,12 @@ const ApiRelationshipsRoute = ApiRelationshipsRouteImport.update({
   path: '/api/relationships',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRelationshipPlaceholdersRoute =
+  ApiRelationshipPlaceholdersRouteImport.update({
+    id: '/api/relationship-placeholders',
+    path: '/api/relationship-placeholders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
   id: '/api/radicale-users',
   path: '/api/radicale-users',
@@ -276,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/api/history': typeof ApiHistoryRouteWithChildren
   '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/relationship-placeholders': typeof ApiRelationshipPlaceholdersRoute
   '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
@@ -318,6 +326,7 @@ export interface FileRoutesByTo {
   '/api/history': typeof ApiHistoryRouteWithChildren
   '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/relationship-placeholders': typeof ApiRelationshipPlaceholdersRoute
   '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
@@ -361,6 +370,7 @@ export interface FileRoutesById {
   '/api/history': typeof ApiHistoryRouteWithChildren
   '/api/mobileconfig': typeof ApiMobileconfigRoute
   '/api/radicale-users': typeof ApiRadicaleUsersRouteWithChildren
+  '/api/relationship-placeholders': typeof ApiRelationshipPlaceholdersRoute
   '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/relationship-placeholders'
     | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/relationship-placeholders'
     | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
@@ -489,6 +501,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/mobileconfig'
     | '/api/radicale-users'
+    | '/api/relationship-placeholders'
     | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
@@ -532,6 +545,7 @@ export interface RootRouteChildren {
   ApiHistoryRoute: typeof ApiHistoryRouteWithChildren
   ApiMobileconfigRoute: typeof ApiMobileconfigRoute
   ApiRadicaleUsersRoute: typeof ApiRadicaleUsersRouteWithChildren
+  ApiRelationshipPlaceholdersRoute: typeof ApiRelationshipPlaceholdersRoute
   ApiRelationshipsRoute: typeof ApiRelationshipsRouteWithChildren
   ApiRuntimeConfigRoute: typeof ApiRuntimeConfigRoute
   ApiSettingsRoute: typeof ApiSettingsRoute
@@ -657,6 +671,13 @@ declare module '@tanstack/react-router' {
       path: '/api/relationships'
       fullPath: '/api/relationships'
       preLoaderRoute: typeof ApiRelationshipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/relationship-placeholders': {
+      id: '/api/relationship-placeholders'
+      path: '/api/relationship-placeholders'
+      fullPath: '/api/relationship-placeholders'
+      preLoaderRoute: typeof ApiRelationshipPlaceholdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/radicale-users': {
@@ -947,6 +968,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHistoryRoute: ApiHistoryRouteWithChildren,
   ApiMobileconfigRoute: ApiMobileconfigRoute,
   ApiRadicaleUsersRoute: ApiRadicaleUsersRouteWithChildren,
+  ApiRelationshipPlaceholdersRoute: ApiRelationshipPlaceholdersRoute,
   ApiRelationshipsRoute: ApiRelationshipsRouteWithChildren,
   ApiRuntimeConfigRoute: ApiRuntimeConfigRoute,
   ApiSettingsRoute: ApiSettingsRoute,
