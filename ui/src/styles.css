@@ -198,6 +198,38 @@ code {
 	--color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* React Flow chrome (relationship tree) - match the terminal tokens */
+.relationship-flow .react-flow__controls {
+	overflow: hidden;
+	border: 1px solid var(--border);
+	border-radius: 2px;
+	box-shadow: none;
+}
+.relationship-flow .react-flow__controls-button {
+	width: 24px;
+	height: 24px;
+	border-bottom: 1px solid var(--border);
+	background: var(--card);
+	color: var(--muted-foreground);
+}
+.relationship-flow .react-flow__controls-button:hover {
+	background: var(--secondary);
+	color: var(--foreground);
+}
+.relationship-flow .react-flow__controls-button svg {
+	fill: currentColor;
+}
+.relationship-flow .react-flow__minimap {
+	border: 1px solid var(--border);
+	border-radius: 2px;
+}
+.relationship-flow .react-flow__pane {
+	cursor: grab;
+}
+.relationship-flow .react-flow__pane.dragging {
+	cursor: grabbing;
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;
