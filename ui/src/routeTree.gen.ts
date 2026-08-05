@@ -9,101 +9,51 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrashRouteImport } from './routes/trash'
-import { Route as RelationshipsRouteImport } from './routes/relationships'
-import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
-import { Route as NewRouteImport } from './routes/new'
-import { Route as ImportRouteImport } from './routes/import'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as HelpRouteImport } from './routes/help'
-import { Route as DuplicatesRouteImport } from './routes/duplicates'
-import { Route as CarddavConnectionRouteImport } from './routes/carddav-connection'
-import { Route as BooksRouteImport } from './routes/books'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiUserBookAssignmentsRouteImport } from './routes/api/user-book-assignments'
-import { Route as ApiSettingsRouteImport } from './routes/api/settings'
-import { Route as ApiRuntimeConfigRouteImport } from './routes/api/runtime-config'
-import { Route as ApiRelationshipsRouteImport } from './routes/api/relationships'
-import { Route as ApiRelationshipPlaceholdersRouteImport } from './routes/api/relationship-placeholders'
-import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
-import { Route as ApiMobileconfigRouteImport } from './routes/api/mobileconfig'
-import { Route as ApiHistoryRouteImport } from './routes/api/history'
-import { Route as ApiHealthRouteImport } from './routes/api/health'
-import { Route as ApiContactsRouteImport } from './routes/api/contacts'
-import { Route as ApiAddressBooksRouteImport } from './routes/api/address-books'
+import { Route as IdRouteImport } from './routes/$id'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as BooksRouteImport } from './routes/books'
+import { Route as CarddavConnectionRouteImport } from './routes/carddav-connection'
+import { Route as DuplicatesRouteImport } from './routes/duplicates'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as ImportRouteImport } from './routes/import'
+import { Route as NewRouteImport } from './routes/new'
+import { Route as RadicaleUsersRouteImport } from './routes/radicale-users'
+import { Route as RelationshipsRouteImport } from './routes/relationships'
+import { Route as TrashRouteImport } from './routes/trash'
 import { Route as ApiAboutRouteImport } from './routes/api/about'
-import { Route as ApiRelationshipsIdRouteImport } from './routes/api/relationships.$id'
-import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
-import { Route as ApiContactsTrashRouteImport } from './routes/api/contacts.trash'
-import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
-import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
-import { Route as ApiContactsExportRouteImport } from './routes/api/contacts.export'
-import { Route as ApiContactsDuplicatesRouteImport } from './routes/api/contacts.duplicates'
-import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
-import { Route as ApiContactsBulkBooksRouteImport } from './routes/api/contacts.bulk-books'
-import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
-import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/address-books.memberships'
+import { Route as ApiAddressBooksRouteImport } from './routes/api/address-books'
+import { Route as ApiContactsRouteImport } from './routes/api/contacts'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiHistoryRouteImport } from './routes/api/history'
+import { Route as ApiMobileconfigRouteImport } from './routes/api/mobileconfig'
+import { Route as ApiRadicaleUsersRouteImport } from './routes/api/radicale-users'
+import { Route as ApiRelationshipPlaceholdersRouteImport } from './routes/api/relationship-placeholders'
+import { Route as ApiRelationshipsRouteImport } from './routes/api/relationships'
+import { Route as ApiRuntimeConfigRouteImport } from './routes/api/runtime-config'
+import { Route as ApiSettingsRouteImport } from './routes/api/settings'
+import { Route as ApiUserBookAssignmentsRouteImport } from './routes/api/user-book-assignments'
 import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-books.$id'
-import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
-import { Route as ApiHistoryIdUndoRouteImport } from './routes/api/history.$id.undo'
-import { Route as ApiContactsIdRelationshipsRouteImport } from './routes/api/contacts.$id.relationships'
+import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/address-books.memberships'
+import { Route as ApiContactsIdRouteImport } from './routes/api/contacts.$id'
+import { Route as ApiContactsBulkBooksRouteImport } from './routes/api/contacts.bulk-books'
+import { Route as ApiContactsDeduplicateRouteImport } from './routes/api/contacts.deduplicate'
+import { Route as ApiContactsDuplicatesRouteImport } from './routes/api/contacts.duplicates'
+import { Route as ApiContactsExportRouteImport } from './routes/api/contacts.export'
+import { Route as ApiContactsImportRouteImport } from './routes/api/contacts.import'
+import { Route as ApiContactsMergeRouteImport } from './routes/api/contacts.merge'
+import { Route as ApiContactsTrashRouteImport } from './routes/api/contacts.trash'
+import { Route as ApiRadicaleUsersUsernameRouteImport } from './routes/api/radicale-users.$username'
+import { Route as ApiRelationshipsIdRouteImport } from './routes/api/relationships.$id'
 import { Route as ApiContactsIdPhotoRouteImport } from './routes/api/contacts.$id.photo'
+import { Route as ApiContactsIdRelationshipsRouteImport } from './routes/api/contacts.$id.relationships'
+import { Route as ApiHistoryIdUndoRouteImport } from './routes/api/history.$id.undo'
+import { Route as ApiRadicaleUsersUsernameBackfillRouteImport } from './routes/api/radicale-users.$username.backfill'
 
-const TrashRoute = TrashRouteImport.update({
-  id: '/trash',
-  path: '/trash',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RelationshipsRoute = RelationshipsRouteImport.update({
-  id: '/relationships',
-  path: '/relationships',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RadicaleUsersRoute = RadicaleUsersRouteImport.update({
-  id: '/radicale-users',
-  path: '/radicale-users',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewRoute = NewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportRoute = ImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpRoute = HelpRouteImport.update({
-  id: '/help',
-  path: '/help',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DuplicatesRoute = DuplicatesRouteImport.update({
-  id: '/duplicates',
-  path: '/duplicates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CarddavConnectionRoute = CarddavConnectionRouteImport.update({
-  id: '/carddav-connection',
-  path: '/carddav-connection',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BooksRoute = BooksRouteImport.update({
-  id: '/books',
-  path: '/books',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IdRoute = IdRouteImport.update({
@@ -111,29 +61,94 @@ const IdRoute = IdRouteImport.update({
   path: '/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiUserBookAssignmentsRoute = ApiUserBookAssignmentsRouteImport.update({
-  id: '/api/user-book-assignments',
-  path: '/api/user-book-assignments',
+const BooksRoute = BooksRouteImport.update({
+  id: '/books',
+  path: '/books',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSettingsRoute = ApiSettingsRouteImport.update({
-  id: '/api/settings',
-  path: '/api/settings',
+const CarddavConnectionRoute = CarddavConnectionRouteImport.update({
+  id: '/carddav-connection',
+  path: '/carddav-connection',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRuntimeConfigRoute = ApiRuntimeConfigRouteImport.update({
-  id: '/api/runtime-config',
-  path: '/api/runtime-config',
+const DuplicatesRoute = DuplicatesRouteImport.update({
+  id: '/duplicates',
+  path: '/duplicates',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRelationshipsRoute = ApiRelationshipsRouteImport.update({
-  id: '/api/relationships',
-  path: '/api/relationships',
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewRoute = NewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadicaleUsersRoute = RadicaleUsersRouteImport.update({
+  id: '/radicale-users',
+  path: '/radicale-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelationshipsRoute = RelationshipsRouteImport.update({
+  id: '/relationships',
+  path: '/relationships',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrashRoute = TrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAboutRoute = ApiAboutRouteImport.update({
+  id: '/api/about',
+  path: '/api/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAddressBooksRoute = ApiAddressBooksRouteImport.update({
+  id: '/api/address-books',
+  path: '/api/address-books',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiContactsRoute = ApiContactsRouteImport.update({
+  id: '/api/contacts',
+  path: '/api/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHistoryRoute = ApiHistoryRouteImport.update({
+  id: '/api/history',
+  path: '/api/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMobileconfigRoute = ApiMobileconfigRouteImport.update({
+  id: '/api/mobileconfig',
+  path: '/api/mobileconfig',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
+  id: '/api/radicale-users',
+  path: '/api/radicale-users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRelationshipPlaceholdersRoute =
@@ -142,91 +157,30 @@ const ApiRelationshipPlaceholdersRoute =
     path: '/api/relationship-placeholders',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiRadicaleUsersRoute = ApiRadicaleUsersRouteImport.update({
-  id: '/api/radicale-users',
-  path: '/api/radicale-users',
+const ApiRelationshipsRoute = ApiRelationshipsRouteImport.update({
+  id: '/api/relationships',
+  path: '/api/relationships',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMobileconfigRoute = ApiMobileconfigRouteImport.update({
-  id: '/api/mobileconfig',
-  path: '/api/mobileconfig',
+const ApiRuntimeConfigRoute = ApiRuntimeConfigRouteImport.update({
+  id: '/api/runtime-config',
+  path: '/api/runtime-config',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiHistoryRoute = ApiHistoryRouteImport.update({
-  id: '/api/history',
-  path: '/api/history',
+const ApiSettingsRoute = ApiSettingsRouteImport.update({
+  id: '/api/settings',
+  path: '/api/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
+const ApiUserBookAssignmentsRoute = ApiUserBookAssignmentsRouteImport.update({
+  id: '/api/user-book-assignments',
+  path: '/api/user-book-assignments',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiContactsRoute = ApiContactsRouteImport.update({
-  id: '/api/contacts',
-  path: '/api/contacts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAddressBooksRoute = ApiAddressBooksRouteImport.update({
-  id: '/api/address-books',
-  path: '/api/address-books',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAboutRoute = ApiAboutRouteImport.update({
-  id: '/api/about',
-  path: '/api/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiRelationshipsIdRoute = ApiRelationshipsIdRouteImport.update({
+const ApiAddressBooksIdRoute = ApiAddressBooksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => ApiRelationshipsRoute,
-} as any)
-const ApiRadicaleUsersUsernameRoute =
-  ApiRadicaleUsersUsernameRouteImport.update({
-    id: '/$username',
-    path: '/$username',
-    getParentRoute: () => ApiRadicaleUsersRoute,
-  } as any)
-const ApiContactsTrashRoute = ApiContactsTrashRouteImport.update({
-  id: '/trash',
-  path: '/trash',
-  getParentRoute: () => ApiContactsRoute,
-} as any)
-const ApiContactsMergeRoute = ApiContactsMergeRouteImport.update({
-  id: '/merge',
-  path: '/merge',
-  getParentRoute: () => ApiContactsRoute,
-} as any)
-const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => ApiContactsRoute,
-} as any)
-const ApiContactsExportRoute = ApiContactsExportRouteImport.update({
-  id: '/export',
-  path: '/export',
-  getParentRoute: () => ApiContactsRoute,
-} as any)
-const ApiContactsDuplicatesRoute = ApiContactsDuplicatesRouteImport.update({
-  id: '/duplicates',
-  path: '/duplicates',
-  getParentRoute: () => ApiContactsRoute,
-} as any)
-const ApiContactsDeduplicateRoute = ApiContactsDeduplicateRouteImport.update({
-  id: '/deduplicate',
-  path: '/deduplicate',
-  getParentRoute: () => ApiContactsRoute,
-} as any)
-const ApiContactsBulkBooksRoute = ApiContactsBulkBooksRouteImport.update({
-  id: '/bulk-books',
-  path: '/bulk-books',
-  getParentRoute: () => ApiContactsRoute,
-} as any)
-const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ApiContactsRoute,
+  getParentRoute: () => ApiAddressBooksRoute,
 } as any)
 const ApiAddressBooksMembershipsRoute =
   ApiAddressBooksMembershipsRouteImport.update({
@@ -234,21 +188,61 @@ const ApiAddressBooksMembershipsRoute =
     path: '/memberships',
     getParentRoute: () => ApiAddressBooksRoute,
   } as any)
-const ApiAddressBooksIdRoute = ApiAddressBooksIdRouteImport.update({
+const ApiContactsIdRoute = ApiContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => ApiAddressBooksRoute,
+  getParentRoute: () => ApiContactsRoute,
 } as any)
-const ApiRadicaleUsersUsernameBackfillRoute =
-  ApiRadicaleUsersUsernameBackfillRouteImport.update({
-    id: '/backfill',
-    path: '/backfill',
-    getParentRoute: () => ApiRadicaleUsersUsernameRoute,
+const ApiContactsBulkBooksRoute = ApiContactsBulkBooksRouteImport.update({
+  id: '/bulk-books',
+  path: '/bulk-books',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiContactsDeduplicateRoute = ApiContactsDeduplicateRouteImport.update({
+  id: '/deduplicate',
+  path: '/deduplicate',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiContactsDuplicatesRoute = ApiContactsDuplicatesRouteImport.update({
+  id: '/duplicates',
+  path: '/duplicates',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiContactsExportRoute = ApiContactsExportRouteImport.update({
+  id: '/export',
+  path: '/export',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiContactsImportRoute = ApiContactsImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiContactsMergeRoute = ApiContactsMergeRouteImport.update({
+  id: '/merge',
+  path: '/merge',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiContactsTrashRoute = ApiContactsTrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => ApiContactsRoute,
+} as any)
+const ApiRadicaleUsersUsernameRoute =
+  ApiRadicaleUsersUsernameRouteImport.update({
+    id: '/$username',
+    path: '/$username',
+    getParentRoute: () => ApiRadicaleUsersRoute,
   } as any)
-const ApiHistoryIdUndoRoute = ApiHistoryIdUndoRouteImport.update({
-  id: '/$id/undo',
-  path: '/$id/undo',
-  getParentRoute: () => ApiHistoryRoute,
+const ApiRelationshipsIdRoute = ApiRelationshipsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiRelationshipsRoute,
+} as any)
+const ApiContactsIdPhotoRoute = ApiContactsIdPhotoRouteImport.update({
+  id: '/photo',
+  path: '/photo',
+  getParentRoute: () => ApiContactsIdRoute,
 } as any)
 const ApiContactsIdRelationshipsRoute =
   ApiContactsIdRelationshipsRouteImport.update({
@@ -256,11 +250,17 @@ const ApiContactsIdRelationshipsRoute =
     path: '/relationships',
     getParentRoute: () => ApiContactsIdRoute,
   } as any)
-const ApiContactsIdPhotoRoute = ApiContactsIdPhotoRouteImport.update({
-  id: '/photo',
-  path: '/photo',
-  getParentRoute: () => ApiContactsIdRoute,
+const ApiHistoryIdUndoRoute = ApiHistoryIdUndoRouteImport.update({
+  id: '/$id/undo',
+  path: '/$id/undo',
+  getParentRoute: () => ApiHistoryRoute,
 } as any)
+const ApiRadicaleUsersUsernameBackfillRoute =
+  ApiRadicaleUsersUsernameBackfillRouteImport.update({
+    id: '/backfill',
+    path: '/backfill',
+    getParentRoute: () => ApiRadicaleUsersUsernameRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -554,81 +554,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trash': {
-      id: '/trash'
-      path: '/trash'
-      fullPath: '/trash'
-      preLoaderRoute: typeof TrashRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/relationships': {
-      id: '/relationships'
-      path: '/relationships'
-      fullPath: '/relationships'
-      preLoaderRoute: typeof RelationshipsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/radicale-users': {
-      id: '/radicale-users'
-      path: '/radicale-users'
-      fullPath: '/radicale-users'
-      preLoaderRoute: typeof RadicaleUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/new': {
-      id: '/new'
-      path: '/new'
-      fullPath: '/new'
-      preLoaderRoute: typeof NewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import': {
-      id: '/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof ImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/history': {
-      id: '/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help': {
-      id: '/help'
-      path: '/help'
-      fullPath: '/help'
-      preLoaderRoute: typeof HelpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/duplicates': {
-      id: '/duplicates'
-      path: '/duplicates'
-      fullPath: '/duplicates'
-      preLoaderRoute: typeof DuplicatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/carddav-connection': {
-      id: '/carddav-connection'
-      path: '/carddav-connection'
-      fullPath: '/carddav-connection'
-      preLoaderRoute: typeof CarddavConnectionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/books': {
-      id: '/books'
-      path: '/books'
-      fullPath: '/books'
-      preLoaderRoute: typeof BooksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$id': {
@@ -638,88 +568,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/user-book-assignments': {
-      id: '/api/user-book-assignments'
-      path: '/api/user-book-assignments'
-      fullPath: '/api/user-book-assignments'
-      preLoaderRoute: typeof ApiUserBookAssignmentsRouteImport
+    '/books': {
+      id: '/books'
+      path: '/books'
+      fullPath: '/books'
+      preLoaderRoute: typeof BooksRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/settings': {
-      id: '/api/settings'
-      path: '/api/settings'
-      fullPath: '/api/settings'
-      preLoaderRoute: typeof ApiSettingsRouteImport
+    '/carddav-connection': {
+      id: '/carddav-connection'
+      path: '/carddav-connection'
+      fullPath: '/carddav-connection'
+      preLoaderRoute: typeof CarddavConnectionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/runtime-config': {
-      id: '/api/runtime-config'
-      path: '/api/runtime-config'
-      fullPath: '/api/runtime-config'
-      preLoaderRoute: typeof ApiRuntimeConfigRouteImport
+    '/duplicates': {
+      id: '/duplicates'
+      path: '/duplicates'
+      fullPath: '/duplicates'
+      preLoaderRoute: typeof DuplicatesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/relationships': {
-      id: '/api/relationships'
-      path: '/api/relationships'
-      fullPath: '/api/relationships'
-      preLoaderRoute: typeof ApiRelationshipsRouteImport
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/relationship-placeholders': {
-      id: '/api/relationship-placeholders'
-      path: '/api/relationship-placeholders'
-      fullPath: '/api/relationship-placeholders'
-      preLoaderRoute: typeof ApiRelationshipPlaceholdersRouteImport
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/radicale-users': {
-      id: '/api/radicale-users'
-      path: '/api/radicale-users'
-      fullPath: '/api/radicale-users'
-      preLoaderRoute: typeof ApiRadicaleUsersRouteImport
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/mobileconfig': {
-      id: '/api/mobileconfig'
-      path: '/api/mobileconfig'
-      fullPath: '/api/mobileconfig'
-      preLoaderRoute: typeof ApiMobileconfigRouteImport
+    '/new': {
+      id: '/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof NewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/history': {
-      id: '/api/history'
-      path: '/api/history'
-      fullPath: '/api/history'
-      preLoaderRoute: typeof ApiHistoryRouteImport
+    '/radicale-users': {
+      id: '/radicale-users'
+      path: '/radicale-users'
+      fullPath: '/radicale-users'
+      preLoaderRoute: typeof RadicaleUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/health': {
-      id: '/api/health'
-      path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
+    '/relationships': {
+      id: '/relationships'
+      path: '/relationships'
+      fullPath: '/relationships'
+      preLoaderRoute: typeof RelationshipsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/contacts': {
-      id: '/api/contacts'
-      path: '/api/contacts'
-      fullPath: '/api/contacts'
-      preLoaderRoute: typeof ApiContactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/address-books': {
-      id: '/api/address-books'
-      path: '/api/address-books'
-      fullPath: '/api/address-books'
-      preLoaderRoute: typeof ApiAddressBooksRouteImport
+    '/trash': {
+      id: '/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof TrashRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/about': {
@@ -729,60 +652,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/relationships/$id': {
-      id: '/api/relationships/$id'
+    '/api/address-books': {
+      id: '/api/address-books'
+      path: '/api/address-books'
+      fullPath: '/api/address-books'
+      preLoaderRoute: typeof ApiAddressBooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/contacts': {
+      id: '/api/contacts'
+      path: '/api/contacts'
+      fullPath: '/api/contacts'
+      preLoaderRoute: typeof ApiContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/history': {
+      id: '/api/history'
+      path: '/api/history'
+      fullPath: '/api/history'
+      preLoaderRoute: typeof ApiHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mobileconfig': {
+      id: '/api/mobileconfig'
+      path: '/api/mobileconfig'
+      fullPath: '/api/mobileconfig'
+      preLoaderRoute: typeof ApiMobileconfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/radicale-users': {
+      id: '/api/radicale-users'
+      path: '/api/radicale-users'
+      fullPath: '/api/radicale-users'
+      preLoaderRoute: typeof ApiRadicaleUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/relationship-placeholders': {
+      id: '/api/relationship-placeholders'
+      path: '/api/relationship-placeholders'
+      fullPath: '/api/relationship-placeholders'
+      preLoaderRoute: typeof ApiRelationshipPlaceholdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/relationships': {
+      id: '/api/relationships'
+      path: '/api/relationships'
+      fullPath: '/api/relationships'
+      preLoaderRoute: typeof ApiRelationshipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/runtime-config': {
+      id: '/api/runtime-config'
+      path: '/api/runtime-config'
+      fullPath: '/api/runtime-config'
+      preLoaderRoute: typeof ApiRuntimeConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings': {
+      id: '/api/settings'
+      path: '/api/settings'
+      fullPath: '/api/settings'
+      preLoaderRoute: typeof ApiSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/user-book-assignments': {
+      id: '/api/user-book-assignments'
+      path: '/api/user-book-assignments'
+      fullPath: '/api/user-book-assignments'
+      preLoaderRoute: typeof ApiUserBookAssignmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/address-books/$id': {
+      id: '/api/address-books/$id'
       path: '/$id'
-      fullPath: '/api/relationships/$id'
-      preLoaderRoute: typeof ApiRelationshipsIdRouteImport
-      parentRoute: typeof ApiRelationshipsRoute
+      fullPath: '/api/address-books/$id'
+      preLoaderRoute: typeof ApiAddressBooksIdRouteImport
+      parentRoute: typeof ApiAddressBooksRoute
     }
-    '/api/radicale-users/$username': {
-      id: '/api/radicale-users/$username'
-      path: '/$username'
-      fullPath: '/api/radicale-users/$username'
-      preLoaderRoute: typeof ApiRadicaleUsersUsernameRouteImport
-      parentRoute: typeof ApiRadicaleUsersRoute
+    '/api/address-books/memberships': {
+      id: '/api/address-books/memberships'
+      path: '/memberships'
+      fullPath: '/api/address-books/memberships'
+      preLoaderRoute: typeof ApiAddressBooksMembershipsRouteImport
+      parentRoute: typeof ApiAddressBooksRoute
     }
-    '/api/contacts/trash': {
-      id: '/api/contacts/trash'
-      path: '/trash'
-      fullPath: '/api/contacts/trash'
-      preLoaderRoute: typeof ApiContactsTrashRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/merge': {
-      id: '/api/contacts/merge'
-      path: '/merge'
-      fullPath: '/api/contacts/merge'
-      preLoaderRoute: typeof ApiContactsMergeRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/import': {
-      id: '/api/contacts/import'
-      path: '/import'
-      fullPath: '/api/contacts/import'
-      preLoaderRoute: typeof ApiContactsImportRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/export': {
-      id: '/api/contacts/export'
-      path: '/export'
-      fullPath: '/api/contacts/export'
-      preLoaderRoute: typeof ApiContactsExportRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/duplicates': {
-      id: '/api/contacts/duplicates'
-      path: '/duplicates'
-      fullPath: '/api/contacts/duplicates'
-      preLoaderRoute: typeof ApiContactsDuplicatesRouteImport
-      parentRoute: typeof ApiContactsRoute
-    }
-    '/api/contacts/deduplicate': {
-      id: '/api/contacts/deduplicate'
-      path: '/deduplicate'
-      fullPath: '/api/contacts/deduplicate'
-      preLoaderRoute: typeof ApiContactsDeduplicateRouteImport
+    '/api/contacts/$id': {
+      id: '/api/contacts/$id'
+      path: '/$id'
+      fullPath: '/api/contacts/$id'
+      preLoaderRoute: typeof ApiContactsIdRouteImport
       parentRoute: typeof ApiContactsRoute
     }
     '/api/contacts/bulk-books': {
@@ -792,40 +757,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactsBulkBooksRouteImport
       parentRoute: typeof ApiContactsRoute
     }
-    '/api/contacts/$id': {
-      id: '/api/contacts/$id'
-      path: '/$id'
-      fullPath: '/api/contacts/$id'
-      preLoaderRoute: typeof ApiContactsIdRouteImport
+    '/api/contacts/deduplicate': {
+      id: '/api/contacts/deduplicate'
+      path: '/deduplicate'
+      fullPath: '/api/contacts/deduplicate'
+      preLoaderRoute: typeof ApiContactsDeduplicateRouteImport
       parentRoute: typeof ApiContactsRoute
     }
-    '/api/address-books/memberships': {
-      id: '/api/address-books/memberships'
-      path: '/memberships'
-      fullPath: '/api/address-books/memberships'
-      preLoaderRoute: typeof ApiAddressBooksMembershipsRouteImport
-      parentRoute: typeof ApiAddressBooksRoute
+    '/api/contacts/duplicates': {
+      id: '/api/contacts/duplicates'
+      path: '/duplicates'
+      fullPath: '/api/contacts/duplicates'
+      preLoaderRoute: typeof ApiContactsDuplicatesRouteImport
+      parentRoute: typeof ApiContactsRoute
     }
-    '/api/address-books/$id': {
-      id: '/api/address-books/$id'
+    '/api/contacts/export': {
+      id: '/api/contacts/export'
+      path: '/export'
+      fullPath: '/api/contacts/export'
+      preLoaderRoute: typeof ApiContactsExportRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
+    '/api/contacts/import': {
+      id: '/api/contacts/import'
+      path: '/import'
+      fullPath: '/api/contacts/import'
+      preLoaderRoute: typeof ApiContactsImportRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
+    '/api/contacts/merge': {
+      id: '/api/contacts/merge'
+      path: '/merge'
+      fullPath: '/api/contacts/merge'
+      preLoaderRoute: typeof ApiContactsMergeRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
+    '/api/contacts/trash': {
+      id: '/api/contacts/trash'
+      path: '/trash'
+      fullPath: '/api/contacts/trash'
+      preLoaderRoute: typeof ApiContactsTrashRouteImport
+      parentRoute: typeof ApiContactsRoute
+    }
+    '/api/radicale-users/$username': {
+      id: '/api/radicale-users/$username'
+      path: '/$username'
+      fullPath: '/api/radicale-users/$username'
+      preLoaderRoute: typeof ApiRadicaleUsersUsernameRouteImport
+      parentRoute: typeof ApiRadicaleUsersRoute
+    }
+    '/api/relationships/$id': {
+      id: '/api/relationships/$id'
       path: '/$id'
-      fullPath: '/api/address-books/$id'
-      preLoaderRoute: typeof ApiAddressBooksIdRouteImport
-      parentRoute: typeof ApiAddressBooksRoute
+      fullPath: '/api/relationships/$id'
+      preLoaderRoute: typeof ApiRelationshipsIdRouteImport
+      parentRoute: typeof ApiRelationshipsRoute
     }
-    '/api/radicale-users/$username/backfill': {
-      id: '/api/radicale-users/$username/backfill'
-      path: '/backfill'
-      fullPath: '/api/radicale-users/$username/backfill'
-      preLoaderRoute: typeof ApiRadicaleUsersUsernameBackfillRouteImport
-      parentRoute: typeof ApiRadicaleUsersUsernameRoute
-    }
-    '/api/history/$id/undo': {
-      id: '/api/history/$id/undo'
-      path: '/$id/undo'
-      fullPath: '/api/history/$id/undo'
-      preLoaderRoute: typeof ApiHistoryIdUndoRouteImport
-      parentRoute: typeof ApiHistoryRoute
+    '/api/contacts/$id/photo': {
+      id: '/api/contacts/$id/photo'
+      path: '/photo'
+      fullPath: '/api/contacts/$id/photo'
+      preLoaderRoute: typeof ApiContactsIdPhotoRouteImport
+      parentRoute: typeof ApiContactsIdRoute
     }
     '/api/contacts/$id/relationships': {
       id: '/api/contacts/$id/relationships'
@@ -834,12 +827,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactsIdRelationshipsRouteImport
       parentRoute: typeof ApiContactsIdRoute
     }
-    '/api/contacts/$id/photo': {
-      id: '/api/contacts/$id/photo'
-      path: '/photo'
-      fullPath: '/api/contacts/$id/photo'
-      preLoaderRoute: typeof ApiContactsIdPhotoRouteImport
-      parentRoute: typeof ApiContactsIdRoute
+    '/api/history/$id/undo': {
+      id: '/api/history/$id/undo'
+      path: '/$id/undo'
+      fullPath: '/api/history/$id/undo'
+      preLoaderRoute: typeof ApiHistoryIdUndoRouteImport
+      parentRoute: typeof ApiHistoryRoute
+    }
+    '/api/radicale-users/$username/backfill': {
+      id: '/api/radicale-users/$username/backfill'
+      path: '/backfill'
+      fullPath: '/api/radicale-users/$username/backfill'
+      preLoaderRoute: typeof ApiRadicaleUsersUsernameBackfillRouteImport
+      parentRoute: typeof ApiRadicaleUsersUsernameRoute
     }
   }
 }
