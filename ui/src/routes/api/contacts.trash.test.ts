@@ -85,9 +85,7 @@ describe('POST /api/contacts/trash', () => {
 		expect(response.status).toBe(200)
 
 		expect(contactEdgeNeighborIds).toHaveBeenCalledWith(['id-1', 'id-2'])
-		expect(vi.mocked(contactEdgeNeighborIds).mock.invocationCallOrder[0]).toBeLessThan(
-			vi.mocked(emptyTrash).mock.invocationCallOrder[0]
-		)
+		expect(vi.mocked(contactEdgeNeighborIds).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(emptyTrash).mock.invocationCallOrder[0])
 		expect(refreshRelatedNamesVcards).toHaveBeenCalledWith(['neighbor-2'])
 	})
 

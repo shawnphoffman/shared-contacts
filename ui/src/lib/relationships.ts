@@ -571,7 +571,11 @@ function snapshotEdge(row: RelationshipRow): TransferredEdgeSnapshot {
  * unique index (qualifier intentionally excluded), and symmetric types are
  * canonicalized first so a duplicate in either direction is caught.
  */
-export function planEdgeTransfer(edges: Array<RelationshipRow>, primaryContactId: string, consumedContactIds: Array<string>): EdgeTransferPlan {
+export function planEdgeTransfer(
+	edges: Array<RelationshipRow>,
+	primaryContactId: string,
+	consumedContactIds: Array<string>
+): EdgeTransferPlan {
 	const consumed = new Set(consumedContactIds)
 	consumed.delete(primaryContactId)
 	const mapRef = (ref: NodeRef): NodeRef =>
@@ -712,7 +716,15 @@ export async function restoreTransferredEdges(
 				`INSERT INTO contact_relationships (id, a_contact_id, a_placeholder_id, b_contact_id, b_placeholder_id, type, qualifier)
 				 VALUES ($1, $2, $3, $4, $5, $6, $7)
 				 ON CONFLICT DO NOTHING RETURNING id`,
-				[target.id, target.a_contact_id, target.a_placeholder_id, target.b_contact_id, target.b_placeholder_id, target.type, target.qualifier]
+				[
+					target.id,
+					target.a_contact_id,
+					target.a_placeholder_id,
+					target.b_contact_id,
+					target.b_placeholder_id,
+					target.type,
+					target.qualifier,
+				]
 			)
 			if (result.rowCount) restored++
 			else skipped++
