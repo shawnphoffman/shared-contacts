@@ -6,28 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.4.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.3.0...v1.4.0) (2026-08-04)
+## [1.5.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.4.0...v1.5.0) (2026-08-05)
 
 ### Features
 
-* **api:** add relationship placeholder listing endpoint ([522a0d4](https://github.com/shawnphoffman/shared-contacts/commit/522a0d4ca1e9c243c34d8cb2034de4215c2e9532))
-* **api:** auto-link parents and siblings on relationship create ([5cf54cb](https://github.com/shawnphoffman/shared-contacts/commit/5cf54cba223920223ad76fdc98de1776cba8b0f0))
-* **ui:** full-height relationship panes and collapsible sidebar ([1705b54](https://github.com/shawnphoffman/shared-contacts/commit/1705b545da7db079ad9ad79880731725901f904a))
+* **api:** heal relationship edges dangling from pre-transfer merges ([9ff491d](https://github.com/shawnphoffman/shared-contacts/commit/9ff491dcd0e3abbf6768dcc17739591aaa22326a))
+* **vcard:** reflect relationships into contact vCards ([9b95582](https://github.com/shawnphoffman/shared-contacts/commit/9b955821b90357de319e47ad27bfc2048d34be02))
 
 ### Bug Fixes
 
-* **ui:** route tree connectors around cards and group sibling clusters ([e0fef01](https://github.com/shawnphoffman/shared-contacts/commit/e0fef011f14c45a173a3c5f62a7aac45649460de))
+* **api:** sweep relationship garbage when permanently deleting contacts ([0ae400d](https://github.com/shawnphoffman/shared-contacts/commit/0ae400d570de8080f06a0efed7dc56af96b3f213))
+* **api:** transfer relationship edges to the surviving contact on merge ([5ff69e1](https://github.com/shawnphoffman/shared-contacts/commit/5ff69e1e58f491a34e05c480b8551db3301e1257))
+
+### Styles
+
+* format merge-repair files with prettier ([e6063bb](https://github.com/shawnphoffman/shared-contacts/commit/e6063bb27f8f80765f03de2ca24c1210082df349))
+
+### Build System
+
+* **deps:** add optional peers required by release changelog pipeline ([2964a1e](https://github.com/shawnphoffman/shared-contacts/commit/2964a1e9cd126f24dad1c0ee887eda08f8456686))
+* **deps:** resolve all open dependabot alerts ([d163519](https://github.com/shawnphoffman/shared-contacts/commit/d163519f38afcf80e3c7905bad1f651a2efce972))
+* **deps:** upgrade commitlint to 21 to fix release changelog crash ([d4a2d41](https://github.com/shawnphoffman/shared-contacts/commit/d4a2d41b725588524819f681902433126e8164c9))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.5.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.4.0...v1.5.0)
+
+- 📦 Build(deps): resolve all open dependabot alerts [`d163519`](https://github.com/shawnphoffman/shared-contacts/commit/d163519f38afcf80e3c7905bad1f651a2efce972)
+- 📦 Build(deps): upgrade commitlint to 21 to fix release changelog crash [`d4a2d41`](https://github.com/shawnphoffman/shared-contacts/commit/d4a2d41b725588524819f681902433126e8164c9)
+- 🐛 Fix(api): transfer relationship edges to the surviving contact on merge [`5ff69e1`](https://github.com/shawnphoffman/shared-contacts/commit/5ff69e1e58f491a34e05c480b8551db3301e1257)
+- ✨ Feature(vcard): reflect relationships into contact vCards [`9b95582`](https://github.com/shawnphoffman/shared-contacts/commit/9b955821b90357de319e47ad27bfc2048d34be02)
+- 🐛 Fix(api): sweep relationship garbage when permanently deleting contacts [`0ae400d`](https://github.com/shawnphoffman/shared-contacts/commit/0ae400d570de8080f06a0efed7dc56af96b3f213)
+- ✨ Feature(api): heal relationship edges dangling from pre-transfer merges [`9ff491d`](https://github.com/shawnphoffman/shared-contacts/commit/9ff491dcd0e3abbf6768dcc17739591aaa22326a)
+- 💄 Style: format merge-repair files with prettier [`e6063bb`](https://github.com/shawnphoffman/shared-contacts/commit/e6063bb27f8f80765f03de2ca24c1210082df349)
+- 📦 Build(deps): add optional peers required by release changelog pipeline [`2964a1e`](https://github.com/shawnphoffman/shared-contacts/commit/2964a1e9cd126f24dad1c0ee887eda08f8456686)
+
 #### [v1.4.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.3.0...v1.4.0)
+
+> 4 August 2026
 
 - ✨ Feature(api): auto-link parents and siblings on relationship create [`5cf54cb`](https://github.com/shawnphoffman/shared-contacts/commit/5cf54cba223920223ad76fdc98de1776cba8b0f0)
 - ✨ Feature(ui): full-height relationship panes and collapsible sidebar [`1705b54`](https://github.com/shawnphoffman/shared-contacts/commit/1705b545da7db079ad9ad79880731725901f904a)
 - 🐛 Fix(ui): route tree connectors around cards and group sibling clusters [`e0fef01`](https://github.com/shawnphoffman/shared-contacts/commit/e0fef011f14c45a173a3c5f62a7aac45649460de)
 - ✨ Feature(api): add relationship placeholder listing endpoint [`522a0d4`](https://github.com/shawnphoffman/shared-contacts/commit/522a0d4ca1e9c243c34d8cb2034de4215c2e9532)
+- 🔧 Chore: release v1.4.0 [`40eb349`](https://github.com/shawnphoffman/shared-contacts/commit/40eb349a7b31cffd2fca672b43aed14ea5c58bb7)
 
 #### [v1.3.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.2.1...v1.3.0)
 
