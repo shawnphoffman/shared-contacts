@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.7.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.6.0...v1.7.0) (2026-08-05)
+## [1.8.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.7.0...v1.8.0) (2026-08-05)
 
 ### Features
 
-* **ui:** open tree at full zoom centered on focal person ([91b70c9](https://github.com/shawnphoffman/shared-contacts/commit/91b70c91b0146eaa85f5b366a5c826a4ff681d1c))
+* **ui:** lane child bars per family and highlight focal lineage ([d383084](https://github.com/shawnphoffman/shared-contacts/commit/d3830849d646e622e1a2943724d62f5f87c73589))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.8.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.7.0...v1.8.0)
+
+- ✨ Feature(ui): lane child bars per family and highlight focal lineage [`d383084`](https://github.com/shawnphoffman/shared-contacts/commit/d3830849d646e622e1a2943724d62f5f87c73589)
+
 #### [v1.7.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.6.0...v1.7.0)
 
+> 5 August 2026
+
 - ✨ Feature(ui): open tree at full zoom centered on focal person [`91b70c9`](https://github.com/shawnphoffman/shared-contacts/commit/91b70c91b0146eaa85f5b366a5c826a4ff681d1c)
+- 🔧 Chore: release v1.7.0 [`84741d5`](https://github.com/shawnphoffman/shared-contacts/commit/84741d575ca6b85afddd9f74499eaaaf75351645)
 
 #### [v1.6.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.5.0...v1.6.0)
 
