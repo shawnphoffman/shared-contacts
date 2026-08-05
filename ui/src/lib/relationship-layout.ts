@@ -197,8 +197,25 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 	}
 	const sortedGens = [...rows.keys()].sort((a, b) => a - b)
 
+	const childrenOf = new Map<string, Array<string>>()
+	for (const edge of graph.edges) {
+		if (edge.type !== 'parent') continue
+		childrenOf.set(edge.a, [...(childrenOf.get(edge.a) ?? []), edge.b])
+	}
+
 	const positions = new Map<string, Positioned>()
-	const rowSpans: Array<{ keys: Array<string>; width: number }> = []
+
+	// Each row is a list of blocks (a couple cluster with order preserved).
+	// After the initial sequential placement, an iterative solver pulls each
+	// block under its parents (down pass) and re-centers parents over their
+	// children (up pass), resolving overlaps while preserving order - so
+	// child bars stay local to their family instead of spanning the tree.
+	interface RowBlock {
+		members: Array<string>
+		width: number
+		x: number
+	}
+	const rowBlocks: Array<Array<RowBlock>> = []
 
 	sortedGens.forEach((gen, rowIndex) => {
 		const keys = rows.get(gen)!
@@ -259,27 +276,108 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 
 		const y = PADDING + rowIndex * (CARD_H + V_GAP)
 		let cursor = PADDING
-		const rowKeys: Array<string> = []
+		const blocks: Array<RowBlock> = []
 		for (const { cluster } of entries) {
-			for (const key of cluster) {
-				positions.set(key, { x: cursor, y })
-				rowKeys.push(key)
-				cursor += CARD_W + H_GAP
+			const block: RowBlock = { members: cluster, width: cluster.length * CARD_W + (cluster.length - 1) * H_GAP, x: cursor }
+			for (const [index, key] of cluster.entries()) {
+				positions.set(key, { x: cursor + index * (CARD_W + H_GAP), y })
 			}
+			blocks.push(block)
+			cursor += block.width + H_GAP
 		}
-		rowSpans.push({ keys: rowKeys, width: cursor - H_GAP + PADDING })
+		rowBlocks.push(blocks)
 	})
 
-	// Center every row within the widest one.
-	const maxWidth = Math.max(...rowSpans.map(row => row.width), PADDING * 2 + CARD_W)
-	for (const row of rowSpans) {
-		const offset = (maxWidth - row.width) / 2
-		if (offset <= 0) continue
-		for (const key of row.keys) {
-			const pos = positions.get(key)!
-			positions.set(key, { x: pos.x + offset, y: pos.y })
-		}
+	const centerOf = (key: string): number => positions.get(key)!.x + CARD_W / 2
+	const setBlockX = (block: RowBlock, x: number) => {
+		block.x = x
+		block.members.forEach((member, index) => {
+			positions.get(member)!.x = x + index * (CARD_W + H_GAP)
+		})
 	}
+	const meanOrNull = (values: Array<number>): number | null =>
+		values.length === 0 ? null : values.reduce((sum, v) => sum + v, 0) / values.length
+
+	// A block's family identity: the sorted parent set of its first member
+	// that has parents (a parentless spouse rides with their partner's group).
+	const parentGroupOf = (block: RowBlock): string | null => {
+		for (const member of block.members) {
+			const parents = parentsOf.get(member) ?? []
+			if (parents.length > 0) return [...parents].sort().join('|')
+		}
+		return null
+	}
+
+	// Down pass targets: whole sibling runs (adjacent blocks with the same
+	// parent set) center as one unit under their parents' union midpoint.
+	const wantsFromParents = (blocks: Array<RowBlock>): Array<number | null> => {
+		const wants: Array<number | null> = blocks.map(() => null)
+		let start = 0
+		while (start < blocks.length) {
+			const groupId = parentGroupOf(blocks[start])
+			let end = start
+			while (end + 1 < blocks.length && groupId !== null && parentGroupOf(blocks[end + 1]) === groupId) end++
+			if (groupId !== null) {
+				const parents = groupId.split('|').filter(p => positions.has(p))
+				const unionCenter = meanOrNull(parents.map(centerOf))
+				if (unionCenter !== null) {
+					const totalWidth = blocks.slice(start, end + 1).reduce((sum, block) => sum + block.width, 0) + (end - start) * H_GAP
+					let cursor = unionCenter - totalWidth / 2
+					for (let index = start; index <= end; index++) {
+						wants[index] = cursor
+						cursor += blocks[index].width + H_GAP
+					}
+				}
+			}
+			start = end + 1
+		}
+		return wants
+	}
+
+	// Up pass targets: each parent block re-centers over its own children.
+	const wantsFromChildren = (blocks: Array<RowBlock>): Array<number | null> =>
+		blocks.map(block => {
+			const center = meanOrNull(block.members.flatMap(member => (childrenOf.get(member) ?? []).filter(c => positions.has(c)).map(centerOf)))
+			return center === null ? null : center - block.width / 2
+		})
+
+	// Place a row's blocks as close to their targets as order and minimum
+	// gaps allow: greedy left-to-right, then a right-to-left relax that lets
+	// blocks slide back toward their target where room remains.
+	const placeRow = (blocks: Array<RowBlock>, wants: Array<number | null>) => {
+		if (blocks.length === 0) return
+		const want = wants.map((value, index) => value ?? blocks[index].x)
+		const xs: Array<number> = []
+		let minX = Number.NEGATIVE_INFINITY
+		blocks.forEach((block, index) => {
+			const x = Math.max(want[index], minX)
+			xs.push(x)
+			minX = x + block.width + H_GAP
+		})
+		for (let index = blocks.length - 1; index >= 0; index--) {
+			const limit = index === blocks.length - 1 ? Number.POSITIVE_INFINITY : xs[index + 1] - H_GAP - blocks[index].width
+			xs[index] = Math.min(want[index], limit)
+		}
+		let cursor = Number.NEGATIVE_INFINITY
+		blocks.forEach((block, index) => {
+			const x = Math.max(xs[index], cursor)
+			setBlockX(block, x)
+			cursor = x + block.width + H_GAP
+		})
+	}
+
+	for (let iteration = 0; iteration < 3; iteration++) {
+		for (let row = 1; row < rowBlocks.length; row++) placeRow(rowBlocks[row], wantsFromParents(rowBlocks[row]))
+		for (let row = rowBlocks.length - 2; row >= 0; row--) placeRow(rowBlocks[row], wantsFromChildren(rowBlocks[row]))
+	}
+	// One final down pass so children end exactly under their parents.
+	for (let row = 1; row < rowBlocks.length; row++) placeRow(rowBlocks[row], wantsFromParents(rowBlocks[row]))
+
+	// Normalize into positive space.
+	const allX = [...positions.values()].map(pos => pos.x)
+	const shift = PADDING - Math.min(...allX, PADDING)
+	if (shift !== 0) for (const pos of positions.values()) pos.x += shift
+	const maxWidth = Math.max(...[...positions.values()].map(pos => pos.x + CARD_W), PADDING + CARD_W) + PADDING
 
 	const segments: Array<LayoutSegment> = []
 	const midY = (pos: Positioned) => pos.y + CARD_H / 2

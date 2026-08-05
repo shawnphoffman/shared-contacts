@@ -131,6 +131,66 @@ describe('layoutEgoTree', () => {
 		expect(mom.y).toBe(dad.y)
 	})
 
+	it('keeps each family block under its own parents with no row overlaps', () => {
+		// Grandparent couple with two married children, each with their own kids.
+		const edges = [
+			edge('c:gp1', 'c:gp2', 'spouse'),
+			edge('c:gp1', 'c:dadA', 'parent'),
+			edge('c:gp2', 'c:dadA', 'parent'),
+			edge('c:gp1', 'c:dadB', 'parent'),
+			edge('c:gp2', 'c:dadB', 'parent'),
+			edge('c:dadA', 'c:momA', 'spouse'),
+			edge('c:dadB', 'c:momB', 'spouse'),
+			edge('c:dadA', 'c:a1', 'parent'),
+			edge('c:momA', 'c:a1', 'parent'),
+			edge('c:dadA', 'c:a2', 'parent'),
+			edge('c:momA', 'c:a2', 'parent'),
+			edge('c:dadB', 'c:b1', 'parent'),
+			edge('c:momB', 'c:b1', 'parent'),
+			edge('c:dadB', 'c:b2', 'parent'),
+			edge('c:momB', 'c:b2', 'parent'),
+			edge('c:dadB', 'c:b3', 'parent'),
+			edge('c:momB', 'c:b3', 'parent'),
+		]
+		const people = ['gp1', 'gp2', 'dadA', 'momA', 'dadB', 'momB', 'a1', 'a2', 'b1', 'b2', 'b3']
+		const graph: EgoGraph = {
+			focus: 'c:a1',
+			nodes: people.map(p => node(`c:${p}`, `Person ${p.toUpperCase()}`)),
+			edges,
+			derivedSiblings: [
+				{ a: 'c:a1', b: 'c:a2', sharedParents: 2 },
+				{ a: 'c:b1', b: 'c:b2', sharedParents: 2 },
+				{ a: 'c:b1', b: 'c:b3', sharedParents: 2 },
+				{ a: 'c:b2', b: 'c:b3', sharedParents: 2 },
+				{ a: 'c:dadA', b: 'c:dadB', sharedParents: 2 },
+			],
+		}
+		const layout = layoutEgoTree(graph)
+		const center = (key: string) => {
+			const entry = layout.nodes.find(n => n.node.key === key)!
+			return entry.x + CARD_W / 2
+		}
+
+		// Children sit under their own parents' midpoint, not the tree center.
+		const familyACenter = (center('c:a1') + center('c:a2')) / 2
+		const parentsACenter = (center('c:dadA') + center('c:momA')) / 2
+		expect(Math.abs(familyACenter - parentsACenter)).toBeLessThan(CARD_W)
+
+		const familyBCenter = (center('c:b1') + center('c:b2') + center('c:b3')) / 3
+		const parentsBCenter = (center('c:dadB') + center('c:momB')) / 2
+		expect(Math.abs(familyBCenter - parentsBCenter)).toBeLessThan(CARD_W)
+
+		// No two cards in the same row overlap.
+		const byRow = new Map<number, Array<number>>()
+		for (const entry of layout.nodes) byRow.set(entry.y, [...(byRow.get(entry.y) ?? []), entry.x])
+		for (const xs of byRow.values()) {
+			const sorted = [...xs].sort((a, b) => a - b)
+			for (let i = 1; i < sorted.length; i++) {
+				expect(sorted[i] - sorted[i - 1]).toBeGreaterThanOrEqual(CARD_W)
+			}
+		}
+	})
+
 	it('handles an empty graph without segments', () => {
 		const graph: EgoGraph = { focus: 'c:solo', nodes: [node('c:solo', 'Solo Person')], edges: [], derivedSiblings: [] }
 		const layout = layoutEgoTree(graph)
