@@ -1,6 +1,23 @@
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Field, FieldContent, FieldLabel } from '../ui/field'
+import { OptionSelect } from '../OptionSelect'
+
+const TIME_ZONE_OPTIONS: Array<string> = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : []
+
+const CLASS_OPTIONS = ['PUBLIC', 'PRIVATE', 'CONFIDENTIAL']
+
+/** Split a "lat;long" geo string into its two halves. */
+function splitGeo(geo: string): [string, string] {
+	const separatorIndex = geo.indexOf(';')
+	if (separatorIndex === -1) return [geo, '']
+	return [geo.slice(0, separatorIndex), geo.slice(separatorIndex + 1)]
+}
+
+function joinGeo(lat: string, lon: string): string {
+	if (lat.trim() === '' && lon.trim() === '') return ''
+	return `${lat};${lon}`
+}
 
 interface ContactAdvancedFieldsProps {
 	formData: {
@@ -160,11 +177,11 @@ export function ContactAdvancedFields({
 						<Field>
 							<FieldLabel htmlFor="time_zone">Time Zone</FieldLabel>
 							<FieldContent>
-								<Input
+								<OptionSelect
 									id="time_zone"
-									name="time_zone"
 									value={formData.time_zone}
-									onChange={e => onFormDataChange({ time_zone: e.target.value })}
+									onChange={value => onFormDataChange({ time_zone: value })}
+									options={TIME_ZONE_OPTIONS}
 									placeholder="e.g. America/Los_Angeles"
 								/>
 							</FieldContent>
@@ -172,15 +189,26 @@ export function ContactAdvancedFields({
 					)}
 					{shouldShowAdvancedField(hasGeo) && (
 						<Field>
-							<FieldLabel htmlFor="geo">Geo</FieldLabel>
+							<FieldLabel htmlFor="geo_lat">Geo</FieldLabel>
 							<FieldContent>
-								<Input
-									id="geo"
-									name="geo"
-									value={formData.geo}
-									onChange={e => onFormDataChange({ geo: e.target.value })}
-									placeholder="lat;long"
-								/>
+								<div className="grid grid-cols-2 gap-2">
+									<Input
+										id="geo_lat"
+										name="geo_lat"
+										inputMode="decimal"
+										value={splitGeo(formData.geo)[0]}
+										onChange={e => onFormDataChange({ geo: joinGeo(e.target.value, splitGeo(formData.geo)[1]) })}
+										placeholder="Latitude"
+									/>
+									<Input
+										id="geo_lon"
+										name="geo_lon"
+										inputMode="decimal"
+										value={splitGeo(formData.geo)[1]}
+										onChange={e => onFormDataChange({ geo: joinGeo(splitGeo(formData.geo)[0], e.target.value) })}
+										placeholder="Longitude"
+									/>
+								</div>
 							</FieldContent>
 						</Field>
 					)}
@@ -217,8 +245,9 @@ export function ContactAdvancedFields({
 									id="revision"
 									name="revision"
 									value={formData.revision}
-									onChange={e => onFormDataChange({ revision: e.target.value })}
-									placeholder="YYYY-MM-DDThh:mm:ssZ"
+									readOnly
+									className="text-muted-foreground"
+									placeholder="Set automatically"
 								/>
 							</FieldContent>
 						</Field>
@@ -240,11 +269,11 @@ export function ContactAdvancedFields({
 						<Field>
 							<FieldLabel htmlFor="class">Class</FieldLabel>
 							<FieldContent>
-								<Input
+								<OptionSelect
 									id="class"
-									name="class"
 									value={formData.class}
-									onChange={e => onFormDataChange({ class: e.target.value })}
+									onChange={value => onFormDataChange({ class: value })}
+									options={CLASS_OPTIONS}
 									placeholder="PUBLIC, PRIVATE, or CONFIDENTIAL"
 								/>
 							</FieldContent>

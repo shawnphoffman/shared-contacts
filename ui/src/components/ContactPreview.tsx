@@ -28,19 +28,19 @@ function formatBirthday(value: string): string | null {
 	})
 }
 
-function getAge(value: string): number | null {
+function getBirthdayInfo(value: string): { age: number; passedThisYear: boolean } | null {
 	const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
 	if (!match) return null
 	const year = Number(match[1])
 	if (year <= 1700) return null
 	const birth = new Date(year, Number(match[2]) - 1, Number(match[3]))
 	const now = new Date()
+	const passedThisYear = now.getMonth() > birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate())
 	let age = now.getFullYear() - birth.getFullYear()
-	const monthDiff = now.getMonth() - birth.getMonth()
-	if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+	if (!passedThisYear) {
 		age--
 	}
-	return age >= 0 && age < 200 ? age : null
+	return age >= 0 && age < 200 ? { age, passedThisYear } : null
 }
 
 function TypeChip({ type }: { type?: string }) {
@@ -115,7 +115,7 @@ export function ContactPreview({ form, contact, onDelete }: ContactPreviewProps)
 		.filter(address => address.lines.length > 0)
 
 	const birthdayDisplay = formData.birthday ? formatBirthday(formData.birthday) : null
-	const birthdayAge = formData.birthday ? getAge(formData.birthday) : null
+	const birthdayInfo = formData.birthday ? getBirthdayInfo(formData.birthday) : null
 
 	const photoSrc = photoPreviewUrl || (showExistingPhoto ? existingPhotoUrl : null)
 
@@ -274,9 +274,9 @@ export function ContactPreview({ form, contact, onDelete }: ContactPreviewProps)
 						<div className="flex flex-wrap items-center gap-2">
 							<Cake className="size-4 text-muted-foreground" />
 							<span>{birthdayDisplay}</span>
-							{birthdayAge !== null && (
+							{birthdayInfo !== null && (
 								<span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-									turns {birthdayAge + 1} this year
+									turns {birthdayInfo.age + 1} {birthdayInfo.passedThisYear ? 'next year' : 'this year'}
 								</span>
 							)}
 						</div>

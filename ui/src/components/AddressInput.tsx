@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { COUNTRIES, DEFAULT_COUNTRY, US_STATES, isUnitedStates } from '../lib/address-options'
 import { Input } from './ui/input'
+import { OptionSelect } from './OptionSelect'
 
 /**
  * Structured address data
@@ -284,9 +286,23 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
 		onChange(formatted)
 	}, [structured])
 
+	const isEmpty = Object.values(structured).every(part => part.trim() === '')
+
 	const updateField = (field: keyof StructuredAddress, newValue: string) => {
-		setStructured(prev => ({ ...prev, [field]: newValue }))
+		setStructured(prev => {
+			const next = { ...prev, [field]: newValue }
+			// Commit the display-level USA default the first time an empty
+			// address is actually filled in, so untouched addresses stay empty.
+			const wasEmpty = Object.values(prev).every(part => part.trim() === '')
+			if (wasEmpty && field !== 'country' && newValue.trim() !== '') {
+				next.country = DEFAULT_COUNTRY
+			}
+			return next
+		})
 	}
+
+	// An empty address shows (and behaves as) the USA default without storing it.
+	const effectiveCountry = structured.country || (isEmpty ? DEFAULT_COUNTRY : '')
 
 	return (
 		<div className="space-y-2">
@@ -306,13 +322,17 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
 				onChange={e => updateField('city', e.target.value)}
 			/>
 			<div className="grid grid-cols-2 gap-2">
-				<Input
-					name="address-state"
-					autoComplete="address-level1"
-					placeholder="State"
-					value={structured.state}
-					onChange={e => updateField('state', e.target.value)}
-				/>
+				{isUnitedStates(effectiveCountry) ? (
+					<OptionSelect value={structured.state} onChange={state => updateField('state', state)} options={US_STATES} placeholder="State" />
+				) : (
+					<Input
+						name="address-state"
+						autoComplete="address-level1"
+						placeholder="State"
+						value={structured.state}
+						onChange={e => updateField('state', e.target.value)}
+					/>
+				)}
 				<Input
 					name="address-postal"
 					autoComplete="postal-code"
@@ -321,12 +341,11 @@ export function AddressInput({ value, onChange, error }: AddressInputProps) {
 					onChange={e => updateField('postal', e.target.value)}
 				/>
 			</div>
-			<Input
-				name="address-country"
-				autoComplete="country"
+			<OptionSelect
+				value={effectiveCountry}
+				onChange={country => updateField('country', country)}
+				options={COUNTRIES}
 				placeholder="Country"
-				value={structured.country}
-				onChange={e => updateField('country', e.target.value)}
 			/>
 			{error && <p className="text-sm text-destructive">{error}</p>}
 		</div>
