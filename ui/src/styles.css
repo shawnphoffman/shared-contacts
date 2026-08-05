@@ -199,6 +199,13 @@ code {
 }
 
 /* React Flow chrome (relationship tree) - match the terminal tokens */
+.relationship-flow {
+	/* Focal lineage lines; the multi phosphor variant highlights in amber. */
+	--tree-active-edge: var(--primary);
+}
+.dark[data-phosphor='multi'] .relationship-flow {
+	--tree-active-edge: var(--accent-foreground);
+}
 .relationship-flow .react-flow__controls {
 	overflow: hidden;
 	border: 1px solid var(--border);

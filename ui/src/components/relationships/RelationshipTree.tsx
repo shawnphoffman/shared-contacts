@@ -160,18 +160,35 @@ function TreeCanvas({ graph, layout, onContactClick }: RelationshipTreeProps & {
 					style={{ zIndex: -1 }}
 					aria-hidden="true"
 				>
-					{layout.segments.map((segment, index) => (
-						<line
-							key={index}
-							x1={segment.x1}
-							y1={segment.y1}
-							x2={segment.x2}
-							y2={segment.y2}
-							className="stroke-muted-foreground/60"
-							strokeWidth={1.5}
-							strokeDasharray={segment.dashed ? '5 4' : undefined}
-						/>
-					))}
+					{/* Inactive lineage first so the focal person's own lines paint on top. */}
+					{layout.segments.map((segment, index) =>
+						segment.active ? null : (
+							<line
+								key={index}
+								x1={segment.x1}
+								y1={segment.y1}
+								x2={segment.x2}
+								y2={segment.y2}
+								className="stroke-muted-foreground/40"
+								strokeWidth={1.5}
+								strokeDasharray={segment.dashed ? '5 4' : undefined}
+							/>
+						)
+					)}
+					{layout.segments.map((segment, index) =>
+						segment.active ? (
+							<line
+								key={index}
+								x1={segment.x1}
+								y1={segment.y1}
+								x2={segment.x2}
+								y2={segment.y2}
+								stroke="var(--tree-active-edge)"
+								strokeWidth={2}
+								strokeDasharray={segment.dashed ? '5 4' : undefined}
+							/>
+						) : null
+					)}
 				</svg>
 			</ViewportPortal>
 			<Background variant={BackgroundVariant.Dots} gap={22} size={1} className="!bg-transparent" color="var(--border)" />

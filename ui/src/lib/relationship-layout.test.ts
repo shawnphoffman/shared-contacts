@@ -191,6 +191,30 @@ describe('layoutEgoTree', () => {
 		}
 	})
 
+	it('never draws two family bars on top of each other and highlights the focal lineage', () => {
+		const graph = familyGraph()
+		const layout = layoutEgoTree(graph)
+
+		// Horizontal channel bars (not card-mid unions): overlapping x-spans
+		// must land on different lanes (different y).
+		const rowMidYs = new Set(layout.nodes.map(entry => entry.y + CARD_H / 2))
+		const bars = layout.segments.filter(s => s.y1 === s.y2 && !rowMidYs.has(s.y1) && Math.abs(s.x2 - s.x1) > 0)
+		for (let i = 0; i < bars.length; i++) {
+			for (let j = i + 1; j < bars.length; j++) {
+				const a = bars[i]
+				const b = bars[j]
+				if (a.y1 !== b.y1) continue
+				const overlap = Math.min(Math.max(a.x1, a.x2), Math.max(b.x1, b.x2)) - Math.max(Math.min(a.x1, a.x2), Math.min(b.x1, b.x2))
+				expect(overlap).toBeLessThanOrEqual(0)
+			}
+		}
+
+		// Sofia is focal: her parents' drop and her union are active, the
+		// grandparents' union is not.
+		expect(layout.segments.some(s => s.active)).toBe(true)
+		expect(layout.segments.some(s => !s.active)).toBe(true)
+	})
+
 	it('handles an empty graph without segments', () => {
 		const graph: EgoGraph = { focus: 'c:solo', nodes: [node('c:solo', 'Solo Person')], edges: [], derivedSiblings: [] }
 		const layout = layoutEgoTree(graph)

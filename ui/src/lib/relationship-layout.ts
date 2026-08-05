@@ -29,6 +29,8 @@ export interface LayoutSegment {
 	x2: number
 	y2: number
 	dashed?: boolean
+	/** Part of the focal person's own lineage (their parents, unions, children). */
+	active?: boolean
 }
 
 export interface TreeLayout {
@@ -395,20 +397,20 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 	// Non-adjacent same-row pairs are routed through the channel just below
 	// the row (above the child bars) instead of straight through other cards.
 	const ELBOW_DROP = 16
-	const routeSameRow = (a: Positioned, b: Positioned, dashed: boolean): Positioned => {
+	const routeSameRow = (a: Positioned, b: Positioned, dashed: boolean, active: boolean): Positioned => {
 		const [left, right] = a.x <= b.x ? [a, b] : [b, a]
 		if (!sameRowBlocked(left, right)) {
 			const y = midY(left)
-			segments.push({ x1: left.x + CARD_W, y1: y, x2: right.x, y2: y, dashed })
+			segments.push({ x1: left.x + CARD_W, y1: y, x2: right.x, y2: y, dashed, active })
 			return { x: (left.x + CARD_W + right.x) / 2, y }
 		}
 		const bottom = left.y + CARD_H
 		const channelY = bottom + ELBOW_DROP
 		const leftX = left.x + CARD_W / 2
 		const rightX = right.x + CARD_W / 2
-		segments.push({ x1: leftX, y1: bottom, x2: leftX, y2: channelY, dashed })
-		segments.push({ x1: leftX, y1: channelY, x2: rightX, y2: channelY, dashed })
-		segments.push({ x1: rightX, y1: channelY, x2: rightX, y2: bottom, dashed })
+		segments.push({ x1: leftX, y1: bottom, x2: leftX, y2: channelY, dashed, active })
+		segments.push({ x1: leftX, y1: channelY, x2: rightX, y2: channelY, dashed, active })
+		segments.push({ x1: rightX, y1: channelY, x2: rightX, y2: bottom, dashed, active })
 		return { x: (leftX + rightX) / 2, y: channelY }
 	}
 
@@ -419,7 +421,8 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 		const posA = positions.get(edge.a)
 		const posB = positions.get(edge.b)
 		if (!posA || !posB) continue
-		unionAnchor.set(coupleKey(edge.a, edge.b), routeSameRow(posA, posB, edge.qualifier === 'ex'))
+		const active = edge.a === graph.focus || edge.b === graph.focus
+		unionAnchor.set(coupleKey(edge.a, edge.b), routeSameRow(posA, posB, edge.qualifier === 'ex', active))
 	}
 
 	// Parent drops: group children by their exact parent set.
@@ -430,12 +433,25 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 		group.children.push(child)
 		childGroups.set(groupId, group)
 	}
+
+	// First resolve every group's geometry, then assign each family its own
+	// lane inside the channel above its children - bars of unrelated families
+	// at the same depth no longer merge into one unreadable line.
+	interface GroupGeometry {
+		anchor: Positioned
+		childPositions: Array<Positioned>
+		childCenters: Array<number>
+		childTop: number
+		minX: number
+		maxX: number
+		active: boolean
+	}
+	const geometries: Array<GroupGeometry> = []
 	for (const group of childGroups.values()) {
 		const childPositions = group.children.map(key => positions.get(key)).filter((p): p is Positioned => Boolean(p))
 		if (childPositions.length === 0) continue
 		const childCenters = childPositions.map(pos => pos.x + CARD_W / 2)
 		const childTop = Math.min(...childPositions.map(pos => pos.y))
-		const barY = childTop - V_GAP / 2
 
 		let anchor: Positioned | null = null
 		if (group.parents.length === 2) {
@@ -449,12 +465,44 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 			anchor = { x: meanX, y: bottom }
 		}
 
-		segments.push({ x1: anchor.x, y1: anchor.y, x2: anchor.x, y2: barY })
-		const minX = Math.min(...childCenters, anchor.x)
-		const maxX = Math.max(...childCenters, anchor.x)
-		if (maxX > minX) segments.push({ x1: minX, y1: barY, x2: maxX, y2: barY })
-		for (let i = 0; i < childCenters.length; i++) {
-			segments.push({ x1: childCenters[i], y1: barY, x2: childCenters[i], y2: childPositions[i].y })
+		geometries.push({
+			anchor,
+			childPositions,
+			childCenters,
+			childTop,
+			minX: Math.min(...childCenters, anchor.x),
+			maxX: Math.max(...childCenters, anchor.x),
+			active: group.parents.includes(graph.focus) || group.children.includes(graph.focus),
+		})
+	}
+
+	// Greedy interval coloring per channel: overlapping spans get different
+	// lanes, disjoint spans share one. Lane 0 sits closest to the children.
+	const LANE_STEP = 12
+	const LANE_BASE = 14
+	const MAX_LANES = 4
+	const byChannel = new Map<number, Array<GroupGeometry>>()
+	for (const geometry of geometries) {
+		byChannel.set(geometry.childTop, [...(byChannel.get(geometry.childTop) ?? []), geometry])
+	}
+	for (const channelGroups of byChannel.values()) {
+		channelGroups.sort((a, b) => a.minX - b.minX)
+		const laneRightEdge: Array<number> = []
+		for (const geometry of channelGroups) {
+			let lane = laneRightEdge.findIndex(rightEdge => rightEdge + LANE_STEP <= geometry.minX)
+			if (lane === -1) {
+				lane = Math.min(laneRightEdge.length, MAX_LANES - 1)
+				if (lane === laneRightEdge.length) laneRightEdge.push(Number.NEGATIVE_INFINITY)
+			}
+			laneRightEdge[lane] = Math.max(laneRightEdge[lane], geometry.maxX)
+			const barY = geometry.childTop - LANE_BASE - lane * LANE_STEP
+
+			const { anchor, childPositions, childCenters, minX, maxX, active } = geometry
+			segments.push({ x1: anchor.x, y1: anchor.y, x2: anchor.x, y2: barY, active })
+			if (maxX > minX) segments.push({ x1: minX, y1: barY, x2: maxX, y2: barY, active })
+			for (let i = 0; i < childCenters.length; i++) {
+				segments.push({ x1: childCenters[i], y1: barY, x2: childCenters[i], y2: childPositions[i].y, active })
+			}
 		}
 	}
 
@@ -465,11 +513,12 @@ export function layoutEgoTree(graph: EgoGraph): TreeLayout {
 		const posA = positions.get(edge.a)
 		const posB = positions.get(edge.b)
 		if (!posA || !posB) continue
+		const active = edge.a === graph.focus || edge.b === graph.focus
 		if (posA.y === posB.y) {
-			routeSameRow(posA, posB, true)
+			routeSameRow(posA, posB, true, active)
 		} else {
 			const [top, bottom] = posA.y <= posB.y ? [posA, posB] : [posB, posA]
-			segments.push({ x1: top.x + CARD_W / 2, y1: top.y + CARD_H, x2: bottom.x + CARD_W / 2, y2: bottom.y, dashed: true })
+			segments.push({ x1: top.x + CARD_W / 2, y1: top.y + CARD_H, x2: bottom.x + CARD_W / 2, y2: bottom.y, dashed: true, active })
 		}
 	}
 
