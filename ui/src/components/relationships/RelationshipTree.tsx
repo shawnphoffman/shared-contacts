@@ -96,20 +96,23 @@ function PersonNode({ data }: NodeProps<PersonFlowNode>) {
 const nodeTypes = { person: PersonNode }
 
 /**
- * Refits the viewport once nodes are measured and again whenever the focal
- * person (projection) changes.
+ * Centers the viewport on the focal person at 100% zoom - on first render
+ * and again whenever the projection changes. Big components stay readable;
+ * the fit control is there when the whole tree is wanted.
  */
-function AutoFit({ focusKey }: { focusKey: string }) {
-	const { fitView } = useReactFlow()
+function CenterOnFocus({ focusKey, x, y }: { focusKey: string; x: number; y: number }) {
+	const { setCenter } = useReactFlow()
 	const nodesInitialized = useNodesInitialized()
+	// Deliberately keyed on the focal person (not x/y) so layout nudges from
+	// graph edits don't yank the viewport around mid-session.
 	useEffect(() => {
-		if (!nodesInitialized) return
-		void fitView({ padding: 0.08, duration: 250, maxZoom: 1 })
-	}, [focusKey, nodesInitialized, fitView])
+		void setCenter(x + CARD_W / 2, y + CARD_H / 2, { zoom: 1, duration: 250 })
+	}, [focusKey, nodesInitialized, setCenter])
 	return null
 }
 
 function TreeCanvas({ graph, layout, onContactClick }: RelationshipTreeProps & { layout: TreeLayout }) {
+	const focal = layout.nodes.find(entry => entry.isFocus)
 	const nodes = useMemo<Array<PersonFlowNode>>(
 		() =>
 			layout.nodes.map(({ node, x, y, isFocus, relationLabel }) => ({
@@ -142,10 +145,8 @@ function TreeCanvas({ graph, layout, onContactClick }: RelationshipTreeProps & {
 			nodesDraggable={false}
 			nodesConnectable={false}
 			elementsSelectable={false}
-			minZoom={0.15}
+			minZoom={0.35}
 			maxZoom={1.5}
-			fitView
-			fitViewOptions={{ padding: 0.08, maxZoom: 1 }}
 			proOptions={{ hideAttribution: true }}
 			className="relationship-flow"
 		>
@@ -184,7 +185,7 @@ function TreeCanvas({ graph, layout, onContactClick }: RelationshipTreeProps & {
 				bgColor="var(--card)"
 				maskColor="color-mix(in srgb, var(--background) 70%, transparent)"
 			/>
-			<AutoFit focusKey={graph.focus} />
+			<CenterOnFocus focusKey={graph.focus} x={focal?.x ?? 0} y={focal?.y ?? 0} />
 		</ReactFlow>
 	)
 }
