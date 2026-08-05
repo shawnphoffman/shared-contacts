@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.8.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.7.0...v1.8.0) (2026-08-05)
+## [1.9.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.8.0...v1.9.0) (2026-08-05)
 
 ### Features
 
-* **ui:** lane child bars per family and highlight focal lineage ([d383084](https://github.com/shawnphoffman/shared-contacts/commit/d3830849d646e622e1a2943724d62f5f87c73589))
+* **ui:** use dropdowns for enumerable contact fields ([a9d346f](https://github.com/shawnphoffman/shared-contacts/commit/a9d346f356faf10185c7e50fdc2fac7ffb6a3dd3))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.9.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.8.0...v1.9.0)
+
+- ✨ Feature(ui): use dropdowns for enumerable contact fields [`a9d346f`](https://github.com/shawnphoffman/shared-contacts/commit/a9d346f356faf10185c7e50fdc2fac7ffb6a3dd3)
+
 #### [v1.8.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.7.0...v1.8.0)
 
+> 5 August 2026
+
 - ✨ Feature(ui): lane child bars per family and highlight focal lineage [`d383084`](https://github.com/shawnphoffman/shared-contacts/commit/d3830849d646e622e1a2943724d62f5f87c73589)
+- 🔧 Chore: release v1.8.0 [`8d2d53f`](https://github.com/shawnphoffman/shared-contacts/commit/8d2d53f93eed15cd5a2cd50ee3e9e7d910a81b61)
 
 #### [v1.7.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.6.0...v1.7.0)
 
