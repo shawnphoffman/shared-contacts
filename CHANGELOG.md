@@ -6,21 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.6.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.5.0...v1.6.0) (2026-08-05)
+## [1.7.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.6.0...v1.7.0) (2026-08-05)
 
 ### Features
 
-* **ui:** center family blocks under parents in tree layout ([9a81316](https://github.com/shawnphoffman/shared-contacts/commit/9a813160a62c5e1cb702d472b8dc6a4bac4e02fb))
-* **ui:** pannable zoomable tree canvas with minimap ([0c20c35](https://github.com/shawnphoffman/shared-contacts/commit/0c20c35195eb29bc206a1eee8e1f9f7ee97f841c))
+* **ui:** open tree at full zoom centered on focal person ([91b70c9](https://github.com/shawnphoffman/shared-contacts/commit/91b70c91b0146eaa85f5b366a5c826a4ff681d1c))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.7.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.6.0...v1.7.0)
+
+- ✨ Feature(ui): open tree at full zoom centered on focal person [`91b70c9`](https://github.com/shawnphoffman/shared-contacts/commit/91b70c91b0146eaa85f5b366a5c826a4ff681d1c)
+
 #### [v1.6.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.5.0...v1.6.0)
+
+> 5 August 2026
 
 - ✨ Feature(ui): pannable zoomable tree canvas with minimap [`0c20c35`](https://github.com/shawnphoffman/shared-contacts/commit/0c20c35195eb29bc206a1eee8e1f9f7ee97f841c)
 - ✨ Feature(ui): center family blocks under parents in tree layout [`9a81316`](https://github.com/shawnphoffman/shared-contacts/commit/9a813160a62c5e1cb702d472b8dc6a4bac4e02fb)
+- 🔧 Chore: release v1.6.0 [`9ec65ba`](https://github.com/shawnphoffman/shared-contacts/commit/9ec65baa71a9c1bf2927692dfec592264a9f2920)
 
 #### [v1.5.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.4.0...v1.5.0)
 
