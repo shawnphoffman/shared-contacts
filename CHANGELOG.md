@@ -6,33 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.5.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.4.0...v1.5.0) (2026-08-05)
+## [1.6.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.5.0...v1.6.0) (2026-08-05)
 
 ### Features
 
-* **api:** heal relationship edges dangling from pre-transfer merges ([9ff491d](https://github.com/shawnphoffman/shared-contacts/commit/9ff491dcd0e3abbf6768dcc17739591aaa22326a))
-* **vcard:** reflect relationships into contact vCards ([9b95582](https://github.com/shawnphoffman/shared-contacts/commit/9b955821b90357de319e47ad27bfc2048d34be02))
-
-### Bug Fixes
-
-* **api:** sweep relationship garbage when permanently deleting contacts ([0ae400d](https://github.com/shawnphoffman/shared-contacts/commit/0ae400d570de8080f06a0efed7dc56af96b3f213))
-* **api:** transfer relationship edges to the surviving contact on merge ([5ff69e1](https://github.com/shawnphoffman/shared-contacts/commit/5ff69e1e58f491a34e05c480b8551db3301e1257))
-
-### Styles
-
-* format merge-repair files with prettier ([e6063bb](https://github.com/shawnphoffman/shared-contacts/commit/e6063bb27f8f80765f03de2ca24c1210082df349))
-
-### Build System
-
-* **deps:** add optional peers required by release changelog pipeline ([2964a1e](https://github.com/shawnphoffman/shared-contacts/commit/2964a1e9cd126f24dad1c0ee887eda08f8456686))
-* **deps:** resolve all open dependabot alerts ([d163519](https://github.com/shawnphoffman/shared-contacts/commit/d163519f38afcf80e3c7905bad1f651a2efce972))
-* **deps:** upgrade commitlint to 21 to fix release changelog crash ([d4a2d41](https://github.com/shawnphoffman/shared-contacts/commit/d4a2d41b725588524819f681902433126e8164c9))
+* **ui:** center family blocks under parents in tree layout ([9a81316](https://github.com/shawnphoffman/shared-contacts/commit/9a813160a62c5e1cb702d472b8dc6a4bac4e02fb))
+* **ui:** pannable zoomable tree canvas with minimap ([0c20c35](https://github.com/shawnphoffman/shared-contacts/commit/0c20c35195eb29bc206a1eee8e1f9f7ee97f841c))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.6.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.5.0...v1.6.0)
+
+- ✨ Feature(ui): pannable zoomable tree canvas with minimap [`0c20c35`](https://github.com/shawnphoffman/shared-contacts/commit/0c20c35195eb29bc206a1eee8e1f9f7ee97f841c)
+- ✨ Feature(ui): center family blocks under parents in tree layout [`9a81316`](https://github.com/shawnphoffman/shared-contacts/commit/9a813160a62c5e1cb702d472b8dc6a4bac4e02fb)
+
 #### [v1.5.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.4.0...v1.5.0)
+
+> 5 August 2026
 
 - 📦 Build(deps): resolve all open dependabot alerts [`d163519`](https://github.com/shawnphoffman/shared-contacts/commit/d163519f38afcf80e3c7905bad1f651a2efce972)
 - 📦 Build(deps): upgrade commitlint to 21 to fix release changelog crash [`d4a2d41`](https://github.com/shawnphoffman/shared-contacts/commit/d4a2d41b725588524819f681902433126e8164c9)
@@ -40,6 +32,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - ✨ Feature(vcard): reflect relationships into contact vCards [`9b95582`](https://github.com/shawnphoffman/shared-contacts/commit/9b955821b90357de319e47ad27bfc2048d34be02)
 - 🐛 Fix(api): sweep relationship garbage when permanently deleting contacts [`0ae400d`](https://github.com/shawnphoffman/shared-contacts/commit/0ae400d570de8080f06a0efed7dc56af96b3f213)
 - ✨ Feature(api): heal relationship edges dangling from pre-transfer merges [`9ff491d`](https://github.com/shawnphoffman/shared-contacts/commit/9ff491dcd0e3abbf6768dcc17739591aaa22326a)
+- 🔧 Chore: release v1.5.0 [`cbb1992`](https://github.com/shawnphoffman/shared-contacts/commit/cbb1992de6b8cc64f1b0f642e419301d9bf1fd34)
 - 💄 Style: format merge-repair files with prettier [`e6063bb`](https://github.com/shawnphoffman/shared-contacts/commit/e6063bb27f8f80765f03de2ca24c1210082df349)
 - 📦 Build(deps): add optional peers required by release changelog pipeline [`2964a1e`](https://github.com/shawnphoffman/shared-contacts/commit/2964a1e9cd126f24dad1c0ee887eda08f8456686)
 
