@@ -37,8 +37,8 @@
 	},
 	"homepage": "https://github.com/shawnphoffman/shared-contacts#readme",
 	"devDependencies": {
-		"@commitlint/cli": "^20.5.0",
-		"@commitlint/config-conventional": "^20.5.0",
+		"@commitlint/cli": "^21.2.0",
+		"@commitlint/config-conventional": "^21.2.0",
 		"@release-it/conventional-changelog": "^12.0.0",
 		"auto-changelog": "^2.5.0",
 		"husky": "^9.1.7",
