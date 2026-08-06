@@ -25,10 +25,13 @@ fine for signing). The jq `select` is an exact match: if `DOMAIN` doesn't match
 `main` character-for-character, the extraction silently writes **zero-byte
 files**. Always confirm before copying anywhere:
 `openssl x509 -in "$DEST/cert.pem" -noout -subject -enddate`.
-(NUC specifics: `ACME=/ssd/docker/traefik/certs/cloudflare-acme.json`,
-`DEST=/ssd/docker/shared-contacts/certs`. Traefik uses `keyType: EC256`, so
-the key is ECDSA P-256 — supported by `openssl smime` and iOS; the PEM header
-reads `BEGIN EC PRIVATE KEY`/`BEGIN PRIVATE KEY`, not RSA.)
+(NUC specifics — resolved 2026-08-06: `DOMAIN='carddav.goober.house'` — the
+acme.json holds per-host certs, no apex/wildcard entries;
+`ACME=/ssd/docker/traefik/certs/cloudflare-acme.json`;
+`DEST=/ssd/docker/shared-contacts/certs`, so the Part B bind mount is
+`- /ssd/docker/shared-contacts/certs:/run/secrets/mc:ro`. Traefik uses
+`keyType: EC256`, so the key is ECDSA P-256 — supported by `openssl smime` and
+iOS; the PEM header reads `BEGIN EC PRIVATE KEY`/`BEGIN PRIVATE KEY`, not RSA.)
 
 ---
 
