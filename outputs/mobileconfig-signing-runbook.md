@@ -18,9 +18,17 @@ the deployment-specific companion to the generic guide in
 
 Placeholders to fill in once: `<ACME>` = path to production
 `cloudflare-acme.json` on the NUC (in the Traefik `certs/` dir);
-`<DOMAIN>` = the cert's domain as it appears in acme.json — check with
-`sudo jq -r '.[].Certificates[].domain.main' <ACME>` (a wildcard shows as
-`*.goober.house`; that works fine).
+`<DOMAIN>` = the cert's domain **exactly as it appears in acme.json** — check
+first with `sudo jq -r '.[].Certificates[].domain' <ACME>` (a wildcard is the
+literal string `*.goober.house`, quotes required in the shell; wildcards work
+fine for signing). The jq `select` is an exact match: if `DOMAIN` doesn't match
+`main` character-for-character, the extraction silently writes **zero-byte
+files**. Always confirm before copying anywhere:
+`openssl x509 -in "$DEST/cert.pem" -noout -subject -enddate`.
+(NUC specifics: `ACME=/ssd/docker/traefik/certs/cloudflare-acme.json`,
+`DEST=/ssd/docker/shared-contacts/certs`. Traefik uses `keyType: EC256`, so
+the key is ECDSA P-256 — supported by `openssl smime` and iOS; the PEM header
+reads `BEGIN EC PRIVATE KEY`/`BEGIN PRIVATE KEY`, not RSA.)
 
 ---
 
