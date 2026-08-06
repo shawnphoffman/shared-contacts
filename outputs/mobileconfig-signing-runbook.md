@@ -29,12 +29,31 @@ Placeholders to fill in once: `<ACME>` = path to production
 Goal: prove the extracted cert produces a green **Verified** install before
 touching the deployment.
 
-1. Pull the cert + key from the NUC to the Mac:
+1. Get the cert + key onto the Mac. `acme.json` is root-owned `600`, and
+   `sudo` over non-interactive ssh can't prompt for a password — so extract
+   **on the NUC as root** (into the deployment location, which Part B needs
+   anyway), stage user-readable copies, and `scp` those:
 
    ```bash
-   ssh nuc 'sudo jq -r ".[].Certificates[] | select(.domain.main==\"<DOMAIN>\") | .certificate" <ACME> | base64 -d' > cert.pem
-   ssh nuc 'sudo jq -r ".[].Certificates[] | select(.domain.main==\"<DOMAIN>\") | .key" <ACME> | base64 -d' > key.pem
+   # On the NUC (ssh in, then sudo -i):
+   DEST=/srv/shared-contacts/certs
+   mkdir -p "$DEST"
+   jq -r --arg d '<DOMAIN>' '.[].Certificates[] | select(.domain.main==$d) | .certificate' <ACME> | base64 -d > "$DEST/cert.pem"
+   jq -r --arg d '<DOMAIN>' '.[].Certificates[] | select(.domain.main==$d) | .key'         <ACME> | base64 -d > "$DEST/key.pem"
+   chmod 640 "$DEST"/*.pem
+   cp "$DEST"/cert.pem "$DEST"/key.pem /home/<youruser>/ && chown <youruser>: /home/<youruser>/{cert,key}.pem
+
+   # From the Mac:
+   scp nuc:cert.pem nuc:key.pem .
+   ssh nuc 'rm ~/cert.pem ~/key.pem'
+
+   # Sanity check — should show the domain and a future expiry:
+   openssl x509 -in cert.pem -noout -subject -enddate
    ```
+
+   Don't loosen permissions on `acme.json` itself — Traefik expects `600` and
+   it contains private keys for every cert it manages. This step also
+   completes Part B step 1 (the NUC-side extraction).
 
 2. Download an unsigned profile from the running instance:
 
