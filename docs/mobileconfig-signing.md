@@ -62,7 +62,7 @@ Let's Encrypt leaf certificate shows **Verified** automatically.
 > profiles without user interaction requires full MDM enrollment, which is out
 > of scope here.
 
-## 3. Choosing a signing certificate
+## 3. Choosing and obtaining a signing certificate
 
 The signing certificate is **independent** of the TLS certificate that secures
 your CardDAV host. It does not have to match the CardDAV domain. It only needs
@@ -71,21 +71,86 @@ to satisfy two requirements:
 1. Its chain ends at a root in Apple's trust store (for the green badge), and
 2. **You hold the private key.**
 
-Recommended options, best first:
+An ordinary TLS server certificate (like Let's Encrypt issues) satisfies both.
+Here is where to actually get one, best option first.
 
-- **Reuse an existing publicly-trusted (e.g. Let's Encrypt) leaf certificate you
-  already manage.** If your reverse proxy already obtains certificates for your
-  domains, you almost certainly already have the right cert and key — no need to
-  obtain anything new. This is what Part 5 walks through.
-- **A free downloadable Let's Encrypt bundle from your DNS host/registrar**
-  (for example, Porkbun's free SSL for domains registered with them). Use this
-  if you would rather manage a standalone cert/key by hand than script an
-  extraction from your proxy.
-- **A self-signed certificate.** Works, but the profile installs as
-  **Unverified** (red). Acceptable for personal/family use where the red label
-  doesn't matter.
+### Option A — Reuse the cert your reverse proxy already manages (recommended)
 
-What **not** to use:
+If a reverse proxy in front of this app already terminates HTTPS with a
+publicly-trusted certificate, you already have the right cert *and* the private
+key, and renewal is already automated. No new accounts or tooling — just
+extract the PEM files:
+
+- **Traefik** stores certs base64-encoded inside `acme.json` — Part 5 is a full
+  walkthrough of extracting, mounting, and keeping them renewed.
+- **Caddy** stores ready-to-use PEMs under
+  `~/.local/share/caddy/certificates/<issuer>/<domain>/` (`<domain>.crt` and
+  `<domain>.key`) — mount or copy them directly.
+- **certbot / acme.sh** keep live PEMs at
+  `/etc/letsencrypt/live/<domain>/{fullchain.pem,privkey.pem}` (certbot) or
+  `~/.acme.sh/<domain>/` — point the env vars at copies of these.
+
+### Option B — Free SSL bundle from your registrar / DNS host
+
+Some registrars issue and auto-renew a free Let's Encrypt certificate for
+domains they manage, and let you download the cert **and private key**. This is
+a good choice if you'd rather have a signing cert that is fully decoupled from
+your reverse proxy.
+
+**Porkbun example:** every Porkbun-registered domain (using their DNS) gets a
+free auto-renewed wildcard cert. Download it from the dashboard (*Domain
+Management → your domain → SSL*), or — better for automation — fetch the current
+bundle from their API so a cron job can keep it fresh:
+
+```bash
+# Requires an API key pair from porkbun.com → Account → API Access,
+# with API access toggled on for the domain.
+curl -s https://api.porkbun.com/api/json/v3/ssl/retrieve/example.com \
+  -H 'Content-Type: application/json' \
+  -d '{"apikey":"pk1_…","secretapikey":"sk1_…"}' \
+  > /tmp/ssl.json
+
+jq -r '.certificatechain' /tmp/ssl.json > /srv/shared-contacts/certs/cert.pem
+jq -r '.privatekey'       /tmp/ssl.json > /srv/shared-contacts/certs/key.pem
+rm /tmp/ssl.json && chmod 640 /srv/shared-contacts/certs/*.pem
+```
+
+Run weekly from cron and renewal is handled — the app re-reads the files on
+every request, so no restart is needed.
+
+### Option C — Issue a dedicated cert with certbot (DNS-01)
+
+If you have neither of the above, issue a cert yourself. With DNS on Cloudflare,
+for example:
+
+```bash
+# API token needs Zone → DNS → Edit for the zone.
+sudo apt install certbot python3-certbot-dns-cloudflare
+echo 'dns_cloudflare_api_token = <token>' | sudo tee /root/cloudflare.ini
+sudo chmod 600 /root/cloudflare.ini
+sudo certbot certonly --dns-cloudflare \
+  --dns-cloudflare-credentials /root/cloudflare.ini \
+  -d contacts.example.com
+# → /etc/letsencrypt/live/contacts.example.com/{fullchain.pem,privkey.pem}
+```
+
+DNS-01 means no port 80/443 exposure is needed on the machine running certbot.
+Add a `--deploy-hook` that copies the PEMs into the mounted cert directory so
+renewals propagate automatically.
+
+### Option D — Self-signed (testing only)
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+  -subj '/CN=Shared Contacts Profile Signing' \
+  -keyout key.pem -out cert.pem
+```
+
+Signing works end to end, but devices show the profile as **Unverified** (red),
+since no OS trusts your ad-hoc CA. Useful for verifying the pipeline before
+wiring up a real cert; not what you want long-term.
+
+### What **not** to use
 
 - **A CDN/edge certificate** (e.g. Cloudflare's "Universal SSL" on a proxied
   hostname). You don't have the private key — it lives at the edge — so you
