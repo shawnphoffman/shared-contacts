@@ -142,8 +142,13 @@ touching the deployment.
 
 ## Open items
 
-- [ ] Run Part A on the Mac
-- [ ] Wire up Part B on the NUC (compose change + extraction)
+- [x] Run Part A on the Mac — 2026-08-06: signed with the extracted
+      `carddav.goober.house` EC256 leaf; `openssl smime -verify` passed and the
+      macOS install dialog shows "Signed: carddav.goober.house" with no
+      Unverified warning (that's the trusted state; the word "Verified" appears
+      in Device Management after install)
+- [ ] Wire up Part B on the NUC (compose change; NUC-side extraction already
+      done at `/ssd/docker/shared-contacts/certs/`)
 - [ ] Automate renewal (dumper or cron)
 - [ ] From an off-network device: install a profile and confirm contacts
       actually sync (checks the Cloudflare proxy passes CardDAV
