@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
-import { access } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { constants as fsConstants } from 'node:fs'
+import { X509Certificate } from 'node:crypto'
 import { logger } from './logger'
 
 export interface SigningResult {
@@ -40,6 +41,71 @@ async function fileReadable(path: string): Promise<boolean> {
 
 export function isSigningEnabled(): boolean {
 	return readConfig().enabled
+}
+
+export interface SigningStatus {
+	/** MOBILECONFIG_SIGNING_ENABLED is on. */
+	enabled: boolean
+	/** Signing is enabled *and* the material actually works — profiles will be signed. */
+	ok: boolean
+	/** Common Name of the signing certificate, when it could be read. */
+	subject?: string
+	/** Certificate expiry, ISO-8601. */
+	expiresAt?: string
+	/** Whole days until expiry; negative once expired. */
+	daysRemaining?: number
+	/** Why signing would fall back to unsigned. */
+	error?: string
+}
+
+/**
+ * Report whether profile signing is actually working.
+ *
+ * Signing is deliberately fail-soft — a missing, unreadable, or expired
+ * certificate silently yields unsigned profiles — so checking the env flag
+ * alone would report "on" for a deployment that is quietly serving unsigned
+ * profiles. This loads the certificate the same way signing does and reports
+ * what a download would really produce.
+ */
+export async function getSigningStatus(): Promise<SigningStatus> {
+	const config = readConfig()
+	if (!config.enabled) return { enabled: false, ok: false }
+
+	if (!config.certPath || !config.keyPath) {
+		return {
+			enabled: true,
+			ok: false,
+			error: 'Signing is enabled but MOBILECONFIG_SIGNING_CERT_PATH / MOBILECONFIG_SIGNING_KEY_PATH are not set.',
+		}
+	}
+	if (!(await fileReadable(config.certPath))) {
+		return { enabled: true, ok: false, error: `Signing certificate is not readable at ${config.certPath}.` }
+	}
+	if (!(await fileReadable(config.keyPath))) {
+		return { enabled: true, ok: false, error: `Signing key is not readable at ${config.keyPath}.` }
+	}
+
+	let certificate: X509Certificate
+	try {
+		certificate = new X509Certificate(await readFile(config.certPath))
+	} catch {
+		return { enabled: true, ok: false, error: 'Signing certificate could not be parsed; expected PEM.' }
+	}
+
+	const subject = /CN\s*=\s*([^,\n/]+)/.exec(certificate.subject)?.[1]?.trim() || certificate.subject
+	const expiry = new Date(certificate.validTo)
+	if (Number.isNaN(expiry.getTime())) {
+		// Certificate parsed but the validity window didn't; treat as usable
+		// rather than blocking, since signing itself would still succeed.
+		return { enabled: true, ok: true, subject }
+	}
+
+	const daysRemaining = Math.floor((expiry.getTime() - Date.now()) / 86_400_000)
+	const base = { enabled: true, subject, expiresAt: expiry.toISOString(), daysRemaining }
+	if (daysRemaining < 0) {
+		return { ...base, ok: false, error: 'Signing certificate has expired; profiles are downloading unsigned.' }
+	}
+	return { ...base, ok: true }
 }
 
 /**

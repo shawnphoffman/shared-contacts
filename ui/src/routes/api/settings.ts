@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
 import { getAppSetting, setAppSetting } from '../../lib/db'
+import { getSigningStatus } from '../../lib/mobileconfig-signer'
 
 const ALLOWED_KEYS = new Set(['mobileconfig_org'])
 
@@ -15,7 +16,11 @@ export const Route = createFileRoute('/api/settings')({
 					for (const [key, value] of entries) {
 						settings[key] = value
 					}
-					return json(settings)
+					// Read-only deployment state (deliberately not an ALLOWED_KEYS
+					// setting, so PUT still rejects it): whether profile signing is
+					// actually working, so the UI can warn when signing has silently
+					// fallen back to unsigned.
+					return json({ ...settings, signing: await getSigningStatus() })
 				} catch (error) {
 					logger.error({ err: error }, 'Error loading app settings')
 					return json({ error: 'Failed to load settings' }, { status: 500 })
