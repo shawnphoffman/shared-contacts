@@ -184,11 +184,20 @@ services:
   shared-contacts-app:
     environment:
       MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme.json
+      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme/acme.json
       MOBILECONFIG_SIGNING_ACME_DOMAIN: carddav.example.com
     volumes:
-      - /srv/traefik/certs/acme.json:/run/secrets/acme.json:ro
+      # Mount the DIRECTORY, not the acme.json file itself — see the note below.
+      - /srv/traefik/certs:/run/secrets/acme:ro
 ```
+
+> **Mount the containing directory, not the file.** A single-file bind mount
+> resolves to one inode at container start. If the ACME client ever replaces
+> the file (write-temp-then-rename) rather than rewriting it in place, the
+> container keeps seeing the **old** file forever — so renewals would silently
+> stop reaching the app and, once the stale cert expires, profiles quietly
+> revert to unsigned. Mounting the parent directory costs nothing and is immune
+> to this.
 
 Trade-off to be aware of: `acme.json` contains the private keys for **every**
 certificate Traefik manages, and this mounts it (read-only) into the app
@@ -267,11 +276,11 @@ Then, in `docker-compose.prod.yml`, on the `shared-contacts-app` service:
     environment:
       # ...existing environment...
       MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme.json
+      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme/acme.json
       MOBILECONFIG_SIGNING_ACME_DOMAIN: contacts.example.com   # a "main" or SAN from the jq output, exactly
     volumes:
       - radicale_data:/data
-      - /srv/traefik/certs/acme.json:/run/secrets/acme.json:ro
+      - /srv/traefik/certs:/run/secrets/acme:ro   # the directory, not the file (see §4 Source A)
 ```
 
 Recreate (`docker compose -f docker-compose.prod.yml up -d`), then jump to 5.3
@@ -355,13 +364,56 @@ The direct-mount path (5.1) renews itself — skip this section.
 If you extracted standalone PEMs instead, note that Let's Encrypt certificates
 rotate roughly every 90 days and the extraction in 5.2 is a one-time snapshot —
 when Traefik renews, `cert.pem`/`key.pem` go stale and new downloads silently
-fall back to **Unsigned**. Automate the refresh:
+fall back to **Unsigned**. Automate the refresh one of two ways.
 
-- **Recommended:** run [`traefik-certs-dumper`](https://github.com/ldez/traefik-certs-dumper)
-  in `file --watch` mode against `acme.json`; it re-emits PEM files on every
-  renewal. Because the app re-reads the cert files per request, no restart is
-  needed.
-- **Simple:** put the 5.2 `jq` snippet in a weekly cron job.
+**Option 1 — `traefik-certs-dumper` sidecar (no cron).** In `--watch` mode it
+watches `acme.json` and re-emits PEM files on every renewal. Add to the stack:
+
+```yaml
+  certs-dumper:
+    image: ldez/traefik-certs-dumper:latest
+    container_name: shared-contacts-certs-dumper
+    restart: unless-stopped
+    command: >
+      file --version v2 --watch
+      --source /acme/acme.json
+      --dest /output
+      --domain-subdir
+    volumes:
+      - /srv/traefik/certs:/acme:ro        # the directory, not the file
+      - /srv/shared-contacts/certs:/output # written by the dumper, read by the app
+```
+
+It dumps **every** domain in `acme.json`, one subdirectory each:
+`/<domain>/certificate.crt` (fullchain) and `/<domain>/privatekey.key`. Confirm
+the actual layout after the first run — flag defaults vary between releases:
+
+```bash
+docker logs shared-contacts-certs-dumper
+ls -R /srv/shared-contacts/certs
+```
+
+Then point the app at the dumped files (note the `.crt`/`.key` names, and that
+`certificate.crt` is the fullchain so it doubles as the chain file):
+
+```yaml
+    environment:
+      MOBILECONFIG_SIGNING_ENABLED: "true"
+      MOBILECONFIG_SIGNING_CERT_PATH:  /run/secrets/mc/certificate.crt
+      MOBILECONFIG_SIGNING_KEY_PATH:   /run/secrets/mc/privatekey.key
+      MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/certificate.crt
+    volumes:
+      # Mount only the one domain's subdirectory, so the app can't read the
+      # other dumped certs. This directory must already exist — start the
+      # dumper first, then bring up the app.
+      - /srv/shared-contacts/certs/carddav.example.com:/run/secrets/mc:ro
+```
+
+No restart is needed when the dumper refreshes the files — the app re-reads
+them per request.
+
+**Option 2 — cron.** Put the 5.2 `jq` snippet in a weekly root cron job. Fewer
+moving parts, but it is a scheduled job that can silently drift.
 
 ---
 

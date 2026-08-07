@@ -94,49 +94,116 @@ touching the deployment.
 
 ## B. Enable automatic signing on the NUC
 
-As of the ACME-source feature (branch `claude/mobile-config-signing-nuc-619m58`),
-the app can read Traefik's `acme.json` directly, per request — **no extraction,
-no cron, no dumper sidecar; renewal is automatic.** The image must include that
-change (rebuild/pull once it's merged and released).
+Two routes, both with zero ongoing maintenance. Pick one.
 
-1. In `docker-compose.prod.yml`, on `shared-contacts-app`:
+|                        | B1 — certs-dumper sidecar | B2 — app reads acme.json |
+|------------------------|---------------------------|--------------------------|
+| Works on current image | **yes** (`:latest` today) | no — needs the ACME-source feature merged + released |
+| Extra container        | yes                       | no |
+| App can read           | only the one dumped cert  | every key in `acme.json` |
+
+Common to both — also set on `shared-contacts-app`:
+
+```yaml
+    environment:
+      PUBLIC_CARDDAV_URL: https://carddav.goober.house
+```
+
+This matters because profiles are for people **outside the home network**:
+without it the CardDAV host is derived from whatever origin the profile was
+downloaded from, so a LAN download would bake in an unreachable host.
+Signature verification itself is location-independent.
+
+### B1. certs-dumper sidecar (deployable today)
+
+1. Add to `docker-compose.prod.yml`:
+
+   ```yaml
+     certs-dumper:
+       image: ldez/traefik-certs-dumper:latest
+       container_name: shared-contacts-certs-dumper
+       restart: unless-stopped
+       command: >
+         file --version v2 --watch
+         --source /acme/cloudflare-acme.json
+         --dest /output
+         --domain-subdir
+       volumes:
+         - /ssd/docker/traefik/certs:/acme:ro         # directory, NOT the file
+         - /ssd/docker/shared-contacts/certs:/output
+       logging:
+         driver: json-file
+         options:
+           max-size: 10m
+           max-file: 3
+   ```
+
+2. Start it alone first and confirm the output layout (flag defaults vary
+   between releases, and the app's mount in step 3 needs the subdir to exist):
+
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d certs-dumper
+   docker logs shared-contacts-certs-dumper
+   ls -R /ssd/docker/shared-contacts/certs
+   ```
+
+   Expect `carddav.goober.house/certificate.crt` (fullchain) and
+   `carddav.goober.house/privatekey.key`. Adjust step 3's paths if they differ.
+   Note it dumps **every** domain in acme.json, which is why step 3 mounts only
+   the one subdirectory.
+
+3. On `shared-contacts-app`:
 
    ```yaml
        environment:
-         # ...existing...
-         PUBLIC_CARDDAV_URL: https://carddav.goober.house   # so profiles always embed the public host
+         # ...existing + PUBLIC_CARDDAV_URL...
          MOBILECONFIG_SIGNING_ENABLED: "true"
-         MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme.json
-         MOBILECONFIG_SIGNING_ACME_DOMAIN: carddav.goober.house
+         MOBILECONFIG_SIGNING_CERT_PATH:  /run/secrets/mc/certificate.crt
+         MOBILECONFIG_SIGNING_KEY_PATH:   /run/secrets/mc/privatekey.key
+         MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/certificate.crt
        volumes:
          - radicale_data:/data
-         - /ssd/docker/traefik/certs/cloudflare-acme.json:/run/secrets/acme.json:ro
+         - /ssd/docker/shared-contacts/certs/carddav.goober.house:/run/secrets/mc:ro
    ```
 
-   `PUBLIC_CARDDAV_URL` matters because profiles are for people **outside the
-   home network**: without it, the CardDAV host is derived from whatever origin
-   the profile was downloaded from, and a LAN download would bake in an
-   unreachable host. Signature verification itself is location-independent.
+4. `docker compose -f docker-compose.prod.yml up -d`, then verify (below).
 
-   Trade-off accepted here: the app container can read every key in
-   `acme.json` (read-only). The least-privilege alternative — extracted PEM
-   files + `MOBILECONFIG_SIGNING_CERT_PATH`/`_KEY_PATH` + a renewal cron or
-   `traefik-certs-dumper` — is documented in the guide §5.2/§5.4; the copies
-   already extracted to `/ssd/docker/shared-contacts/certs/` can be deleted if
-   going the ACME route.
+5. Renewal: nothing to do. The dumper rewrites the PEMs on every Traefik
+   renewal and the app re-reads them per request — no restart either side.
 
-2. `docker compose -f docker-compose.prod.yml up -d`
+### B2. App reads acme.json directly
 
-3. Verify: re-download a profile from the browser — it should now be DER
-   (starts with binary bytes, not `<?xml`) and install as Verified. While
-   downloading, watch `docker logs shared-contacts-app`: silence = signed; a
-   warning names the failure ("ACME store is not readable" = mount path;
-   "no certificate for MOBILECONFIG_SIGNING_ACME_DOMAIN" = domain string
-   doesn't exactly match a main/SAN in acme.json — signing fails soft to
-   unsigned, the log is the only tell).
+Needs the ACME-source feature (branch `claude/mobile-config-signing-nuc-619m58`)
+merged and a new image pulled. Then, on `shared-contacts-app`:
 
-4. Renewal: nothing to do. Traefik renews `acme.json` in place and the app
-   reads it fresh on every download.
+```yaml
+    environment:
+      # ...existing + PUBLIC_CARDDAV_URL...
+      MOBILECONFIG_SIGNING_ENABLED: "true"
+      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme/cloudflare-acme.json
+      MOBILECONFIG_SIGNING_ACME_DOMAIN: carddav.goober.house
+    volumes:
+      - radicale_data:/data
+      - /ssd/docker/traefik/certs:/run/secrets/acme:ro   # directory, NOT the file
+```
+
+`docker compose -f docker-compose.prod.yml up -d`. Renewal: nothing to do.
+
+> **Mount the directory, not `cloudflare-acme.json` itself** (both routes). A
+> single-file bind mount pins one inode; if Traefik ever replaces the file
+> instead of rewriting it in place, the container keeps reading the stale copy
+> and signing silently degrades once that cert expires.
+
+### Verify (either route)
+
+Re-download a profile from the browser — it should be DER (binary, not starting
+with `<?xml`) and install as Verified. While downloading, watch
+`docker logs shared-contacts-app`: silence = signed. A warning names the
+failure — "cert or key is not readable" (B1: mount path / dumper hasn't run
+yet) or "ACME store is not readable" / "no certificate for
+MOBILECONFIG_SIGNING_ACME_DOMAIN" (B2: mount path / domain string doesn't match
+a main or SAN exactly). Signing fails soft to unsigned, so the log is the only
+tell.
 
 ## Open items
 
@@ -145,12 +212,16 @@ change (rebuild/pull once it's merged and released).
       macOS install dialog shows "Signed: carddav.goober.house" with no
       Unverified warning (that's the trusted state; the word "Verified" appears
       in Device Management after install)
-- [ ] Merge/release the ACME-source feature and pull the updated image on the NUC
-- [ ] Wire up Part B on the NUC (compose change: mount acme.json + 2 env vars)
-- [x] Automate renewal — obsolete: the ACME source reads acme.json per request,
-      so Traefik's own renewal covers signing; nothing to automate
-- [ ] Delete the extracted PEMs at `/ssd/docker/shared-contacts/certs/` and the
-      staged copies in `/ssd/docker/shared-contacts/` once the ACME route is live
+- [ ] Pick a Part B route (B1 certs-dumper works on the current image; B2 needs
+      the ACME-source feature merged + released) and wire it up
+- [x] Automate renewal — obsolete either way: B1's dumper re-emits on renewal,
+      B2 reads acme.json per request. Nothing scheduled to maintain.
+- [ ] Delete the hand-extracted PEMs at `/ssd/docker/shared-contacts/certs/*.pem`
+      and the staged copies at `/ssd/docker/shared-contacts/{cert,key}.pem` —
+      B1 replaces them with per-domain subdirs, B2 doesn't need them at all
+- [ ] Mac cleanup: `rm key.pem` in `local-test/`, and move the `local-test/`
+      ignore rule into the repo-root `.gitignore` (the one appended inside
+      `local-test/` matches nothing)
 - [ ] From an off-network device: install a profile and confirm contacts
       actually sync (checks the Cloudflare proxy passes CardDAV
       `PROPFIND`/`REPORT` — separate concern from signing)
