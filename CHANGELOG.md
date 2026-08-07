@@ -6,19 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.9.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.8.0...v1.9.0) (2026-08-05)
+## [1.10.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.9.0...v1.10.0) (2026-08-07)
 
 ### Features
 
-* **ui:** use dropdowns for enumerable contact fields ([a9d346f](https://github.com/shawnphoffman/shared-contacts/commit/a9d346f356faf10185c7e50fdc2fac7ffb6a3dd3))
+* **ui:** sign mobileconfig profiles and surface signing status ([8fd7bad](https://github.com/shawnphoffman/shared-contacts/commit/8fd7bad41a10a746fb336b517c740caf1f4436d4))
+
+### Styles
+
+* **ui:** apply prettier formatting to signing docs and page ([0addb30](https://github.com/shawnphoffman/shared-contacts/commit/0addb30bcb2175dc96f3f685dc9570d1d7c43cc4))
+
+### Miscellaneous
+
+* **git:** update gitignore ([85f2f8f](https://github.com/shawnphoffman/shared-contacts/commit/85f2f8fde39a3df96ad5022bc64b9b42c93fbf22))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.10.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.9.0...v1.10.0)
+
+- ✨ Feature(ui): sign mobileconfig profiles and surface signing status [`8fd7bad`](https://github.com/shawnphoffman/shared-contacts/commit/8fd7bad41a10a746fb336b517c740caf1f4436d4)
+- 💄 Style(ui): apply prettier formatting to signing docs and page [`0addb30`](https://github.com/shawnphoffman/shared-contacts/commit/0addb30bcb2175dc96f3f685dc9570d1d7c43cc4)
+- 🔧 Chore(git): update gitignore [`85f2f8f`](https://github.com/shawnphoffman/shared-contacts/commit/85f2f8fde39a3df96ad5022bc64b9b42c93fbf22)
+
 #### [v1.9.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.8.0...v1.9.0)
 
+> 5 August 2026
+
 - ✨ Feature(ui): use dropdowns for enumerable contact fields [`a9d346f`](https://github.com/shawnphoffman/shared-contacts/commit/a9d346f356faf10185c7e50fdc2fac7ffb6a3dd3)
+- 🔧 Chore: release v1.9.0 [`7f4dd02`](https://github.com/shawnphoffman/shared-contacts/commit/7f4dd02b7d971841bd7e12cfcf787c1f84fcdbea)
 
 #### [v1.8.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.7.0...v1.8.0)
 
