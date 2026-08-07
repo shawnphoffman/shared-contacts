@@ -171,6 +171,27 @@ Signature verification itself is location-independent.
 5. Renewal: nothing to do. The dumper rewrites the PEMs on every Traefik
    renewal and the app re-reads them per request — no restart either side.
 
+   One caveat to verify once, after the first renewal or a dumper restart:
+   the app bind-mounts the *domain subdirectory*, so if the dumper ever
+   deletes and recreates that directory rather than overwriting the files in
+   it, the mount is pinned to the deleted inode and the app sees an empty
+   directory (→ silent fallback to unsigned). Check with:
+
+   ```bash
+   docker exec shared-contacts-app ls -l /run/secrets/mc
+   ```
+
+   If it's empty while the host path has files, `docker compose up -d
+   shared-contacts-app` re-establishes the mount; the durable fix is to mount
+   the parent `certs` dir instead and use
+   `/run/secrets/mc/carddav.goober.house/certificate.crt` paths, trading the
+   per-domain isolation for a stable inode.
+
+6. Set `MOBILECONFIG_SIGNING_ENABLED=true` in `.env` — the compose entry
+   interpolates it, and an unset variable becomes an empty string, which the
+   signer reads as *false* (signing silently off). Use the
+   `${MOBILECONFIG_SIGNING_ENABLED:-false}` form so the default is explicit.
+
 ### B2. App reads acme.json directly
 
 Needs the ACME-source feature (branch `claude/mobile-config-signing-nuc-619m58`)
