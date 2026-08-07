@@ -93,6 +93,15 @@ export function getCardDAVUrl(username: string, bookId: string, baseUrl: string)
 
 // ── Actions ────────────────────────────────────────────────────────
 
+// The server names the file in Content-Disposition and appends "-signed" when
+// the profile is signed, so prefer its name over recomputing one here. The
+// fallback keeps downloads working if the header is ever missing or mangled.
+function filenameFromResponse(response: Response, fallback: string): string {
+	const disposition = response.headers.get('Content-Disposition') ?? ''
+	const match = /filename="([^"]+)"/.exec(disposition)
+	return match?.[1] ?? fallback
+}
+
 export async function handleDownloadMobileconfig(username: string, bookId: string, bookName: string) {
 	try {
 		const params = new URLSearchParams({
@@ -121,7 +130,7 @@ export async function handleDownloadMobileconfig(username: string, bookId: strin
 		const shortBookId = bookId.replace(/-/g, '').slice(0, 8) || bookId
 
 		link.href = url
-		link.download = `shared-contacts-${username}-${shortBookId}.mobileconfig`
+		link.download = filenameFromResponse(response, `shared-contacts-${username}-${shortBookId}.mobileconfig`)
 
 		document.body.appendChild(link)
 		link.click()
@@ -160,7 +169,7 @@ export async function handleDownloadCombinedMobileconfig(username: string) {
 		const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_')
 
 		link.href = url
-		link.download = `shared-contacts-${safeUsername}-all.mobileconfig`
+		link.download = filenameFromResponse(response, `shared-contacts-${safeUsername}-all.mobileconfig`)
 
 		document.body.appendChild(link)
 		link.click()

@@ -21,6 +21,7 @@ vi.mock('../../lib/mobileconfig-signer', () => ({
 }))
 
 import { getAddressBook, getAddressBookReadonly, getAddressBooks, getAppSetting, getUserAddressBookIds } from '../../lib/db'
+import { signMobileconfig } from '../../lib/mobileconfig-signer'
 
 const getHandler = async () => {
 	const mod = await import('./mobileconfig')
@@ -134,6 +135,29 @@ describe('mobileconfig handler', () => {
 			})
 			expect(res.headers.get('Content-Type')).toBe('application/x-apple-aspen-config; charset=utf-8')
 			expect(res.headers.get('Content-Disposition')).toContain('.mobileconfig')
+		})
+
+		it('does not mark the filename as signed when the profile is unsigned', async () => {
+			const handler = await getHandler()
+			const res = await handler({
+				request: makeRequest(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&bookId=${BOOK_ID}`),
+			})
+			expect(res.headers.get('Content-Disposition')).not.toContain('-signed')
+		})
+
+		it('appends -signed to the filename when the profile is signed', async () => {
+			vi.mocked(signMobileconfig).mockResolvedValueOnce({
+				body: Buffer.from('DER'),
+				signed: true,
+				contentType: 'application/x-apple-aspen-config',
+			})
+			const handler = await getHandler()
+			const res = await handler({
+				request: makeRequest(`http://localhost:3030/api/mobileconfig?username=${USERNAME}&bookId=${BOOK_ID}`),
+			})
+			expect(res.headers.get('Content-Disposition')).toContain('-signed.mobileconfig')
+			// exactly one .mobileconfig suffix, not "…-signed.mobileconfig.mobileconfig"
+			expect(res.headers.get('Content-Disposition')).toMatch(/filename="[^"]+-signed\.mobileconfig"$/)
 		})
 	})
 

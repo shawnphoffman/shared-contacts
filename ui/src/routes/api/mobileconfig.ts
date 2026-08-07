@@ -236,6 +236,11 @@ export const Route = createFileRoute('/api/mobileconfig')({
 
 					const signed = await signMobileconfig(xml)
 
+					// Mark signed profiles in the filename so it's obvious at a glance
+					// (in the browser's download list, or on disk) whether signing is
+					// actually working — signing falls back to unsigned silently.
+					const downloadFilename = signed.signed ? filename.replace(/\.mobileconfig$/, '-signed.mobileconfig') : filename
+
 					// Hand the runtime an ArrayBuffer slice rather than a Node Buffer — the
 					// fetch Response type varies between runtimes and this form is accepted
 					// universally. The signed body may be DER bytes or XML bytes.
@@ -248,7 +253,7 @@ export const Route = createFileRoute('/api/mobileconfig')({
 						status: 200,
 						headers: {
 							'Content-Type': signed.contentType,
-							'Content-Disposition': `attachment; filename="${filename}"`,
+							'Content-Disposition': `attachment; filename="${downloadFilename}"`,
 						},
 					})
 				} catch (error) {
