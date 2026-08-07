@@ -94,15 +94,13 @@ touching the deployment.
 
 ## B. Enable automatic signing on the NUC
 
-Two routes, both with zero ongoing maintenance. Pick one.
+Route: the **certs-dumper sidecar**, which works on the released image today
+and lets the app see only the one signing cert. (An earlier alternative — the
+app reading `acme.json` itself — was built and then dropped from the branch:
+it required a new image release and would have exposed every Traefik-managed
+key to the app container for no gain over the sidecar.)
 
-|                        | B1 — certs-dumper sidecar | B2 — app reads acme.json |
-|------------------------|---------------------------|--------------------------|
-| Works on current image | **yes** (`:latest` today) | no — needs the ACME-source feature merged + released |
-| Extra container        | yes                       | no |
-| App can read           | only the one dumped cert  | every key in `acme.json` |
-
-Common to both — also set on `shared-contacts-app`:
+Also set on `shared-contacts-app`:
 
 ```yaml
     environment:
@@ -114,7 +112,7 @@ without it the CardDAV host is derived from whatever origin the profile was
 downloaded from, so a LAN download would bake in an unreachable host.
 Signature verification itself is location-independent.
 
-### B1. certs-dumper sidecar (deployable today)
+### B. certs-dumper sidecar
 
 1. Add to `docker-compose.prod.yml`:
 
@@ -192,39 +190,26 @@ Signature verification itself is location-independent.
    signer reads as *false* (signing silently off). Use the
    `${MOBILECONFIG_SIGNING_ENABLED:-false}` form so the default is explicit.
 
-### B2. App reads acme.json directly
+> **Mount the acme.json's directory, not the file itself** (the dumper's
+> `--source` above). A single-file bind mount pins one inode; if Traefik ever
+> replaces the file instead of rewriting it in place, the container keeps
+> reading the stale copy and signing silently degrades once that cert expires.
 
-Needs the ACME-source feature (branch `claude/mobile-config-signing-nuc-619m58`)
-merged and a new image pulled. Then, on `shared-contacts-app`:
+### Verify
 
-```yaml
-    environment:
-      # ...existing + PUBLIC_CARDDAV_URL...
-      MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme/cloudflare-acme.json
-      MOBILECONFIG_SIGNING_ACME_DOMAIN: carddav.goober.house
-    volumes:
-      - radicale_data:/data
-      - /ssd/docker/traefik/certs:/run/secrets/acme:ro   # directory, NOT the file
-```
+Re-download a profile from the browser. Three signals, cheapest first:
 
-`docker compose -f docker-compose.prod.yml up -d`. Renewal: nothing to do.
+1. **The filename** — a signed profile arrives as
+   `shared-contacts-…-signed.mobileconfig`. No `-signed` suffix means signing
+   fell back.
+2. **The CardDAV Connection page** — the mobileconfig card shows `[Signed]`
+   with the signer CN and certificate expiry, or a red `[Signing broken]`
+   naming the reason.
+3. **The container log** — `docker logs shared-contacts-app` while downloading;
+   silence = signed, "cert or key is not readable" = mount path wrong or the
+   dumper hasn't run yet.
 
-> **Mount the directory, not `cloudflare-acme.json` itself** (both routes). A
-> single-file bind mount pins one inode; if Traefik ever replaces the file
-> instead of rewriting it in place, the container keeps reading the stale copy
-> and signing silently degrades once that cert expires.
-
-### Verify (either route)
-
-Re-download a profile from the browser — it should be DER (binary, not starting
-with `<?xml`) and install as Verified. While downloading, watch
-`docker logs shared-contacts-app`: silence = signed. A warning names the
-failure — "cert or key is not readable" (B1: mount path / dumper hasn't run
-yet) or "ACME store is not readable" / "no certificate for
-MOBILECONFIG_SIGNING_ACME_DOMAIN" (B2: mount path / domain string doesn't match
-a main or SAN exactly). Signing fails soft to unsigned, so the log is the only
-tell.
+Then install it: it should show Verified with `carddav.goober.house` as signer.
 
 ## Open items
 
@@ -233,13 +218,12 @@ tell.
       macOS install dialog shows "Signed: carddav.goober.house" with no
       Unverified warning (that's the trusted state; the word "Verified" appears
       in Device Management after install)
-- [ ] Pick a Part B route (B1 certs-dumper works on the current image; B2 needs
-      the ACME-source feature merged + released) and wire it up
-- [x] Automate renewal — obsolete either way: B1's dumper re-emits on renewal,
-      B2 reads acme.json per request. Nothing scheduled to maintain.
+- [ ] Wire up Part B on the NUC (certs-dumper sidecar + compose changes)
+- [x] Automate renewal — obsolete: the dumper re-emits PEMs on every Traefik
+      renewal and the app re-reads them per request. Nothing scheduled.
 - [ ] Delete the hand-extracted PEMs at `/ssd/docker/shared-contacts/certs/*.pem`
       and the staged copies at `/ssd/docker/shared-contacts/{cert,key}.pem` —
-      B1 replaces them with per-domain subdirs, B2 doesn't need them at all
+      the dumper replaces them with per-domain subdirs
 - [ ] Mac cleanup: `rm key.pem` in `local-test/`, and move the `local-test/`
       ignore rule into the repo-root `.gitignore` (the one appended inside
       `local-test/` matches nothing)

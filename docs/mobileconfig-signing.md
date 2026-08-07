@@ -163,63 +163,21 @@ wiring up a real cert; not what you want long-term.
 
 ## 4. Configuration
 
-Signing is controlled by environment variables on the application container.
-`MOBILECONFIG_SIGNING_ENABLED=true` turns it on; the signing material then
-comes from one of **two sources**:
-
-### Source A — a mounted ACME storage file (recommended with Traefik)
-
-Point the app directly at a Traefik `acme.json` and name the certificate to
-use. The file is read **fresh on every signing request** and the cert/key are
-extracted in memory — so certificate renewals are picked up automatically, with
-**no extraction scripts, cron jobs, or sidecar containers**.
-
-| Variable | Description |
-|----------|-------------|
-| `MOBILECONFIG_SIGNING_ACME_PATH` | Path (inside the container) to the mounted `acme.json` |
-| `MOBILECONFIG_SIGNING_ACME_DOMAIN` | Which cert to sign with — must match the entry's `main` or a SAN **exactly** (a wildcard cert is named by its literal `*.example.com`) |
-
-```yaml
-services:
-  shared-contacts-app:
-    environment:
-      MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme/acme.json
-      MOBILECONFIG_SIGNING_ACME_DOMAIN: carddav.example.com
-    volumes:
-      # Mount the DIRECTORY, not the acme.json file itself — see the note below.
-      - /srv/traefik/certs:/run/secrets/acme:ro
-```
-
-> **Mount the containing directory, not the file.** A single-file bind mount
-> resolves to one inode at container start. If the ACME client ever replaces
-> the file (write-temp-then-rename) rather than rewriting it in place, the
-> container keeps seeing the **old** file forever — so renewals would silently
-> stop reaching the app and, once the stale cert expires, profiles quietly
-> revert to unsigned. Mounting the parent directory costs nothing and is immune
-> to this.
-
-Trade-off to be aware of: `acme.json` contains the private keys for **every**
-certificate Traefik manages, and this mounts it (read-only) into the app
-container. In a typical single-admin homelab that's usually acceptable; if you
-want the app to see only the one signing cert, use Source B.
-
-### Source B — explicit PEM files
+Signing is controlled by environment variables on the application container:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `MOBILECONFIG_SIGNING_ENABLED` | yes | `true` to enable signing (default `false`) |
 | `MOBILECONFIG_SIGNING_CERT_PATH` | yes | Path (inside the container) to the PEM signing certificate |
 | `MOBILECONFIG_SIGNING_KEY_PATH` | yes | Path to the matching PEM private key |
 | `MOBILECONFIG_SIGNING_CHAIN_PATH` | no | Path to intermediate certificate(s); improves chain building on the device |
 | `MOBILECONFIG_SIGNING_KEY_PASSPHRASE` | no | Passphrase, only if the private key is encrypted |
 
-If both sources are configured, the explicit PEM paths win.
-
-Provide files by **mounting them into the container** (read-only bind mount or
-Docker secret). **Never bake certificates or keys into the image.** A
-"fullchain" PEM (leaf + intermediates) may be used for both `CERT_PATH` and
-`CHAIN_PATH`; `openssl` uses the first certificate as the signer and bundles
-the rest.
+Provide the certificate and key by **mounting them into the container**
+(read-only bind mount or Docker secret). **Never bake certificates or keys into
+the image.** A "fullchain" PEM (leaf + intermediates) may be used for both
+`CERT_PATH` and `CHAIN_PATH`; `openssl` uses the first certificate as the
+signer and bundles the rest.
 
 ```yaml
 services:
@@ -233,9 +191,20 @@ services:
       - /srv/shared-contacts/certs:/run/secrets/mc:ro
 ```
 
-With Source B the files are also read **on every request**, so
-renewing/refreshing them on the host takes effect without restarting the
-container — but keeping them fresh is on you (see 5.4).
+The files are read **on every request**, so refreshing them on the host takes
+effect without restarting the container — but keeping them fresh is on you
+(see 5.4).
+
+### Checking that it works
+
+Because signing is fail-soft, "enabled" and "working" are different things.
+Two signals tell you which you have:
+
+- Signed profiles download as **`<name>-signed.mobileconfig`**. An unmarked
+  filename means signing fell back.
+- The **CardDAV Connection page** shows the verified signing state — the
+  signer's Common Name and certificate expiry when it's working, or a
+  "Signing broken" warning naming the reason when it isn't.
 
 ---
 
@@ -262,38 +231,17 @@ in an `acme.json` file. Replace the placeholder values:
 > itself is issued by Let's Encrypt and stored by Traefik — your DNS host or
 > registrar does not keep a copy to re-download. Read it out of `acme.json`.
 
-### 5.1 The zero-maintenance path: mount `acme.json` directly
+### 5.1 Extract the certificate and key
 
-Find the exact certificate name first (as root; `acme.json` is `600`):
+`acme.json` stores the certificate and key **base64-encoded**, so you can't use
+the file as PEM directly. Find the exact certificate name first (as root;
+`acme.json` is `600`):
 
 ```bash
 jq -r '.[].Certificates[].domain' /srv/traefik/certs/acme.json
 ```
 
-Then, in `docker-compose.prod.yml`, on the `shared-contacts-app` service:
-
-```yaml
-    environment:
-      # ...existing environment...
-      MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme/acme.json
-      MOBILECONFIG_SIGNING_ACME_DOMAIN: contacts.example.com   # a "main" or SAN from the jq output, exactly
-    volumes:
-      - radicale_data:/data
-      - /srv/traefik/certs:/run/secrets/acme:ro   # the directory, not the file (see §4 Source A)
-```
-
-Recreate (`docker compose -f docker-compose.prod.yml up -d`), then jump to 5.3
-to verify. That's the whole setup — renewals are handled by Traefik and picked
-up automatically, so **5.2 and 5.4 don't apply to you**. They cover the
-alternative: extracting standalone PEM files, for when you don't want the app
-container to see the full `acme.json` (it holds keys for every Traefik-managed
-cert).
-
-### 5.2 Alternative: extract standalone PEM files
-
-`acme.json` stores the certificate and key **base64-encoded**, so you can't use
-the file as PEM directly. Extract them with `jq`. Run as root on the host:
+Then extract with `jq`, still as root:
 
 ```bash
 DOMAIN=contacts.example.com                 # host whose cert you want to sign with
@@ -320,8 +268,9 @@ point both `CERT_PATH` and `CHAIN_PATH` at `cert.pem`.
 > wildcard or a SAN). List what's available with:
 > `jq -r '.[].Certificates[].domain.main' "$SRC"`
 
-Then mount the PEMs and enable, in `docker-compose.prod.yml` on the
-`shared-contacts-app` service:
+### 5.2 Mount and enable
+
+In `docker-compose.prod.yml`, on the `shared-contacts-app` service:
 
 ```yaml
     environment:
@@ -420,15 +369,14 @@ moving parts, but it is a scheduled job that can silently drift.
 ## 6. Troubleshooting
 
 - **Profile downloads as Unsigned even though signing is enabled.** Signing fell
-  back. Check the app container logs (`docker logs shared-contacts-app`) for a
-  warning such as "cert or key is not readable". Usual causes: wrong path inside
-  the container, the bind mount not applied, or file permissions.
-- **Unsigned, and the log says "no certificate for
-  MOBILECONFIG_SIGNING_ACME_DOMAIN in ACME store".** The domain doesn't exactly
-  match any cert's `main` or SAN in `acme.json` — a wildcard is named literally
-  `*.example.com` and does **not** implicitly cover subdomains here. List the
-  names with `jq -r '.[].Certificates[].domain' acme.json` and copy one
-  verbatim.
+  back. The CardDAV Connection page names the reason; the app container logs
+  (`docker logs shared-contacts-app`) carry the same detail, e.g. "cert or key
+  is not readable". Usual causes: wrong path inside the container, the bind
+  mount not applied, or file permissions.
+- **`jq` extraction produced empty files.** The `select(.domain.main==$d)` is an
+  exact match, and a wildcard cert is named literally `*.example.com` — it does
+  **not** implicitly cover subdomains here. List the names with
+  `jq -r '.[].Certificates[].domain' acme.json` and copy one verbatim.
 - **Profile shows Unverified (red) on the device.** The signing chain isn't
   publicly trusted — you signed with a self-signed, CDN-origin, or staging
   certificate. Switch to a publicly-trusted leaf (Part 3).

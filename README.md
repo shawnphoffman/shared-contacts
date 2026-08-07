@@ -84,12 +84,14 @@ All profiles share the organization / brand string configured on the CardDAV Con
 Profiles are unsigned by default. In production you may want them signed so devices show a trusted issuer and tampering is harder. Signing is controlled by environment variables:
 
 - `MOBILECONFIG_SIGNING_ENABLED=true|false`: turns signing on or off (defaults to `false`)
-- `MOBILECONFIG_SIGNING_ACME_PATH` + `MOBILECONFIG_SIGNING_ACME_DOMAIN`: read the cert/key for a domain straight from a mounted Traefik ACME storage file (`acme.json`) on every request — renewals are picked up automatically, no extraction or cron needed
-- `MOBILECONFIG_SIGNING_CERT_PATH` / `MOBILECONFIG_SIGNING_KEY_PATH`: alternatively, paths to a PEM-encoded signing certificate and private key (take precedence if both sources are set)
+- `MOBILECONFIG_SIGNING_CERT_PATH`: path to a PEM-encoded signing certificate
+- `MOBILECONFIG_SIGNING_KEY_PATH`: path to the corresponding private key (PEM)
 - `MOBILECONFIG_SIGNING_CHAIN_PATH` (optional): path to intermediate certificates for the chain
 - `MOBILECONFIG_SIGNING_KEY_PASSPHRASE` (optional): passphrase for the private key
 
 When enabled, the server builds the XML payload, then signs it with `openssl smime -sign -outform DER` as a subprocess and returns the DER-encoded CMS envelope. If signing is enabled but the cert or key is missing/unreadable, the server logs a warning and falls back to returning the unsigned XML rather than erroring out, so generation is never blocked by misconfiguration.
+
+Signed profiles download as `<name>-signed.mobileconfig`, and the CardDAV Connection page reports whether signing is actually working (including when an unreadable or expired certificate has silently pushed it back to unsigned).
 
 Self-signed certificates work but iOS will label the profile as "Unverified". For a "Verified" badge, use a publicly-trusted certificate chain (an ordinary Let's Encrypt leaf works — no Apple Developer account or code-signing cert is required). Provide certs and keys via Docker secrets or mounted volumes, **never baked into the image**.
 

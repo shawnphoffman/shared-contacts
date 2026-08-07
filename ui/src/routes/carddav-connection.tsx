@@ -4,6 +4,7 @@ import { AlertTriangle, Lock, Server, Tag, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
@@ -38,8 +39,18 @@ interface AddressBook {
 	readonly_enabled?: boolean
 }
 
+interface SigningStatus {
+	enabled: boolean
+	ok: boolean
+	subject?: string
+	expiresAt?: string
+	daysRemaining?: number
+	error?: string
+}
+
 interface AppSettings {
 	mobileconfig_org: string | null
+	signing?: SigningStatus
 }
 
 async function fetchAddressBooks(): Promise<Array<AddressBook>> {
@@ -69,6 +80,55 @@ async function updateAppSettings(updates: Partial<AppSettings>): Promise<void> {
 	}
 }
 
+/**
+ * Surface whether downloaded profiles are actually signed.
+ *
+ * Signing is fail-soft on the server — an unreadable or expired certificate
+ * yields unsigned profiles with only a log line — so this reports the verified
+ * state rather than just the env flag, and calls out the broken case loudly.
+ */
+function SigningStatusNotice({ signing }: { signing?: SigningStatus }) {
+	if (!signing) return null
+
+	if (!signing.enabled) {
+		return (
+			<div className="flex items-start gap-2 text-xs text-muted-foreground">
+				<Badge variant="secondary">Unsigned</Badge>
+				<span className="pt-0.5">
+					Profiles are delivered unsigned and install with an &ldquo;Unsigned&rdquo; warning. Set{' '}
+					<code>MOBILECONFIG_SIGNING_ENABLED</code> to change this.
+				</span>
+			</div>
+		)
+	}
+
+	if (!signing.ok) {
+		return (
+			<div className="flex items-start gap-2 text-xs text-destructive">
+				<Badge variant="destructive">
+					<AlertTriangle />
+					Signing broken
+				</Badge>
+				<span className="pt-0.5">
+					{signing.error ?? 'Signing is enabled but not working.'} Profiles are still downloading <strong>unsigned</strong>.
+				</span>
+			</div>
+		)
+	}
+
+	const expiringSoon = typeof signing.daysRemaining === 'number' && signing.daysRemaining <= 14
+	return (
+		<div className="flex items-start gap-2 text-xs text-muted-foreground">
+			<Badge variant={expiringSoon ? 'destructive' : 'secondary'}>Signed</Badge>
+			<span className="pt-0.5">
+				Signed by <code>{signing.subject}</code>
+				{signing.expiresAt ? <> · certificate expires {new Date(signing.expiresAt).toLocaleDateString()}</> : null}
+				{expiringSoon ? <strong> — renew soon, profiles fall back to unsigned once it expires.</strong> : null}
+			</span>
+		</div>
+	)
+}
+
 function CardDAVConnectionPage() {
 	const queryClient = useQueryClient()
 	const { data: users = [], isLoading: usersLoading } = useQuery({
@@ -93,6 +153,18 @@ function CardDAVConnectionPage() {
 	})
 
 	const [orgDraft, setOrgDraft] = useState('')
+	// Which profile download is in flight, keyed per button, so a slow request
+	// doesn't look like a dead button and can't be fired twice.
+	const [downloadingKey, setDownloadingKey] = useState<string | null>(null)
+
+	const runDownload = async (key: string, download: () => Promise<void>) => {
+		setDownloadingKey(key)
+		try {
+			await download()
+		} finally {
+			setDownloadingKey(null)
+		}
+	}
 	useEffect(() => {
 		if (appSettings) {
 			setOrgDraft(appSettings.mobileconfig_org ?? '')
@@ -285,6 +357,8 @@ function CardDAVConnectionPage() {
 							{saveOrgMutation.isPending ? 'Saving…' : 'Save'}
 						</Button>
 					</form>
+					<Separator className="my-4" />
+					<SigningStatusNotice signing={appSettings?.signing} />
 				</CardContent>
 			</Card>
 
@@ -315,8 +389,15 @@ function CardDAVConnectionPage() {
 										<div className="font-medium">{user.username}</div>
 										<div className="text-xs text-muted-foreground">All accessible books combined into one profile.</div>
 									</div>
-									<Button variant="outline" size="sm" onClick={() => handleDownloadCombinedMobileconfig(user.username)}>
-										Download combined profile
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={downloadingKey === `combined:${user.username}`}
+										onClick={() =>
+											runDownload(`combined:${user.username}`, () => handleDownloadCombinedMobileconfig(user.username))
+										}
+									>
+										{downloadingKey === `combined:${user.username}` ? 'Preparing…' : 'Download combined profile'}
 									</Button>
 								</div>
 							))}
@@ -407,9 +488,14 @@ function CardDAVConnectionPage() {
 														<Button
 															variant="outline"
 															size="sm"
-															onClick={() => handleDownloadMobileconfig(user.username, book.id, book.name)}
+															disabled={downloadingKey === `${user.username}:${book.id}`}
+															onClick={() =>
+																runDownload(`${user.username}:${book.id}`, () =>
+																	handleDownloadMobileconfig(user.username, book.id, book.name)
+																)
+															}
 														>
-															Download profile
+															{downloadingKey === `${user.username}:${book.id}` ? 'Preparing…' : 'Download profile'}
 														</Button>
 													</div>
 												</div>
