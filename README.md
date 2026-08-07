@@ -84,8 +84,8 @@ All profiles share the organization / brand string configured on the CardDAV Con
 Profiles are unsigned by default. In production you may want them signed so devices show a trusted issuer and tampering is harder. Signing is controlled by environment variables:
 
 - `MOBILECONFIG_SIGNING_ENABLED=true|false`: turns signing on or off (defaults to `false`)
-- `MOBILECONFIG_SIGNING_CERT_PATH`: path to a PEM-encoded signing certificate
-- `MOBILECONFIG_SIGNING_KEY_PATH`: path to the corresponding private key (PEM)
+- `MOBILECONFIG_SIGNING_ACME_PATH` + `MOBILECONFIG_SIGNING_ACME_DOMAIN`: read the cert/key for a domain straight from a mounted Traefik ACME storage file (`acme.json`) on every request — renewals are picked up automatically, no extraction or cron needed
+- `MOBILECONFIG_SIGNING_CERT_PATH` / `MOBILECONFIG_SIGNING_KEY_PATH`: alternatively, paths to a PEM-encoded signing certificate and private key (take precedence if both sources are set)
 - `MOBILECONFIG_SIGNING_CHAIN_PATH` (optional): path to intermediate certificates for the chain
 - `MOBILECONFIG_SIGNING_KEY_PASSPHRASE` (optional): passphrase for the private key
 

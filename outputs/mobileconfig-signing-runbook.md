@@ -94,29 +94,23 @@ touching the deployment.
 
 ## B. Enable automatic signing on the NUC
 
-1. Extract the PEMs on the NUC (as root):
+As of the ACME-source feature (branch `claude/mobile-config-signing-nuc-619m58`),
+the app can read Traefik's `acme.json` directly, per request — **no extraction,
+no cron, no dumper sidecar; renewal is automatic.** The image must include that
+change (rebuild/pull once it's merged and released).
 
-   ```bash
-   DEST=/srv/shared-contacts/certs
-   mkdir -p "$DEST"
-   jq -r '.[].Certificates[] | select(.domain.main=="<DOMAIN>") | .certificate' <ACME> | base64 -d > "$DEST/cert.pem"
-   jq -r '.[].Certificates[] | select(.domain.main=="<DOMAIN>") | .key'         <ACME> | base64 -d > "$DEST/key.pem"
-   chmod 640 "$DEST"/*.pem
-   ```
-
-2. In `docker-compose.prod.yml`, on `shared-contacts-app`:
+1. In `docker-compose.prod.yml`, on `shared-contacts-app`:
 
    ```yaml
        environment:
          # ...existing...
          PUBLIC_CARDDAV_URL: https://carddav.goober.house   # so profiles always embed the public host
          MOBILECONFIG_SIGNING_ENABLED: "true"
-         MOBILECONFIG_SIGNING_CERT_PATH:  /run/secrets/mc/cert.pem
-         MOBILECONFIG_SIGNING_KEY_PATH:   /run/secrets/mc/key.pem
-         MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/cert.pem
+         MOBILECONFIG_SIGNING_ACME_PATH: /run/secrets/acme.json
+         MOBILECONFIG_SIGNING_ACME_DOMAIN: carddav.goober.house
        volumes:
          - radicale_data:/data
-         - /srv/shared-contacts/certs:/run/secrets/mc:ro
+         - /ssd/docker/traefik/certs/cloudflare-acme.json:/run/secrets/acme.json:ro
    ```
 
    `PUBLIC_CARDDAV_URL` matters because profiles are for people **outside the
@@ -124,21 +118,25 @@ touching the deployment.
    the profile was downloaded from, and a LAN download would bake in an
    unreachable host. Signature verification itself is location-independent.
 
-3. `docker compose -f docker-compose.prod.yml up -d`
+   Trade-off accepted here: the app container can read every key in
+   `acme.json` (read-only). The least-privilege alternative — extracted PEM
+   files + `MOBILECONFIG_SIGNING_CERT_PATH`/`_KEY_PATH` + a renewal cron or
+   `traefik-certs-dumper` — is documented in the guide §5.2/§5.4; the copies
+   already extracted to `/ssd/docker/shared-contacts/certs/` can be deleted if
+   going the ACME route.
 
-4. Verify: re-download a profile from the browser — it should now be DER
+2. `docker compose -f docker-compose.prod.yml up -d`
+
+3. Verify: re-download a profile from the browser — it should now be DER
    (starts with binary bytes, not `<?xml`) and install as Verified. While
    downloading, watch `docker logs shared-contacts-app`: silence = signed; a
-   "cert or key is not readable" warning = mount path/permissions problem
-   (signing fails soft to unsigned — the log is the only tell).
+   warning names the failure ("ACME store is not readable" = mount path;
+   "no certificate for MOBILECONFIG_SIGNING_ACME_DOMAIN" = domain string
+   doesn't exactly match a main/SAN in acme.json — signing fails soft to
+   unsigned, the log is the only tell).
 
-5. **Renewal (do not skip):** the extraction in B.1 is a snapshot; Let's
-   Encrypt rotates ~90 days and stale PEMs silently drop downloads back to
-   unsigned. Either run
-   [`traefik-certs-dumper`](https://github.com/ldez/traefik-certs-dumper) in
-   `file --watch` mode against `<ACME>`, or put the B.1 snippet in a weekly
-   root cron. No container restart needed either way — cert files are re-read
-   per request.
+4. Renewal: nothing to do. Traefik renews `acme.json` in place and the app
+   reads it fresh on every download.
 
 ## Open items
 
@@ -147,9 +145,12 @@ touching the deployment.
       macOS install dialog shows "Signed: carddav.goober.house" with no
       Unverified warning (that's the trusted state; the word "Verified" appears
       in Device Management after install)
-- [ ] Wire up Part B on the NUC (compose change; NUC-side extraction already
-      done at `/ssd/docker/shared-contacts/certs/`)
-- [ ] Automate renewal (dumper or cron)
+- [ ] Merge/release the ACME-source feature and pull the updated image on the NUC
+- [ ] Wire up Part B on the NUC (compose change: mount acme.json + 2 env vars)
+- [x] Automate renewal — obsolete: the ACME source reads acme.json per request,
+      so Traefik's own renewal covers signing; nothing to automate
+- [ ] Delete the extracted PEMs at `/ssd/docker/shared-contacts/certs/` and the
+      staged copies in `/ssd/docker/shared-contacts/` once the ACME route is live
 - [ ] From an off-network device: install a profile and confirm contacts
       actually sync (checks the Cloudflare proxy passes CardDAV
       `PROPFIND`/`REPORT` — separate concern from signing)
