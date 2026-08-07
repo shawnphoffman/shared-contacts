@@ -3,7 +3,7 @@
 Explicit steps for (A) test-signing a profile locally on the Mac to verify the
 cert works, then (B) enabling automatic signing on the NUC deployment. This is
 the deployment-specific companion to the generic guide in
-`docs/mobileconfig-signing.md` — read that for the *why*; this is the *do*.
+`docs/mobileconfig-signing.md` — read that for the _why_; this is the _do_.
 
 **Decisions already made:**
 
@@ -103,8 +103,8 @@ key to the app container for no gain over the sidecar.)
 Also set on `shared-contacts-app`:
 
 ```yaml
-    environment:
-      PUBLIC_CARDDAV_URL: https://carddav.goober.house
+environment:
+  PUBLIC_CARDDAV_URL: https://carddav.goober.house
 ```
 
 This matters because profiles are for people **outside the home network**:
@@ -117,23 +117,23 @@ Signature verification itself is location-independent.
 1. Add to `docker-compose.prod.yml`:
 
    ```yaml
-     certs-dumper:
-       image: ldez/traefik-certs-dumper:latest
-       container_name: shared-contacts-certs-dumper
-       restart: unless-stopped
-       command: >
-         file --version v2 --watch
-         --source /acme/cloudflare-acme.json
-         --dest /output
-         --domain-subdir
-       volumes:
-         - /ssd/docker/traefik/certs:/acme:ro         # directory, NOT the file
-         - /ssd/docker/shared-contacts/certs:/output
-       logging:
-         driver: json-file
-         options:
-           max-size: 10m
-           max-file: 3
+   certs-dumper:
+     image: ldez/traefik-certs-dumper:latest
+     container_name: shared-contacts-certs-dumper
+     restart: unless-stopped
+     command: >
+       file --version v2 --watch
+       --source /acme/cloudflare-acme.json
+       --dest /output
+       --domain-subdir
+     volumes:
+       - /ssd/docker/traefik/certs:/acme:ro # directory, NOT the file
+       - /ssd/docker/shared-contacts/certs:/output
+     logging:
+       driver: json-file
+       options:
+         max-size: 10m
+         max-file: 3
    ```
 
 2. Start it alone first and confirm the output layout (flag defaults vary
@@ -153,15 +153,15 @@ Signature verification itself is location-independent.
 3. On `shared-contacts-app`:
 
    ```yaml
-       environment:
-         # ...existing + PUBLIC_CARDDAV_URL...
-         MOBILECONFIG_SIGNING_ENABLED: "true"
-         MOBILECONFIG_SIGNING_CERT_PATH:  /run/secrets/mc/certificate.crt
-         MOBILECONFIG_SIGNING_KEY_PATH:   /run/secrets/mc/privatekey.key
-         MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/certificate.crt
-       volumes:
-         - radicale_data:/data
-         - /ssd/docker/shared-contacts/certs/carddav.goober.house:/run/secrets/mc:ro
+   environment:
+     # ...existing + PUBLIC_CARDDAV_URL...
+     MOBILECONFIG_SIGNING_ENABLED: 'true'
+     MOBILECONFIG_SIGNING_CERT_PATH: /run/secrets/mc/certificate.crt
+     MOBILECONFIG_SIGNING_KEY_PATH: /run/secrets/mc/privatekey.key
+     MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/certificate.crt
+   volumes:
+     - radicale_data:/data
+     - /ssd/docker/shared-contacts/certs/carddav.goober.house:/run/secrets/mc:ro
    ```
 
 4. `docker compose -f docker-compose.prod.yml up -d`, then verify (below).
@@ -170,7 +170,7 @@ Signature verification itself is location-independent.
    renewal and the app re-reads them per request — no restart either side.
 
    One caveat to verify once, after the first renewal or a dumper restart:
-   the app bind-mounts the *domain subdirectory*, so if the dumper ever
+   the app bind-mounts the _domain subdirectory_, so if the dumper ever
    deletes and recreates that directory rather than overwriting the files in
    it, the mount is pinned to the deleted inode and the app sees an empty
    directory (→ silent fallback to unsigned). Check with:
@@ -180,14 +180,14 @@ Signature verification itself is location-independent.
    ```
 
    If it's empty while the host path has files, `docker compose up -d
-   shared-contacts-app` re-establishes the mount; the durable fix is to mount
+shared-contacts-app` re-establishes the mount; the durable fix is to mount
    the parent `certs` dir instead and use
    `/run/secrets/mc/carddav.goober.house/certificate.crt` paths, trading the
    per-domain isolation for a stable inode.
 
 6. Set `MOBILECONFIG_SIGNING_ENABLED=true` in `.env` — the compose entry
    interpolates it, and an unset variable becomes an empty string, which the
-   signer reads as *false* (signing silently off). Use the
+   signer reads as _false_ (signing silently off). Use the
    `${MOBILECONFIG_SIGNING_ENABLED:-false}` form so the default is explicit.
 
 > **Mount the acme.json's directory, not the file itself** (the dumper's

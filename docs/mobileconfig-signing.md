@@ -48,11 +48,11 @@ certificate. Configuration profiles are outside that system — any
 publicly-trusted certificate works, including an ordinary TLS server
 certificate.
 
-| State | When it happens | What the user sees |
-|-------|-----------------|--------------------|
+| State                | When it happens                                                | What the user sees                      |
+| -------------------- | -------------------------------------------------------------- | --------------------------------------- |
 | **Verified** (green) | Signed, and the chain ends at a root already trusted by the OS | Green "Verified" with the signer's name |
-| **Unverified** (red) | Signed, but the chain is **not** trusted by the OS | Red "Unverified" — still installable |
-| **Unsigned** | No signature (signing disabled or fell back) | "Unsigned" — still installable |
+| **Unverified** (red) | Signed, but the chain is **not** trusted by the OS             | Red "Unverified" — still installable    |
+| **Unsigned**         | No signature (signing disabled or fell back)                   | "Unsigned" — still installable          |
 
 Let's Encrypt's roots are in Apple's trust store, so a profile signed with a
 Let's Encrypt leaf certificate shows **Verified** automatically.
@@ -77,7 +77,7 @@ Here is where to actually get one, best option first.
 ### Option A — Reuse the cert your reverse proxy already manages (recommended)
 
 If a reverse proxy in front of this app already terminates HTTPS with a
-publicly-trusted certificate, you already have the right cert *and* the private
+publicly-trusted certificate, you already have the right cert _and_ the private
 key, and renewal is already automated. No new accounts or tooling — just
 extract the PEM files:
 
@@ -98,8 +98,8 @@ a good choice if you'd rather have a signing cert that is fully decoupled from
 your reverse proxy.
 
 **Porkbun example:** every Porkbun-registered domain (using their DNS) gets a
-free auto-renewed wildcard cert. Download it from the dashboard (*Domain
-Management → your domain → SSL*), or — better for automation — fetch the current
+free auto-renewed wildcard cert. Download it from the dashboard (_Domain
+Management → your domain → SSL_), or — better for automation — fetch the current
 bundle from their API so a cron job can keep it fresh:
 
 ```bash
@@ -158,20 +158,20 @@ wiring up a real cert; not what you want long-term.
 - **A CDN "Origin" certificate** (e.g. Cloudflare Origin CA). It's downloadable,
   but it is only trusted by the CDN, not publicly — signing with it produces
   **Unverified** profiles.
-- **Staging / test CA certificates** (e.g. Let's Encrypt *staging*). Not in any
+- **Staging / test CA certificates** (e.g. Let's Encrypt _staging_). Not in any
   device trust store → **Unverified**.
 
 ## 4. Configuration
 
 Signing is controlled by environment variables on the application container:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MOBILECONFIG_SIGNING_ENABLED` | yes | `true` to enable signing (default `false`) |
-| `MOBILECONFIG_SIGNING_CERT_PATH` | yes | Path (inside the container) to the PEM signing certificate |
-| `MOBILECONFIG_SIGNING_KEY_PATH` | yes | Path to the matching PEM private key |
-| `MOBILECONFIG_SIGNING_CHAIN_PATH` | no | Path to intermediate certificate(s); improves chain building on the device |
-| `MOBILECONFIG_SIGNING_KEY_PASSPHRASE` | no | Passphrase, only if the private key is encrypted |
+| Variable                              | Required | Description                                                                |
+| ------------------------------------- | -------- | -------------------------------------------------------------------------- |
+| `MOBILECONFIG_SIGNING_ENABLED`        | yes      | `true` to enable signing (default `false`)                                 |
+| `MOBILECONFIG_SIGNING_CERT_PATH`      | yes      | Path (inside the container) to the PEM signing certificate                 |
+| `MOBILECONFIG_SIGNING_KEY_PATH`       | yes      | Path to the matching PEM private key                                       |
+| `MOBILECONFIG_SIGNING_CHAIN_PATH`     | no       | Path to intermediate certificate(s); improves chain building on the device |
+| `MOBILECONFIG_SIGNING_KEY_PASSPHRASE` | no       | Passphrase, only if the private key is encrypted                           |
 
 Provide the certificate and key by **mounting them into the container**
 (read-only bind mount or Docker secret). **Never bake certificates or keys into
@@ -183,10 +183,10 @@ signer and bundles the rest.
 services:
   shared-contacts-app:
     environment:
-      MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_CERT_PATH:  /run/secrets/mc/cert.pem
-      MOBILECONFIG_SIGNING_KEY_PATH:   /run/secrets/mc/key.pem
-      MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/cert.pem   # optional
+      MOBILECONFIG_SIGNING_ENABLED: 'true'
+      MOBILECONFIG_SIGNING_CERT_PATH: /run/secrets/mc/cert.pem
+      MOBILECONFIG_SIGNING_KEY_PATH: /run/secrets/mc/key.pem
+      MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/cert.pem # optional
     volumes:
       - /srv/shared-contacts/certs:/run/secrets/mc:ro
 ```
@@ -222,7 +222,7 @@ in an `acme.json` file. Replace the placeholder values:
 - `/srv/traefik/certs/acme.json` — path to your production `acme.json`.
 
 > **Use the production `acme.json`, not a staging one.** Certificates issued by a
-> CA's *staging* environment are not publicly trusted and produce **Unverified**
+> CA's _staging_ environment are not publicly trusted and produce **Unverified**
 > profiles. If you have both `…-acme.json` and `…-staging-acme.json`, use the
 > non-staging file.
 
@@ -273,15 +273,15 @@ point both `CERT_PATH` and `CHAIN_PATH` at `cert.pem`.
 In `docker-compose.prod.yml`, on the `shared-contacts-app` service:
 
 ```yaml
-    environment:
-      # ...existing environment...
-      MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_CERT_PATH:  /run/secrets/mc/cert.pem
-      MOBILECONFIG_SIGNING_KEY_PATH:   /run/secrets/mc/key.pem
-      MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/cert.pem
-    volumes:
-      - radicale_data:/data
-      - /srv/shared-contacts/certs:/run/secrets/mc:ro
+environment:
+  # ...existing environment...
+  MOBILECONFIG_SIGNING_ENABLED: 'true'
+  MOBILECONFIG_SIGNING_CERT_PATH: /run/secrets/mc/cert.pem
+  MOBILECONFIG_SIGNING_KEY_PATH: /run/secrets/mc/key.pem
+  MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/cert.pem
+volumes:
+  - radicale_data:/data
+  - /srv/shared-contacts/certs:/run/secrets/mc:ro
 ```
 
 And recreate the service:
@@ -319,18 +319,18 @@ fall back to **Unsigned**. Automate the refresh one of two ways.
 watches `acme.json` and re-emits PEM files on every renewal. Add to the stack:
 
 ```yaml
-  certs-dumper:
-    image: ldez/traefik-certs-dumper:latest
-    container_name: shared-contacts-certs-dumper
-    restart: unless-stopped
-    command: >
-      file --version v2 --watch
-      --source /acme/acme.json
-      --dest /output
-      --domain-subdir
-    volumes:
-      - /srv/traefik/certs:/acme:ro        # the directory, not the file
-      - /srv/shared-contacts/certs:/output # written by the dumper, read by the app
+certs-dumper:
+  image: ldez/traefik-certs-dumper:latest
+  container_name: shared-contacts-certs-dumper
+  restart: unless-stopped
+  command: >
+    file --version v2 --watch
+    --source /acme/acme.json
+    --dest /output
+    --domain-subdir
+  volumes:
+    - /srv/traefik/certs:/acme:ro # the directory, not the file
+    - /srv/shared-contacts/certs:/output # written by the dumper, read by the app
 ```
 
 It dumps **every** domain in `acme.json`, one subdirectory each:
@@ -346,16 +346,16 @@ Then point the app at the dumped files (note the `.crt`/`.key` names, and that
 `certificate.crt` is the fullchain so it doubles as the chain file):
 
 ```yaml
-    environment:
-      MOBILECONFIG_SIGNING_ENABLED: "true"
-      MOBILECONFIG_SIGNING_CERT_PATH:  /run/secrets/mc/certificate.crt
-      MOBILECONFIG_SIGNING_KEY_PATH:   /run/secrets/mc/privatekey.key
-      MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/certificate.crt
-    volumes:
-      # Mount only the one domain's subdirectory, so the app can't read the
-      # other dumped certs. This directory must already exist — start the
-      # dumper first, then bring up the app.
-      - /srv/shared-contacts/certs/carddav.example.com:/run/secrets/mc:ro
+environment:
+  MOBILECONFIG_SIGNING_ENABLED: 'true'
+  MOBILECONFIG_SIGNING_CERT_PATH: /run/secrets/mc/certificate.crt
+  MOBILECONFIG_SIGNING_KEY_PATH: /run/secrets/mc/privatekey.key
+  MOBILECONFIG_SIGNING_CHAIN_PATH: /run/secrets/mc/certificate.crt
+volumes:
+  # Mount only the one domain's subdirectory, so the app can't read the
+  # other dumped certs. This directory must already exist — start the
+  # dumper first, then bring up the app.
+  - /srv/shared-contacts/certs/carddav.example.com:/run/secrets/mc:ro
 ```
 
 No restart is needed when the dumper refreshes the files — the app re-reads

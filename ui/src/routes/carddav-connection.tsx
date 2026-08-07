@@ -95,8 +95,8 @@ function SigningStatusNotice({ signing }: { signing?: SigningStatus }) {
 			<div className="flex items-start gap-2 text-xs text-muted-foreground">
 				<Badge variant="secondary">Unsigned</Badge>
 				<span className="pt-0.5">
-					Profiles are delivered unsigned and install with an &ldquo;Unsigned&rdquo; warning. Set{' '}
-					<code>MOBILECONFIG_SIGNING_ENABLED</code> to change this.
+					Profiles are delivered unsigned and install with an &ldquo;Unsigned&rdquo; warning. Set <code>MOBILECONFIG_SIGNING_ENABLED</code>{' '}
+					to change this.
 				</span>
 			</div>
 		)
@@ -393,9 +393,7 @@ function CardDAVConnectionPage() {
 										variant="outline"
 										size="sm"
 										disabled={downloadingKey === `combined:${user.username}`}
-										onClick={() =>
-											runDownload(`combined:${user.username}`, () => handleDownloadCombinedMobileconfig(user.username))
-										}
+										onClick={() => runDownload(`combined:${user.username}`, () => handleDownloadCombinedMobileconfig(user.username))}
 									>
 										{downloadingKey === `combined:${user.username}` ? 'Preparing…' : 'Download combined profile'}
 									</Button>
