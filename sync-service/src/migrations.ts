@@ -50,6 +50,7 @@ function getMigrationFiles(): string[] {
 		'18_change_history.sql',
 		'19_drop_user_encrypted_passwords.sql',
 		'20_relationships.sql',
+		'21_contact_groups.sql',
 	]
 }
 

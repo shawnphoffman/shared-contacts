@@ -365,3 +365,88 @@ describe('generateVCard line folding (large content regression)', () => {
 		expect(unfolded).toContain(`NOTE:${big}`)
 	})
 })
+
+describe('group cards (Apple "lists")', () => {
+	// A list in Apple Contacts is an ordinary vCard in the same collection,
+	// marked X-ADDRESSBOOKSERVER-KIND:group with one -MEMBER line per member.
+	// The pipeline has to carry it through untouched or the list silently empties
+	// on every subscriber's device.
+	const appleGroup = [
+		'BEGIN:VCARD',
+		'VERSION:3.0',
+		'N:CA Alpine Club;;;;',
+		'FN:CA Alpine Club',
+		'X-ADDRESSBOOKSERVER-KIND:group',
+		'X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:AAAA-1111',
+		'X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:BBBB-2222',
+		'UID:group-uid-1',
+		'END:VCARD',
+	].join('\r\n')
+
+	it('parses the Apple group markers into kind and members', () => {
+		const parsed = parseVCard(appleGroup)
+
+		expect(parsed.kind).toBe('group')
+		expect(parsed.members).toEqual(['urn:uuid:AAAA-1111', 'urn:uuid:BBBB-2222'])
+		// Held structurally, not in the generic custom-field bucket, so
+		// regeneration emits exactly one copy of each line.
+		expect(parsed.customFields).toEqual([])
+	})
+
+	it('parses the vCard 4 spelling onto the same fields', () => {
+		const parsed = parseVCard(
+			['BEGIN:VCARD', 'VERSION:4.0', 'FN:Book Club', 'KIND:group', 'MEMBER:urn:uuid:XYZ-9', 'UID:group-uid-2', 'END:VCARD'].join('\r\n')
+		)
+
+		expect(parsed.kind).toBe('group')
+		expect(parsed.members).toEqual(['urn:uuid:XYZ-9'])
+	})
+
+	it('survives a full parse -> column -> regenerate round-trip', () => {
+		const parsed = parseVCard(appleGroup)
+		const regenerated = generateVCard(
+			{},
+			{
+				vcard_id: parsed.uid,
+				full_name: parsed.fn,
+				last_name: 'CA Alpine Club',
+				kind: parsed.kind,
+				group_members: parsed.members,
+				custom_fields: parsed.customFields,
+			}
+		)
+		const reparsed = parseVCard(regenerated)
+
+		// UID must be stable: members are resolved by UID, so a regenerated UID
+		// orphans the card and breaks every list that references it.
+		expect(reparsed.uid).toBe('group-uid-1')
+		expect(reparsed.kind).toBe('group')
+		expect(reparsed.members).toEqual(parsed.members)
+	})
+
+	it('normalizes a vCard 4 group to the Apple spelling that Contacts reads', () => {
+		const regenerated = generateVCard({}, { vcard_id: 'g-4', full_name: 'Book Club', kind: 'group', group_members: ['urn:uuid:XYZ-9'] })
+
+		expect(regenerated).toContain('X-ADDRESSBOOKSERVER-KIND:group')
+		expect(regenerated).toContain('X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:XYZ-9')
+		expect(regenerated).not.toMatch(/^KIND:/m)
+	})
+
+	it('leaves ordinary contacts unmarked', () => {
+		const parsed = parseVCard(
+			['BEGIN:VCARD', 'VERSION:3.0', 'FN:Shawn Hoffman', 'N:Hoffman;Shawn;;;', 'UID:person-1', 'END:VCARD'].join('\r\n')
+		)
+		const regenerated = generateVCard({}, { vcard_id: parsed.uid, full_name: parsed.fn, last_name: 'Hoffman', first_name: 'Shawn' })
+
+		expect(parsed.kind).toBeUndefined()
+		expect(regenerated).not.toContain('ADDRESSBOOKSERVER')
+	})
+
+	it('keeps the contact UID when regenerating from columns alone', () => {
+		// db-to-radicale falls back to generateVCard({}, contact) when a row has no
+		// stored vcard_data; minting a fresh UID there would orphan the card.
+		const regenerated = generateVCard({}, { vcard_id: 'stable-uid', full_name: 'Shawn Hoffman' })
+
+		expect(regenerated).toContain('UID:stable-uid')
+	})
+})

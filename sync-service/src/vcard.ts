@@ -43,7 +43,14 @@ export interface VCardData {
 	note?: string
 	photo?: { data: string; type?: string }
 	version?: string
+	// Group ("list") cards. Apple writes X-ADDRESSBOOKSERVER-KIND / -MEMBER;
+	// vCard 4 clients write the unprefixed KIND / MEMBER. Both parse to these.
+	kind?: string // 'individual' (default) or 'group'
+	members?: string[] // member UIDs, usually "urn:uuid:<uid>"
 }
+
+export const GROUP_KIND = 'group'
+export const INDIVIDUAL_KIND = 'individual'
 
 /**
  * Parse a vCard string into structured data
@@ -278,7 +285,27 @@ function parseVCardLine(line: string, data: VCardData): void {
 				type,
 			}
 			break
+		// vCard 4 group cards. Apple's X- spelling is handled in the default
+		// branch below so both forms land on the same two fields.
+		case 'KIND':
+			data.kind = value.trim().toLowerCase()
+			break
+		case 'MEMBER':
+			if (!data.members) data.members = []
+			data.members.push(value.trim())
+			break
 		default:
+			// Group markers are stored structurally (kind/members) rather than in
+			// customFields, so regeneration emits exactly one copy of each.
+			if (baseKey === 'X-ADDRESSBOOKSERVER-KIND') {
+				data.kind = value.trim().toLowerCase()
+				break
+			}
+			if (baseKey === 'X-ADDRESSBOOKSERVER-MEMBER') {
+				if (!data.members) data.members = []
+				data.members.push(value.trim())
+				break
+			}
 			// Match on the raw (possibly grouped) key so Apple's grouping-helper
 			// metadata such as item1.X-ABLabel is not ingested as a visible custom field.
 			if (rawKey.startsWith('X-')) {
@@ -344,13 +371,18 @@ export function generateVCard(
 		emails?: Array<{ value: string; type?: string }> | null
 		addresses?: Array<{ value: string; type?: string }> | null
 		urls?: Array<{ value: string; type?: string }> | null
+		vcard_id?: string | null
+		kind?: string | null
+		group_members?: string[] | null
 	}
 ): string {
 	const version = data.version || '3.0'
 	const lines: string[] = ['BEGIN:VCARD', `VERSION:${version}`]
 
-	// UID (required for vCard 4.0, recommended for 3.0)
-	const uid = data.uid || generateUID()
+	// UID (required for vCard 4.0, recommended for 3.0). Prefer the contact's
+	// stored vcard_id: minting a fresh UID here would orphan the card in every
+	// client and break any group card that lists this contact as a member.
+	const uid = data.uid || contact?.vcard_id || generateUID()
 	lines.push(`UID:${uid}`)
 
 	// Full name (FN is required)
@@ -369,6 +401,20 @@ export function generateVCard(
 		lines.push(`N:${lastName};${firstName};${additional};${prefix};${suffix}`)
 	} else if (contact?.first_name || contact?.last_name) {
 		lines.push(`N:${contact.last_name || ''};${contact.first_name || ''};${contact.middle_name || ''};;`)
+	}
+
+	// Group ("list") markers. Always emitted in Apple's X-ADDRESSBOOKSERVER
+	// spelling, which is what Contacts on iOS/macOS reads; a vCard 4 card that
+	// came in as KIND/MEMBER is normalized to it here.
+	const kind = data.kind || contact?.kind
+	if (kind === GROUP_KIND) {
+		lines.push(`X-ADDRESSBOOKSERVER-KIND:${GROUP_KIND}`)
+		const members = data.members || contact?.group_members || []
+		for (const member of members) {
+			if (member) {
+				lines.push(...foldVCardLine(`X-ADDRESSBOOKSERVER-MEMBER:${normalizeVCardText(member)}`))
+			}
+		}
 	}
 
 	// Nickname

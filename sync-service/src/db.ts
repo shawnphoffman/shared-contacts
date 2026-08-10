@@ -109,6 +109,11 @@ export interface Contact {
 	sort_string: string | null
 	class: string | null
 	custom_fields: Array<{ key: string; value: string; params?: string[] }> | null
+	// 'individual' or 'group'. Group rows are CardDAV group cards (Apple "lists"),
+	// carried through the pipeline like any other card but hidden from the people
+	// views in the web UI.
+	kind: string
+	group_members: string[] | null // member UIDs on a group card
 	notes: string | null
 	photo_blob: Buffer | null
 	photo_mime: string | null
@@ -146,6 +151,7 @@ const JSONB_FIELDS = [
 	'sounds',
 	'keys',
 	'custom_fields',
+	'group_members',
 ] as const
 
 export function parseContactRow<T extends Record<string, unknown>>(row: T): T {
@@ -322,8 +328,8 @@ export async function restoreContact(id: string): Promise<void> {
 export async function createContact(contact: Partial<Contact>): Promise<Contact> {
 	const pool = getPool()
 	const result = await pool.query(
-		`INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, name_prefix, name_suffix, nickname, maiden_name, email, phone, phones, emails, organization, org_units, job_title, role, address, addresses, birthday, homepage, urls, categories, labels, logos, sounds, keys, mailer, time_zone, geo, agent, prod_id, revision, sort_string, class, custom_fields, notes, photo_blob, photo_mime, photo_width, photo_height, photo_updated_at, photo_hash, vcard_data)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
+		`INSERT INTO contacts (vcard_id, full_name, first_name, last_name, middle_name, name_prefix, name_suffix, nickname, maiden_name, email, phone, phones, emails, organization, org_units, job_title, role, address, addresses, birthday, homepage, urls, categories, labels, logos, sounds, keys, mailer, time_zone, geo, agent, prod_id, revision, sort_string, class, custom_fields, kind, group_members, notes, photo_blob, photo_mime, photo_width, photo_height, photo_updated_at, photo_hash, vcard_data)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46)
      RETURNING *`,
 		[
 			contact.vcard_id || null,
@@ -362,6 +368,8 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 			contact.sort_string || null,
 			contact.class || null,
 			contact.custom_fields ? JSON.stringify(contact.custom_fields) : '[]',
+			contact.kind || 'individual',
+			contact.group_members ? JSON.stringify(contact.group_members) : null,
 			contact.notes || null,
 			contact.photo_blob || null,
 			contact.photo_mime || null,
@@ -418,6 +426,8 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 		'sort_string',
 		'class',
 		'custom_fields',
+		'kind',
+		'group_members',
 		'notes',
 		'photo_blob',
 		'photo_mime',
@@ -443,7 +453,8 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 					field === 'logos' ||
 					field === 'sounds' ||
 					field === 'keys' ||
-					field === 'custom_fields') &&
+					field === 'custom_fields' ||
+					field === 'group_members') &&
 				Array.isArray(contact[field])
 			) {
 				values.push(JSON.stringify(contact[field]))

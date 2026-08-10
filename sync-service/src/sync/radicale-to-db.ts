@@ -14,7 +14,7 @@ import {
 	updateContact,
 	updateSyncMetadata,
 } from '../db'
-import { parseVCard } from '../vcard'
+import { parseVCard, GROUP_KIND, INDIVIDUAL_KIND } from '../vcard'
 import { getUsers, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from '../htpasswd'
 import { atomicWriteFileSync } from '../fs-utils'
 import { recordHistory } from '../history'
@@ -357,6 +357,11 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 				sort_string: vcardData.sortString || null,
 				class: vcardData.class || null,
 				custom_fields: vcardData.customFields && vcardData.customFields.length > 0 ? vcardData.customFields : null,
+				// A group card is an Apple "list": kept as a row so it round-trips to
+				// every subscriber of the book, but flagged so the web UI can keep it
+				// out of the people views.
+				kind: vcardData.kind === GROUP_KIND ? GROUP_KIND : INDIVIDUAL_KIND,
+				group_members: vcardData.members && vcardData.members.length > 0 ? vcardData.members : null,
 				notes: notes,
 				photo_blob: photoBlob,
 				photo_mime: photoMime,
