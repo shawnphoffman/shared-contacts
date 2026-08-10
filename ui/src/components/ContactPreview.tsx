@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Cake, Mail, MoreHorizontal, Phone, Trash2 } from 'lucide-react'
+import { Cake, List as ListIcon, Mail, MoreHorizontal, Phone, Trash2 } from 'lucide-react'
 import { formatPhoneNumber } from '../lib/utils'
 import { formatAddressForDisplay, parseAddress } from './AddressInput'
 import { Button } from './ui/button'
@@ -106,6 +106,7 @@ export function ContactPreview({ form, contact, onDelete }: ContactPreviewProps)
 	const subtitle = [formData.job_title, formData.organization].filter(Boolean).join(' · ')
 
 	const memberBooks = addressBooks.filter(book => selectedBookIds.includes(book.id))
+	const memberLists = contact?.lists || []
 
 	const nonEmptyEmails = emails.filter(e => e.value.trim())
 	const nonEmptyPhones = phones.filter(p => p.value.trim())
@@ -142,11 +143,23 @@ export function ContactPreview({ form, contact, onDelete }: ContactPreviewProps)
 				<div className="min-w-0">
 					<div className="truncate text-xl font-bold">{displayName}</div>
 					{subtitle && <div className="truncate text-sm text-muted-foreground">{subtitle}</div>}
-					{memberBooks.length > 0 && (
+					{(memberBooks.length > 0 || memberLists.length > 0) && (
 						<div className="mt-1.5 flex flex-wrap gap-1.5">
 							{memberBooks.map(book => (
 								<span key={book.id} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
 									{book.name}
+								</span>
+							))}
+							{/* Lists are CardDAV group cards, edited in the CardDAV client rather
+							    than here, so they are outlined instead of filled like books. */}
+							{memberLists.map(list => (
+								<span
+									key={list.id}
+									title="List, managed in your CardDAV client"
+									className="inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground"
+								>
+									<ListIcon className="size-3" />
+									{list.name}
 								</span>
 							))}
 						</div>

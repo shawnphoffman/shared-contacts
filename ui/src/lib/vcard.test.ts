@@ -22,3 +22,35 @@ describe('generateVCard line folding (large content regression)', () => {
 		expect(unfolded).toContain(`NOTE:${big}`)
 	})
 })
+
+describe('group cards (Apple "lists")', () => {
+	// Group cards are authored in the CardDAV client, but any UI write path that
+	// regenerates vcard_data from columns must rebuild them intact rather than
+	// emitting a card with no members.
+	it('emits the Apple group markers when the row is a group', () => {
+		const result = generateVCard({
+			vcard_id: 'group-1',
+			full_name: 'CA Alpine Club',
+			kind: 'group',
+			group_members: ['urn:uuid:AAAA-1111', 'urn:uuid:BBBB-2222'],
+		})
+
+		expect(result).toContain('UID:group-1')
+		expect(result).toContain('X-ADDRESSBOOKSERVER-KIND:group')
+		expect(result).toContain('X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:AAAA-1111')
+		expect(result).toContain('X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:BBBB-2222')
+	})
+
+	it('leaves ordinary contacts unmarked', () => {
+		const result = generateVCard({ vcard_id: 'person-1', full_name: 'Shawn Hoffman', last_name: 'Hoffman', first_name: 'Shawn' })
+
+		expect(result).not.toContain('ADDRESSBOOKSERVER')
+	})
+
+	it('emits the kind marker even when a group has no members yet', () => {
+		const result = generateVCard({ vcard_id: 'group-2', full_name: 'New List', kind: 'group', group_members: [] })
+
+		expect(result).toContain('X-ADDRESSBOOKSERVER-KIND:group')
+		expect(result).not.toContain('X-ADDRESSBOOKSERVER-MEMBER')
+	})
+})

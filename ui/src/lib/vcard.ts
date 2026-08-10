@@ -88,6 +88,8 @@ export function generateVCard(contact: {
 	notes?: string | null
 	photo_blob?: Uint8Array | string | null
 	photo_mime?: string | null
+	kind?: string | null
+	group_members?: Array<string> | null
 }): string {
 	const uid = contact.vcard_id || generateUID()
 	const fullName = contact.full_name || 'Unknown'
@@ -105,6 +107,17 @@ export function generateVCard(contact: {
 		`FN:${fullName}`,
 		`N:${lastName};${firstName};${middleName};${namePrefix};${nameSuffix}`,
 	]
+
+	// Group ("list") markers, in the X-ADDRESSBOOKSERVER spelling Apple Contacts
+	// reads. Emitted here so that any write path which regenerates vcard_data
+	// from columns rebuilds the list intact instead of silently emptying it.
+	if (contact.kind === 'group') {
+		lines.push('X-ADDRESSBOOKSERVER-KIND:group')
+		for (const member of contact.group_members || []) {
+			if (!member) continue
+			lines.push(...foldVCardLine(`X-ADDRESSBOOKSERVER-MEMBER:${normalizeVCardText(member)}`))
+		}
+	}
 
 	if (contact.nickname) {
 		lines.push(`NICKNAME:${contact.nickname}`)

@@ -8,6 +8,7 @@ import { normalizePhoneNumber } from '../../lib/utils'
 import { BadPhotoError, decodePhotoPayloadForUpdate, resolveAddressBookIds, sanitizeContact, zodError } from '../../lib/contact-helpers'
 import { UpdateContactSchema } from '../../lib/schemas'
 import { actorFromRequest, recordHistory } from '../../lib/history'
+import { getListsForContact } from '../../lib/contact-groups'
 import type { Contact } from '../../lib/db'
 
 export const Route = createFileRoute('/api/contacts/$id')({
@@ -19,7 +20,8 @@ export const Route = createFileRoute('/api/contacts/$id')({
 					if (!contact) {
 						return json({ error: 'Contact not found' }, { status: 404 })
 					}
-					return json(sanitizeContact(contact))
+					const lists = await getListsForContact(contact.vcard_id)
+					return json({ ...sanitizeContact(contact), lists })
 				} catch (error) {
 					logger.error({ err: error }, 'Error fetching contact')
 					return json({ error: 'Failed to fetch contact' }, { status: 500 })

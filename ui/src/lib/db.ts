@@ -96,6 +96,11 @@ export interface Contact {
 	sort_string: string | null
 	class: string | null
 	custom_fields: Array<{ key: string; value: string; params?: Array<string> }> | null
+	// 'individual' or 'group'. Group rows are CardDAV group cards, which Apple
+	// Contacts shows as "lists" under the address book. They sync and propagate
+	// like any other card but are hidden from every people view here.
+	kind: string
+	group_members: Array<string> | null // member UIDs on a group card
 	notes: string | null
 	photo_blob: Uint8Array | string | null
 	photo_mime: string | null
@@ -114,6 +119,9 @@ export interface Contact {
 	radicale_file_mtime: Date | null
 	deleted_at: Date | null
 	address_books?: Array<AddressBook> | null
+	// Group cards this contact is a member of, resolved on read. Display only:
+	// membership is authored in the CardDAV client, never here.
+	lists?: Array<{ id: string; name: string }> | null
 }
 
 /**
@@ -133,6 +141,7 @@ const JSONB_FIELDS = [
 	'sounds',
 	'keys',
 	'custom_fields',
+	'group_members',
 ] as const
 
 export function parseContactRow<T extends Record<string, unknown>>(row: T): T {
@@ -422,11 +431,45 @@ export async function setUserAddressBooks(username: string, addressBookIds: Arra
 	)
 }
 
+// CardDAV group cards live in the contacts table so they round-trip to every
+// subscriber untouched, but they are not people: they must stay out of the
+// contact list, dedupe, export, and trash. Every people-facing read goes through
+// getAllContacts / getAllContactsPaginated / getDeletedContacts, so filtering
+// there covers all of them.
+//
+// Gated on the column existing: the UI and the sync service start
+// independently, and only the sync service runs migrations, so the UI can be
+// serving requests against a schema that predates 21_contact_groups. Without
+// the guard every contact query 500s until the migration lands.
+async function individualsOnlyClause(): Promise<string> {
+	const columns = await getContactColumns()
+	return columns.has('kind') ? "AND kind <> 'group'" : ''
+}
+
 export async function getAllContacts(): Promise<Array<Contact>> {
 	const dbPool = getPool()
-	const result = await dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NULL ORDER BY full_name, created_at DESC')
+	const result = await dbPool.query(
+		`SELECT * FROM contacts WHERE deleted_at IS NULL ${await individualsOnlyClause()} ORDER BY full_name, created_at DESC`
+	)
 	const contacts = result.rows.map(parseContactRow)
 	return attachAddressBooks(contacts)
+}
+
+/**
+ * Every group card, newest first. Group cards are read-only here: they are
+ * authored in Apple Contacts (or any CardDAV client) and this app only
+ * classifies and displays them.
+ */
+export async function getGroupCards(): Promise<Array<Contact>> {
+	const columns = await getContactColumns()
+	if (!columns.has('kind')) return []
+
+	const dbPool = getPool()
+	const result = await dbPool.query(
+		`SELECT * FROM contacts WHERE deleted_at IS NULL AND kind = 'group' ORDER BY full_name, created_at DESC`
+	)
+	const groups = result.rows.map(parseContactRow)
+	return attachAddressBooks(groups)
 }
 
 export async function getAllContactsPaginated({
@@ -440,12 +483,13 @@ export async function getAllContactsPaginated({
 	const clampedLimit = Math.max(1, Math.min(500, limit))
 	const clampedOffset = Math.max(0, offset)
 
+	const individualsOnly = await individualsOnlyClause()
 	const [countResult, dataResult] = await Promise.all([
-		dbPool.query('SELECT COUNT(*) FROM contacts WHERE deleted_at IS NULL'),
-		dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NULL ORDER BY full_name, created_at DESC LIMIT $1 OFFSET $2', [
-			clampedLimit,
-			clampedOffset,
-		]),
+		dbPool.query(`SELECT COUNT(*) FROM contacts WHERE deleted_at IS NULL ${individualsOnly}`),
+		dbPool.query(
+			`SELECT * FROM contacts WHERE deleted_at IS NULL ${individualsOnly} ORDER BY full_name, created_at DESC LIMIT $1 OFFSET $2`,
+			[clampedLimit, clampedOffset]
+		),
 	])
 
 	const total = parseInt(countResult.rows[0].count, 10)
@@ -619,6 +663,8 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 		'sort_string',
 		'class',
 		'custom_fields',
+		'kind',
+		'group_members',
 		'notes',
 		'photo_blob',
 		'photo_mime',
@@ -658,7 +704,8 @@ export async function createContact(contact: Partial<Contact>): Promise<Contact>
 					field === 'logos' ||
 					field === 'sounds' ||
 					field === 'keys' ||
-					field === 'custom_fields') &&
+					field === 'custom_fields' ||
+					field === 'group_members') &&
 				Array.isArray(value)
 			) {
 				values.push(JSON.stringify(value))
@@ -769,6 +816,8 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 		'sort_string',
 		'class',
 		'custom_fields',
+		'kind',
+		'group_members',
 		'notes',
 		'photo_blob',
 		'photo_mime',
@@ -800,7 +849,8 @@ export async function updateContact(id: string, contact: Partial<Contact>): Prom
 					field === 'logos' ||
 					field === 'sounds' ||
 					field === 'keys' ||
-					field === 'custom_fields') &&
+					field === 'custom_fields' ||
+					field === 'group_members') &&
 				Array.isArray(contact[field])
 			) {
 				values.push(JSON.stringify(contact[field]))
@@ -837,7 +887,9 @@ export async function permanentlyDeleteContact(id: string): Promise<void> {
 
 export async function getDeletedContacts(): Promise<Array<Contact>> {
 	const dbPool = getPool()
-	const result = await dbPool.query('SELECT * FROM contacts WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC')
+	const result = await dbPool.query(
+		`SELECT * FROM contacts WHERE deleted_at IS NOT NULL ${await individualsOnlyClause()} ORDER BY deleted_at DESC`
+	)
 	return result.rows.map(parseContactRow)
 }
 
