@@ -34,6 +34,7 @@ logs/
 # Docker volumes (if mounted locally)
 postgres_data/
 radicale_data/
+backups/
 
 # Temporary files
 tmp/

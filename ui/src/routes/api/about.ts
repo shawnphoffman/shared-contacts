@@ -1,41 +1,16 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
+import { readAppPackageInfo } from '../../lib/app-version'
 
 export const Route = createFileRoute('/api/about')({
 	server: {
 		handlers: {
 			GET: () => {
 				try {
-					// Try to read root package.json first (for version and repo info)
-					let version = 'unknown'
-					let repository = null
-
-					// Check multiple possible locations for package.json
-					const possiblePaths = [
-						join(process.cwd(), '..', 'package.json'), // Root package.json (when running from ui/)
-						join(process.cwd(), 'package.json'), // Current directory
-						join(process.cwd(), '..', '..', 'package.json'), // If nested deeper
-					]
-
-					for (const packageJsonPath of possiblePaths) {
-						if (existsSync(packageJsonPath)) {
-							try {
-								const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-								if (packageJson.version) {
-									version = packageJson.version
-								}
-								if (packageJson.repository) {
-									repository = packageJson.repository
-								}
-								break // Use the first valid package.json found
-							} catch {
-								// Continue to next path if this one fails
-							}
-						}
-					}
+					// Root package.json carries the version and repo info.
+					const { version: packageVersion, repository } = readAppPackageInfo()
+					const version = packageVersion ?? 'unknown'
 
 					// Get safe environment variables (mask sensitive ones)
 					const safeEnvVars: Record<string, string | null> = {
@@ -46,6 +21,10 @@ export const Route = createFileRoute('/api/about')({
 						FILE_WATCHER_DEBOUNCE_MS: process.env.FILE_WATCHER_DEBOUNCE_MS || null,
 						DATABASE_SSL: process.env.DATABASE_SSL || null,
 						DATABASE_SSL_REJECT_UNAUTHORIZED: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED || null,
+						BACKUP_ENABLED: process.env.BACKUP_ENABLED || null,
+						BACKUP_DIR: process.env.BACKUP_DIR || null,
+						BACKUP_INTERVAL: process.env.BACKUP_INTERVAL || null,
+						BACKUP_KEEP: process.env.BACKUP_KEEP || null,
 					}
 
 					return json({

@@ -104,12 +104,19 @@ services:
       HOST: 0.0.0.0
       CHOKIDAR_USEPOLLING: 'true'
       WATCHPACK_POLLING: 'true'
+      # Scheduled backups (off by default; the Backups page can still run one by hand)
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-false}
+      BACKUP_DIR: ${BACKUP_DIR:-/backups}
+      BACKUP_INTERVAL: ${BACKUP_INTERVAL:-24h}
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
     volumes:
       # Mount source code for live reload
       - ./ui:/app
       # Use named volume for node_modules to avoid conflicts and speed up installs
       # If you encounter "vite: not found" errors, try removing this volume mount temporarily
       - ui_node_modules:/app/node_modules
+      # Backups land on the host so they can be inspected and synced offsite.
+      - ./backups:/backups
     ports:
       - '${UI_PORT:-3030}:3030'
     networks:

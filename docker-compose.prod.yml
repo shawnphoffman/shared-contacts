@@ -38,12 +38,22 @@ services:
       # put the two seven hours apart in the same row. Not ${TZ:-UTC} for that
       # reason. See migrations/22_contacts_timestamptz.sql.
       TZ: UTC
+      # Scheduled backups written to BACKUP_DIR. Off by default; the Backups
+      # page can still create one on demand. See docs/backups.md.
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-false}
+      BACKUP_DIR: ${BACKUP_DIR:-/backups}
+      BACKUP_INTERVAL: ${BACKUP_INTERVAL:-24h}
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
       # Optional: Public URLs for CardDAV connection page (used for convenience only)
       # If not set, URLs will be derived from the current location
       # PUBLIC_UI_URL: https://contacts.example.com
       # PUBLIC_CARDDAV_URL: https://carddav.example.com
     volumes:
       - radicale_data:/data
+      # Bind mount so archives land on the host, where an offsite sync (restic,
+      # rclone, borg) can pick them up. The container runs as root, so the
+      # directory and its contents end up root-owned on the host.
+      - ./backups:/backups
     # ports:
     #   - '${UI_PORT:-3030}:3030'
     networks:

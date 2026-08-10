@@ -26,6 +26,7 @@ I also have a large extended family that I'd love to stay in touch with as much 
 - **Bidirectional Sync**: Automatic synchronization between CardDAV and database
 - **Contact Lists**: Lists (groups) made in Apple Contacts sync to everyone sharing the address book
 - **User Management**: Manage Radicale users for CardDAV access
+- **Scheduled Backups**: Timestamped archives written to disk on an interval, with retention
 - **Docker Compose**: Easy deployment with Docker
 
 ## Screenshots
@@ -45,6 +46,18 @@ I also have a large extended family that I'd love to stay in touch with as much 
 > **AI Model:** Claude Opus 4
 
 ## Backup and Restore
+
+### Scheduled backups (recommended)
+
+The app writes timestamped `.tar.gz` archives to disk on a schedule and keeps the newest N. Each archive holds a full logical dump of every table (`snapshot.json`) plus `contacts.vcf` and `contacts.csv`. Manage them from the **Backups** page in the sidebar, or run one on demand there.
+
+```bash
+BACKUP_ENABLED=true
+BACKUP_INTERVAL=12h
+BACKUP_KEEP=14
+```
+
+See [docs/backups.md](docs/backups.md) for what is and isn't covered, where the files land, and how to restore.
 
 ### Backup Database
 

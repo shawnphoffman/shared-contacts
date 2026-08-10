@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import {
 	BookOpen,
 	ContactRound,
+	DatabaseBackup,
 	Heart,
 	HelpCircle,
 	History,
@@ -117,6 +118,15 @@ export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
 					<Link to="/carddav-connection" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<LinkIcon className="size-4 shrink-0" />
 						CardDAV Config
+					</Link>
+				</div>
+
+				{/* System */}
+				<div className="space-y-1">
+					<p className={groupLabelClass}>~/system</p>
+					<Link to="/backups" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
+						<DatabaseBackup className="size-4 shrink-0" />
+						Backups
 					</Link>
 				</div>
 
