@@ -8,6 +8,7 @@ import {
 	History,
 	Info,
 	Link as LinkIcon,
+	ListChecks,
 	Network,
 	NotebookTabs,
 	PanelLeftClose,
@@ -73,6 +74,10 @@ export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
 					>
 						<ContactRound className="size-4 shrink-0" />
 						All Contacts
+					</Link>
+					<Link to="/lists" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
+						<ListChecks className="size-4 shrink-0" />
+						Lists
 					</Link>
 					<Link to="/relationships" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Network className="size-4 shrink-0" />

@@ -85,9 +85,11 @@ If your deployment platform injects a `TZ` for containers, override it to `UTC` 
 
 Apple Contacts lets you nest **lists** under an address book to group people. A list is not a server-side object: it is an ordinary vCard stored in the same collection, marked `X-ADDRESSBOOKSERVER-KIND:group`, naming its members by UID. vCard 4 clients use the unprefixed `KIND:group` / `MEMBER` spelling instead; both are accepted, and profiles are always written back in the Apple spelling that Contacts reads.
 
-Lists are created and edited **in your CardDAV client**, not in the web UI. Make a list on your Mac or iPhone and it syncs to everyone subscribed to that address book, with the same people in it. Renaming a list, or adding and removing members, propagates the same way.
+Lists are created **in your CardDAV client**. Make a list on your Mac or iPhone and it syncs to everyone subscribed to that address book, with the same people in it. Adding and removing members propagates the same way, and is only done in the client.
 
-The web UI shows lists read-only: a contact's detail page displays the lists it belongs to as dashed badges next to its address books. Group cards themselves are hidden from the contact list, duplicate detection, CSV export, and trash, so they never show up as phantom contacts.
+The **Lists** page in the web UI shows every list with its members and address books, and can **rename** or **delete** one. That exists because Apple Contacts does not always let you: a list it refuses to rename or remove stays on every device forever otherwise. A rename rewrites only the name on the stored card, leaving the member lines untouched; a delete removes the card from the master mirror and from every subscriber's collection on the next sync, and does not touch the people who were in it.
+
+Elsewhere the web UI treats lists as read-only: a contact's detail page displays the lists it belongs to as dashed badges next to its address books, and group cards are hidden from the contact list, duplicate detection, CSV export, and trash, so they never show up as phantom contacts. A list deleted from the web UI does not land in the trash for the same reason; undo it from the History page instead.
 
 > [!IMPORTANT]
 > An address book is shared, so deleting a contact or a list on one device deletes it for **every** subscriber of that book. This is deliberate: the alternative is silent, permanent divergence between people's devices.

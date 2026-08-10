@@ -162,3 +162,11 @@ export const CreateRelationshipSchema = z.object({
 export const UpdateRelationshipSchema = z.object({
 	qualifier: z.string().trim().max(40).nullable(),
 })
+
+// ---------------------------------------------------------------------------
+// Contact list (CardDAV group card) schemas
+// ---------------------------------------------------------------------------
+
+export const RenameListSchema = z.object({
+	name: z.string().trim().min(1, 'List name is required').max(255),
+})

@@ -193,3 +193,82 @@ describe('CardDAV group cards propagate between subscribers', () => {
 		expect(result.rows[0].group_members).toEqual(['urn:uuid:person-1', 'urn:uuid:person-2'])
 	})
 })
+
+/**
+ * The web UI can rename and delete a list when the CardDAV client will not.
+ * Both are plain writes to the contacts row, so what these cover is the half
+ * that actually reaches a device: that the outbound pass turns the row change
+ * into the right file change in every subscriber's collection.
+ *
+ * The row writes here mirror ui/src/routes/api/lists.$id.ts.
+ */
+describe('managing a list from the web UI', () => {
+	it("deletes the card from the master mirror and every subscriber's collection", async () => {
+		const book = await createSharedBook()
+		const ownerDir = userCollection(OWNER, book.id)
+		writeCard(ownerDir, 'person-1', personCard('person-1', 'Shawn Hoffman', 'Hoffman', 'Shawn'))
+		writeCard(ownerDir, 'group-1', groupCard('group-1', 'CA Alpine Club', ['person-1']))
+
+		await syncRadicaleToDb(true)
+		await syncDbToRadicale()
+
+		const subscriberCard = path.join(userCollection(SUBSCRIBER, book.id), 'group-1.vcf')
+		expect(fs.existsSync(subscriberCard)).toBe(true)
+
+		await pool.query("UPDATE contacts SET deleted_at = NOW() WHERE vcard_id = 'group-1'")
+		await syncDbToRadicale()
+
+		expect(fs.existsSync(path.join(ownerDir, 'group-1.vcf'))).toBe(false)
+		expect(fs.existsSync(subscriberCard)).toBe(false)
+		expect(fs.existsSync(path.join(collectionRoot(), book.id, 'group-1.vcf'))).toBe(false)
+
+		// Deleting a list must not take its members with it.
+		expect(fs.existsSync(path.join(ownerDir, 'person-1.vcf'))).toBe(true)
+		expect(fs.existsSync(path.join(userCollection(SUBSCRIBER, book.id), 'person-1.vcf'))).toBe(true)
+	})
+
+	it('pushes a rename to every subscriber with the member lines intact', async () => {
+		const book = await createSharedBook()
+		writeCard(userCollection(OWNER, book.id), 'group-1', groupCard('group-1', 'CA Alpine Club', ['person-1', 'person-2']))
+
+		await syncRadicaleToDb(true)
+		await syncDbToRadicale()
+
+		const renamed = groupCard('group-1', 'Alpine Crew', ['person-1', 'person-2'])
+		await pool.query(
+			`UPDATE contacts
+			 SET full_name = 'Alpine Crew', last_name = 'Alpine Crew', vcard_data = $1, last_synced_to_radicale_at = NULL
+			 WHERE vcard_id = 'group-1'`,
+			[renamed]
+		)
+		await syncDbToRadicale()
+
+		for (const username of [OWNER, SUBSCRIBER]) {
+			const card = fs.readFileSync(path.join(userCollection(username, book.id), 'group-1.vcf'), 'utf-8')
+			expect(card).toContain('FN:Alpine Crew')
+			expect(card).not.toContain('CA Alpine Club')
+			expect(card).toContain('X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:person-1')
+			expect(card).toContain('X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:person-2')
+		}
+	})
+
+	it('leaves the card deletable from a device after a web rename', async () => {
+		// sync_source is the precondition every client-side delete path checks.
+		// A rename that stamped 'api' over 'radicale' would quietly cost the user
+		// the ability to delete the list from Apple Contacts.
+		const book = await createSharedBook()
+		writeCard(userCollection(OWNER, book.id), 'group-1', groupCard('group-1', 'CA Alpine Club', ['person-1']))
+
+		await syncRadicaleToDb(true)
+		await syncDbToRadicale()
+
+		await pool.query(
+			`UPDATE contacts SET full_name = 'Alpine Crew', vcard_data = $1, last_synced_to_radicale_at = NULL WHERE vcard_id = 'group-1'`,
+			[groupCard('group-1', 'Alpine Crew', ['person-1'])]
+		)
+		await syncDbToRadicale()
+
+		const result = await pool.query('SELECT sync_source FROM contacts WHERE vcard_id = $1', ['group-1'])
+		expect(result.rows[0].sync_source).toBe('radicale')
+	})
+})
