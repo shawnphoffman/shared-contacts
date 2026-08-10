@@ -6,28 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.10.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.9.0...v1.10.0) (2026-08-07)
+## [1.11.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.10.0...v1.11.0) (2026-08-10)
 
 ### Features
 
-* **ui:** sign mobileconfig profiles and surface signing status ([8fd7bad](https://github.com/shawnphoffman/shared-contacts/commit/8fd7bad41a10a746fb336b517c740caf1f4436d4))
+* **sync:** sync carddav group cards as lists ([9bc5be8](https://github.com/shawnphoffman/shared-contacts/commit/9bc5be8b9c6ec5c01744cc75c7a7146372f781ea))
+* **ui:** show list membership and hide group cards ([8684eea](https://github.com/shawnphoffman/shared-contacts/commit/8684eea9e8f22759369cd3874fc6e8854efe64ab))
 
-### Styles
+### Bug Fixes
 
-* **ui:** apply prettier formatting to signing docs and page ([0addb30](https://github.com/shawnphoffman/shared-contacts/commit/0addb30bcb2175dc96f3f685dc9570d1d7c43cc4))
+* **sync:** propagate creates and deletes to every subscriber ([86fc7a9](https://github.com/shawnphoffman/shared-contacts/commit/86fc7a943795fb4e3ec61bdfe4b8cbd52c9fc550))
 
-### Miscellaneous
+### Documentation
 
-* **git:** update gitignore ([85f2f8f](https://github.com/shawnphoffman/shared-contacts/commit/85f2f8fde39a3df96ad5022bc64b9b42c93fbf22))
+* document contact lists ([12f7fb3](https://github.com/shawnphoffman/shared-contacts/commit/12f7fb316d2c18370b444401bc272ddcabd045c6))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.11.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.10.0...v1.11.0)
+
+- ✨ Feature(sync): sync carddav group cards as lists [`9bc5be8`](https://github.com/shawnphoffman/shared-contacts/commit/9bc5be8b9c6ec5c01744cc75c7a7146372f781ea)
+- 🐛 Fix(sync): propagate creates and deletes to every subscriber [`86fc7a9`](https://github.com/shawnphoffman/shared-contacts/commit/86fc7a943795fb4e3ec61bdfe4b8cbd52c9fc550)
+- ✨ Feature(ui): show list membership and hide group cards [`8684eea`](https://github.com/shawnphoffman/shared-contacts/commit/8684eea9e8f22759369cd3874fc6e8854efe64ab)
+- 📝 Docs: document contact lists [`12f7fb3`](https://github.com/shawnphoffman/shared-contacts/commit/12f7fb316d2c18370b444401bc272ddcabd045c6)
+
 #### [v1.10.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.9.0...v1.10.0)
+
+> 7 August 2026
 
 - ✨ Feature(ui): sign mobileconfig profiles and surface signing status [`8fd7bad`](https://github.com/shawnphoffman/shared-contacts/commit/8fd7bad41a10a746fb336b517c740caf1f4436d4)
 - 💄 Style(ui): apply prettier formatting to signing docs and page [`0addb30`](https://github.com/shawnphoffman/shared-contacts/commit/0addb30bcb2175dc96f3f685dc9570d1d7c43cc4)
+- 🔧 Chore: release v1.10.0 [`87db15a`](https://github.com/shawnphoffman/shared-contacts/commit/87db15a73e7160aa668b9b26334c03c42c17f2b6)
 - 🔧 Chore(git): update gitignore [`85f2f8f`](https://github.com/shawnphoffman/shared-contacts/commit/85f2f8fde39a3df96ad5022bc64b9b42c93fbf22)
 
 #### [v1.9.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.8.0...v1.9.0)
