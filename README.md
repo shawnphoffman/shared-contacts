@@ -24,6 +24,7 @@ I also have a large extended family that I'd love to stay in touch with as much 
 - **Web Management UI**: Modern React-based interface built with TanStack Start
 - **PostgreSQL Backend**: Queryable database for fast contact searches
 - **Bidirectional Sync**: Automatic synchronization between CardDAV and database
+- **Contact Lists**: Lists (groups) made in Apple Contacts sync to everyone sharing the address book
 - **User Management**: Manage Radicale users for CardDAV access
 - **Docker Compose**: Easy deployment with Docker
 
@@ -71,6 +72,17 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 3. **Restrict network access** to services
 4. **Regular backups** of database and Radicale data
 5. **Keep Docker images updated**
+
+## Contact lists (groups)
+
+Apple Contacts lets you nest **lists** under an address book to group people. A list is not a server-side object: it is an ordinary vCard stored in the same collection, marked `X-ADDRESSBOOKSERVER-KIND:group`, naming its members by UID. vCard 4 clients use the unprefixed `KIND:group` / `MEMBER` spelling instead; both are accepted, and profiles are always written back in the Apple spelling that Contacts reads.
+
+Lists are created and edited **in your CardDAV client**, not in the web UI. Make a list on your Mac or iPhone and it syncs to everyone subscribed to that address book, with the same people in it. Renaming a list, or adding and removing members, propagates the same way.
+
+The web UI shows lists read-only: a contact's detail page displays the lists it belongs to as dashed badges next to its address books. Group cards themselves are hidden from the contact list, duplicate detection, CSV export, and trash, so they never show up as phantom contacts.
+
+> [!IMPORTANT]
+> An address book is shared, so deleting a contact or a list on one device deletes it for **every** subscriber of that book. This is deliberate: the alternative is silent, permanent divergence between people's devices.
 
 ## Mobileconfig profiles and signing
 
