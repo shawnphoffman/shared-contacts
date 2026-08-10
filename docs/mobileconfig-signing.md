@@ -35,6 +35,11 @@ XML instead of erroring. A profile that suddenly downloads unsigned is therefore
 almost always a cert path / file-permission problem — check the app container
 logs for a warning from the signer.
 
+Note that the services run **unprivileged** (`PUID`/`PGID`, default `1000`), so
+the mounted certificate and key must be readable by that uid — root-only `0600`
+files will not be. They are deliberately not chowned by the entrypoint; see
+[permissions.md](permissions.md).
+
 `openssl` is already included in the application image, so no extra packages are
 required.
 

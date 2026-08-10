@@ -84,20 +84,68 @@ cleanup() {
 # Set up signal handlers
 trap cleanup SIGTERM SIGINT
 
+# ---------------------------------------------------------------------------
+# Privilege handling
+#
+# We start as root only long enough to fix ownership on mounted volumes (which
+# ignore any chown baked into the image), then run every service as an
+# unprivileged user. PUID/PGID let that user match a host account so files on
+# bind mounts — notably BACKUP_DIR — are readable without sudo. The defaults
+# are 1000:1000, the `radicale` user the base image already ships.
+# ---------------------------------------------------------------------------
+APP_UID=${PUID:-1000}
+APP_GID=${PGID:-1000}
+
+# Ensure the ids resolve to real accounts. Radicale is Python, which looks the
+# running uid up in /etc/passwd in places; a bare numeric id would fail there.
+ensure_account() {
+    if ! getent group "$APP_GID" >/dev/null 2>&1; then
+        addgroup -g "$APP_GID" appuser 2>/dev/null || true
+    fi
+    if ! getent passwd "$APP_UID" >/dev/null 2>&1; then
+        group_name=$(getent group "$APP_GID" | cut -d: -f1)
+        adduser -D -H -u "$APP_UID" -G "${group_name:-appuser}" appuser 2>/dev/null || true
+    fi
+}
+
+# chown -R over the paths the services write to. Best effort: a read-only or
+# root-squashed mount should degrade to a clear failure later rather than
+# stopping the container from booting.
+take_ownership() {
+    for path in "$@"; do
+        [ -e "$path" ] || continue
+        if ! chown -R "$APP_UID:$APP_GID" "$path" 2>/dev/null; then
+            warn "Could not change ownership of $path; services may fail to write there"
+        fi
+    done
+}
+
+# Run a command as the unprivileged user.
+as_app_user() {
+    su-exec "$APP_UID:$APP_GID" "$@"
+}
+
+ensure_account
+
 # Initialize Radicale users file if it doesn't exist
 if [ ! -f /data/users ]; then
     log "Creating empty users file..."
     touch /data/users 2>/dev/null || true
-    chmod 666 /data/users 2>/dev/null || chmod 644 /data/users 2>/dev/null || true
     log "Users file created. Add users with: docker exec -it <container> htpasswd -B /data/users username"
 fi
+
+# /data holds the Radicale collections and the htpasswd file; BACKUP_DIR holds
+# the archives. On an upgrade from a root-running version this is a one-time
+# recursive chown of the existing volume.
+log "Preparing data directories for uid=$APP_UID gid=$APP_GID..."
+take_ownership /data "${BACKUP_DIR:-/backups}" /var/lib/radicale
 
 # Set NODE_ENV for all services
 export NODE_ENV=${NODE_ENV:-production}
 
 # Start Radicale in background
 log "Starting Radicale (CardDAV server)..."
-/app/bin/python /app/bin/radicale --config /config/config &
+as_app_user /app/bin/python /app/bin/radicale --config /config/config &
 RADICALE_PID=$!
 
 # Wait for Radicale to be ready
@@ -110,7 +158,7 @@ fi
 # Start sync-service in background
 log "Starting sync-service..."
 cd /app/sync-service
-node dist/index.js &
+as_app_user node dist/index.js &
 SYNC_PID=$!
 
 # Wait for sync-service to be ready
@@ -125,7 +173,7 @@ log "Starting UI..."
 cd /app/ui
 export PORT=${PORT:-3030}
 export HOST=${HOST:-0.0.0.0}
-node .output/server/index.mjs &
+as_app_user node .output/server/index.mjs &
 UI_PID=$!
 
 # Wait for UI to be ready

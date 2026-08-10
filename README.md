@@ -86,6 +86,8 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 4. **Regular backups** of database and Radicale data
 5. **Keep Docker images updated**
 
+The container's services run as an unprivileged user (`PUID`/`PGID`, default `1000`), not as root. Set them to your host account so bind-mounted files belong to you: see [docs/permissions.md](docs/permissions.md).
+
 ## Timezone
 
 The app container runs in UTC, pinned in the Dockerfile and in both compose files. Leave it that way.

@@ -47,9 +47,10 @@ USER root
 
 # Install Node.js 22 (for ui) and Node.js 20 (for sync-service)
 # We'll use Node 22 for both since it's backward compatible
-# Also install netcat for health checks in entrypoint script and openssl
-# for optional .mobileconfig signing (openssl smime -sign).
-RUN apk add --no-cache nodejs npm netcat-openbsd openssl && \
+# Also install netcat for health checks in entrypoint script, openssl for
+# optional .mobileconfig signing (openssl smime -sign), and su-exec so the
+# entrypoint can drop privileges after fixing volume ownership.
+RUN apk add --no-cache nodejs npm netcat-openbsd openssl su-exec && \
 	rm -rf /var/cache/apk/*
 
 # Run the app in UTC, matching the Postgres session. node-postgres serializes a
@@ -104,9 +105,12 @@ EXPOSE 3030 3001 5232
 # Set working directory
 WORKDIR /app
 
-# TODO: Run as non-root user — requires entrypoint changes to handle
-# volume ownership (mounted volumes ignore in-image chown). Implement
-# with gosu/su-exec: start as root, fix permissions, then drop to appuser.
+# The container deliberately STARTS as root and does not stay there. Mounted
+# volumes ignore ownership baked into the image, so only a running container
+# can fix them; the entrypoint chowns the writable paths and then starts all
+# three services under an unprivileged user (PUID/PGID, default 1000:1000 —
+# the `radicale` user the base image already ships). Setting `USER` here
+# instead would leave us unable to chown a fresh volume.
 
 # Built-in health check against the UI server
 HEALTHCHECK --interval=1m --timeout=10s --retries=3 --start-period=60s \

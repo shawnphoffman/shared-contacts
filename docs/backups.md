@@ -48,13 +48,14 @@ BACKUP_KEEP=14
 
 Both compose files bind-mount `./backups` (next to the compose file) onto `/backups` in the container, so archives land on the host where an offsite sync (restic, rclone, borg) can pick them up. `backups/` is gitignored.
 
-Docker creates the directory on first start if it does not exist. The container currently runs as root, so the directory and the archives inside it end up owned by root on the host — reading them needs `sudo`, or a one-time:
+Docker creates the directory on first start if it does not exist. Archives are written by the container's unprivileged user, so set `PUID`/`PGID` to your host account and they land owned by you:
 
 ```bash
-sudo chown -R "$USER" ./backups
+echo "PUID=$(id -u)" >> .env
+echo "PGID=$(id -g)" >> .env
 ```
 
-New archives will still be written as root. See [the root TODO in the Dockerfile](../Dockerfile) — dropping to a non-root user is the real fix.
+See [permissions](permissions.md) for how that works.
 
 To point backups somewhere else entirely, set `BACKUP_DIR` and mount that path instead:
 

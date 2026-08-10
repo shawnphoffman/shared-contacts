@@ -38,6 +38,10 @@ services:
       # put the two seven hours apart in the same row. Not ${TZ:-UTC} for that
       # reason. See migrations/22_contacts_timestamptz.sql.
       TZ: UTC
+      # Services run unprivileged as this uid/gid. Set these to your host user
+      # (`id -u` / `id -g`) so files on the bind-mounted ./backups are yours.
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
       # Scheduled backups written to BACKUP_DIR. Off by default; the Backups
       # page can still create one on demand. See docs/backups.md.
       BACKUP_ENABLED: ${BACKUP_ENABLED:-false}
@@ -51,8 +55,7 @@ services:
     volumes:
       - radicale_data:/data
       # Bind mount so archives land on the host, where an offsite sync (restic,
-      # rclone, borg) can pick them up. The container runs as root, so the
-      # directory and its contents end up root-owned on the host.
+      # rclone, borg) can pick them up. Ownership follows PUID/PGID above.
       - ./backups:/backups
     # ports:
     #   - '${UI_PORT:-3030}:3030'
