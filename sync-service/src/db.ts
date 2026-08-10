@@ -297,6 +297,18 @@ export async function getAllContacts(): Promise<Contact[]> {
 	return result.rows.map(parseContactRow)
 }
 
+/**
+ * id and vcard_id for every contact that still exists, deliberately without the
+ * heavy columns. The outbound orphan sweep needs to know which cards belong on
+ * disk, not what is in them, and loading full rows (photos included) just to
+ * read two fields is a needless cost on every pass.
+ */
+export async function getLiveContactVCardIds(): Promise<Array<{ id: string; vcard_id: string }>> {
+	const pool = getPool()
+	const result = await pool.query('SELECT id, vcard_id FROM contacts WHERE deleted_at IS NULL AND vcard_id IS NOT NULL')
+	return result.rows
+}
+
 export async function getContactByVcardId(vcardId: string): Promise<Contact | null> {
 	const pool = getPool()
 	const result = await pool.query('SELECT * FROM contacts WHERE vcard_id = $1 AND deleted_at IS NULL', [vcardId])

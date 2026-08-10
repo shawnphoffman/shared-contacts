@@ -5,6 +5,7 @@ import {
 	getAllAddressBookReadonly,
 	getContactAddressBookEntries,
 	getContactsNeedingRadicaleSync,
+	getLiveContactVCardIds,
 	setContactAddressBooks,
 	updateSyncMetadata,
 } from '../db'
@@ -104,9 +105,29 @@ export async function syncDbToRadicale(): Promise<void> {
 			contactBookIdsByContactId.set(entry.contact_id, existing)
 		}
 
+		const booksHoldingContact = (contactId: string): Array<AddressBook> => {
+			const assigned = Array.from(contactBookIdsByContactId.get(contactId) || [])
+				.map(id => bookById.get(id))
+				.filter((book): book is AddressBook => Boolean(book))
+			return assigned.length > 0 ? assigned : hasAddressBooks ? [defaultBook] : books
+		}
+
+		// Which cards legitimately belong on disk. The orphan sweep at the end of
+		// this pass deletes every master file missing from this set, and deletes it
+		// out of each subscriber's collection with it, so the set has to describe
+		// every live contact rather than only the ones needing a write this pass.
+		// Keyed to the write list, "did not need syncing" meant "orphan": a single
+		// pass in which a contact's row was already up to date removed its card
+		// from every device, and the inbound pass then read those missing files as
+		// a client-side delete and soft-deleted the rows behind them.
 		const existingVCardIdsByBookId = new Map<string, Set<string>>()
 		for (const book of books) {
 			existingVCardIdsByBookId.set(book.id, new Set<string>())
+		}
+		for (const live of await getLiveContactVCardIds()) {
+			for (const book of booksHoldingContact(live.id)) {
+				existingVCardIdsByBookId.get(book.id)?.add(live.vcard_id)
+			}
 		}
 
 		let synced = 0
@@ -126,11 +147,7 @@ export async function syncDbToRadicale(): Promise<void> {
 				await setContactAddressBooks(contact.id, [defaultBook.id])
 			}
 
-			const targetBooks = Array.from(bookIds)
-				.map(id => bookById.get(id))
-				.filter((book): book is AddressBook => Boolean(book))
-
-			const booksToSync = targetBooks.length > 0 ? targetBooks : hasAddressBooks ? [defaultBook] : books
+			const booksToSync = booksHoldingContact(contact.id)
 			for (const book of booksToSync) {
 				existingVCardIdsByBookId.get(book.id)?.add(contact.vcard_id)
 			}
