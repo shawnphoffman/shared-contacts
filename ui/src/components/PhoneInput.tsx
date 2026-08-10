@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { AsYouType, parsePhoneNumber } from 'libphonenumber-js'
+import { useEffect, useState } from 'react'
 import { Input } from './ui/input'
 import type { CountryCode } from 'libphonenumber-js'
-import { cn } from '@/lib/utils'
+import { cn, formatPhoneAsYouType, formatPhoneNumber, formatSevenDigitPhone, formatValidPhoneNumber, toE164Phone } from '@/lib/utils'
 
 interface PhoneInputProps {
 	value?: string
@@ -16,6 +15,8 @@ interface PhoneInputProps {
 	disabled?: boolean
 	defaultCountry?: CountryCode
 }
+
+const digitsOf = (value: string) => value.replace(/\D/g, '')
 
 /**
  * Smart phone number input that formats numbers as you type
@@ -33,176 +34,39 @@ export function PhoneInput({
 	disabled = false,
 	defaultCountry = 'US',
 }: PhoneInputProps) {
-	const [displayValue, setDisplayValue] = useState(value)
-	const [detectedCountry, setDetectedCountry] = useState<CountryCode | undefined>(defaultCountry)
-	const inputRef = useRef<HTMLInputElement>(null)
-	const formatSevenDigit = (inputValue: string): string | null => {
-		const digitsOnly = inputValue.replace(/\D/g, '')
-		if (digitsOnly.length !== 7) return null
-		return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3)}`
-	}
+	const [displayValue, setDisplayValue] = useState(() => formatPhoneNumber(value, defaultCountry))
 
-	// Update display value when external value changes
+	// Reformat when the value changes externally. Same digits with the same
+	// international prefix means the parent just echoed back what is already on
+	// screen (usually the E.164 form), so leave the text under the cursor alone.
 	useEffect(() => {
-		// Only update if the value prop actually changed (not from internal state)
-		const currentFormatted = displayValue.replace(/\D/g, '')
-		const newFormatted = value.replace(/\D/g, '')
-
-		// If the digits are the same, don't update (to avoid loops)
-		if (currentFormatted === newFormatted && value === displayValue) {
+		if (digitsOf(displayValue) === digitsOf(value) && displayValue.trim().startsWith('+') === value.trim().startsWith('+')) {
 			return
 		}
-
-		// If value is empty, clear display
-		if (!value) {
-			setDisplayValue('')
-			return
-		}
-
-		// Try to format the value for display
-		try {
-			// First try to parse as a complete number
-			const phoneNumber = parsePhoneNumber(value, detectedCountry || defaultCountry)
-			if (phoneNumber.isValid()) {
-				// Format for display
-				setDisplayValue(phoneNumber.formatNational())
-				if (phoneNumber.country) {
-					setDetectedCountry(phoneNumber.country)
-				}
-			} else {
-				// Try without country hint
-				try {
-					const phoneNumberIntl = parsePhoneNumber(value)
-					if (phoneNumberIntl.isValid()) {
-						setDisplayValue(phoneNumberIntl.formatInternational())
-						if (phoneNumberIntl.country) {
-							setDetectedCountry(phoneNumberIntl.country)
-						}
-					} else {
-						// Use AsYouType formatter for partial numbers
-						const formatter = new AsYouType(detectedCountry || defaultCountry)
-						const formatted = formatter.input(value)
-						setDisplayValue(formatted)
-						if (formatter.country) {
-							setDetectedCountry(formatter.country)
-						}
-					}
-				} catch {
-					// Use AsYouType formatter
-					const formatter = new AsYouType(detectedCountry || defaultCountry)
-					const formatted = formatter.input(value)
-					setDisplayValue(formatSevenDigit(value) || formatted)
-					if (formatter.country) {
-						setDetectedCountry(formatter.country)
-					}
-				}
-			}
-		} catch {
-			// If parsing fails, use AsYouType formatter
-			try {
-				const formatter = new AsYouType(detectedCountry || defaultCountry)
-				const formatted = formatter.input(value)
-				setDisplayValue(formatSevenDigit(value) || formatted)
-				if (formatter.country) {
-					setDetectedCountry(formatter.country)
-				}
-			} catch {
-				// If all else fails, use value as-is
-				setDisplayValue(formatSevenDigit(value) || value)
-			}
-		}
+		setDisplayValue(formatPhoneNumber(value, defaultCountry))
 	}, [value, defaultCountry])
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const inputValue = e.target.value
-		const sevenDigit = formatSevenDigit(inputValue)
+		const formatted = formatPhoneAsYouType(inputValue, defaultCountry)
 
-		// Use AsYouType formatter for real-time formatting
-		const formatter = new AsYouType(detectedCountry || defaultCountry)
-		const formattedValue = formatter.input(inputValue)
-
-		// Update detected country if formatter detected one
-		if (formatter.country) {
-			setDetectedCountry(formatter.country)
-		}
-
-		setDisplayValue(sevenDigit || formattedValue)
-
-		// Call onChange with the formatted value
-		// Try to get E.164 format if we can parse it, otherwise use formatted value
-		if (onChange) {
-			if (sevenDigit) {
-				onChange(sevenDigit)
-				return
-			}
-			try {
-				const phoneNumber = parsePhoneNumber(inputValue, detectedCountry || defaultCountry)
-				// Use E.164 format if valid, otherwise use formatted value
-				onChange(phoneNumber.isValid() ? phoneNumber.number : formattedValue)
-			} catch {
-				// If parsing fails, try without country hint
-				try {
-					const phoneNumber = parsePhoneNumber(inputValue)
-					if (phoneNumber.isValid()) {
-						onChange(phoneNumber.number)
-					} else {
-						onChange(formattedValue)
-					}
-				} catch {
-					// If all parsing fails, use formatted value
-					onChange(formattedValue)
-				}
-			}
-		}
+		setDisplayValue(formatted)
+		// Store E.164 once the number is complete, otherwise keep the raw formatting
+		onChange?.(toE164Phone(inputValue, defaultCountry) ?? formatted)
 	}
 
 	const handleBlur = () => {
-		// On blur, try to format to a complete number if possible
 		if (displayValue) {
-			try {
-				// Try parsing with detected/default country first
-				const phoneNumber = parsePhoneNumber(displayValue, detectedCountry || defaultCountry)
-				if (phoneNumber.isValid()) {
-					// Format as national format for display, but store E.164
-					const formatted = phoneNumber.formatNational()
+			const sevenDigit = formatSevenDigitPhone(displayValue)
+			if (sevenDigit) {
+				setDisplayValue(sevenDigit)
+				onChange?.(sevenDigit)
+			} else {
+				const formatted = formatValidPhoneNumber(displayValue, defaultCountry)
+				const e164 = toE164Phone(displayValue, defaultCountry)
+				if (formatted && e164) {
 					setDisplayValue(formatted)
-					if (onChange) {
-						onChange(phoneNumber.number) // Store E.164 format
-					}
-					if (phoneNumber.country) {
-						setDetectedCountry(phoneNumber.country)
-					}
-				} else {
-					// Try without country hint
-					try {
-						const phoneNumberIntl = parsePhoneNumber(displayValue)
-						if (phoneNumberIntl.isValid()) {
-							const formatted = phoneNumberIntl.formatInternational()
-							setDisplayValue(formatted)
-							if (onChange) {
-								onChange(phoneNumberIntl.number)
-							}
-							if (phoneNumberIntl.country) {
-								setDetectedCountry(phoneNumberIntl.country)
-							}
-						}
-					} catch {
-						const sevenDigit = formatSevenDigit(displayValue)
-						if (sevenDigit) {
-							setDisplayValue(sevenDigit)
-							if (onChange) {
-								onChange(sevenDigit)
-							}
-						}
-					}
-				}
-			} catch {
-				const sevenDigit = formatSevenDigit(displayValue)
-				if (sevenDigit) {
-					setDisplayValue(sevenDigit)
-					if (onChange) {
-						onChange(sevenDigit)
-					}
+					onChange?.(e164)
 				}
 			}
 		}
@@ -211,7 +75,6 @@ export function PhoneInput({
 
 	return (
 		<Input
-			ref={inputRef}
 			id={id}
 			name={name}
 			type="tel"
