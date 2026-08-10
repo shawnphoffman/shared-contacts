@@ -38,3 +38,28 @@ The same applies if you change `PUID`/`PGID` later: the next start re-chowns `/d
 - **Mobileconfig signing certificates.** If you mount a signing cert and key (see [mobileconfig-signing.md](mobileconfig-signing.md)), they must be readable by `PUID`. They are deliberately _not_ chowned — they are your secrets, mounted read-only, and the container should not be rewriting their ownership. If signing silently falls back to unsigned after upgrading, check their mode first; the CardDAV Config page surfaces the signing status.
 - **Read-only or root-squashed mounts.** The `chown` is best effort. If it fails the container still boots and logs a warning, so the real error surfaces at the point something tries to write rather than as an opaque startup failure.
 - **The development stack is unchanged.** `docker-compose.yml` runs Radicale, the sync service and the UI as three separate root containers sharing one volume; making that non-root means moving all three at once, and it is a throwaway local stack rather than a security boundary. This document is about the published single-container image.
+
+## If a certificate dumper feeds your signing key
+
+A common setup points the mobileconfig signer at a TLS certificate extracted from Traefik by [traefik-certs-dumper](https://github.com/ldez/traefik-certs-dumper). That tool writes `certificate.crt` as `0644` and `privatekey.key` as `0600 root:root`, and with `--clean` (its default) it wipes and recreates the destination on every renewal. So a manual `chmod` on the key holds only until the certificate next renews, and then profiles quietly start downloading unsigned.
+
+Fix it at the source, in two lines. Run the dumper with `PGID` as its group so everything it creates lands in that group, and add a post-hook that opens up the one key:
+
+```yaml
+traefik-certs-dumper:
+  image: ldez/traefik-certs-dumper:latest
+  user: '0:1000' # root, so it can still read Traefik's 0600 acme.json
+  command: file --version v2 --watch --source /acme/acme.json --dest /out --domain-subdir
+    --post-hook "chmod 640 /out/example.com/privatekey.key"
+```
+
+That leaves the key `0640 root:1000` after every renewal, the certificate `0644` (it is public), and `/out/private/letsencrypt.key` at `0600` — group `1000` but no group bits, so the ACME account key stays unreadable.
+
+Two constraints worth knowing before you adjust it:
+
+- **The hook gets no shell.** The string is split on whitespace and executed directly, so `&&`, pipes, globs and quoting do not work. One command with plain arguments only.
+- **A hook that exits non-zero panics the dumper**, and cert dumping stops. `chmod` on a path that does not exist is a non-zero exit, so the literal path above must match reality — if you add a second domain or rename one, the dumper dies rather than degrading.
+
+With more than one domain, or paths that change, put the loop in a script and point `--post-hook` at it instead (mounted read-only, executable bit set on the host), guarding each path with `[ -e "$key" ] || continue` so a missing file cannot take the dumper down.
+
+Running the dumper as `1000:1000` outright would make the key owner-readable and need no hook at all, but it then cannot read Traefik's `acme.json`, which is `0600 root:root` and rewritten on every renewal. That just moves the same problem upstream.
