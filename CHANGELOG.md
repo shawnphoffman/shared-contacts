@@ -6,30 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.11.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.10.0...v1.11.0) (2026-08-10)
+## [1.12.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.11.0...v1.12.0) (2026-08-10)
 
 ### Features
 
-* **sync:** sync carddav group cards as lists ([9bc5be8](https://github.com/shawnphoffman/shared-contacts/commit/9bc5be8b9c6ec5c01744cc75c7a7146372f781ea))
-* **ui:** show list membership and hide group cards ([8684eea](https://github.com/shawnphoffman/shared-contacts/commit/8684eea9e8f22759369cd3874fc6e8854efe64ab))
+* **docker:** run the services as an unprivileged user ([11c0848](https://github.com/shawnphoffman/shared-contacts/commit/11c084827ece6d5a35bc0a474accb29a38da65fd))
+* **ui:** add scheduled backups to disk with retention ([e38834c](https://github.com/shawnphoffman/shared-contacts/commit/e38834c720d67dbd1f5187a470ab9d929f7b291a))
+* **ui:** rename and delete contact lists ([63fdd9a](https://github.com/shawnphoffman/shared-contacts/commit/63fdd9a02e2574abefb34693461905689bd8bbf2))
 
 ### Bug Fixes
 
-* **sync:** propagate creates and deletes to every subscriber ([86fc7a9](https://github.com/shawnphoffman/shared-contacts/commit/86fc7a943795fb4e3ec61bdfe4b8cbd52c9fc550))
+* **sync:** store contact timestamps with a time zone ([3500c07](https://github.com/shawnphoffman/shared-contacts/commit/3500c074b45f93c5728d22581685feb49f31405e))
+* **sync:** sweep only cards with no live contact ([70be1cd](https://github.com/shawnphoffman/shared-contacts/commit/70be1cd4980ec61923e61fce95779c28158262c6))
+* **ui:** activate the server directory and raise the body limit ([1b46ee8](https://github.com/shawnphoffman/shared-contacts/commit/1b46ee8e93ceaa010c5cc1ee5aaefe83e607db27))
+* **ui:** preserve country code on international phone entry ([f1bf02b](https://github.com/shawnphoffman/shared-contacts/commit/f1bf02bc9c9a7ae5fffeca1d999073ac4558a2fe))
 
 ### Documentation
 
-* document contact lists ([12f7fb3](https://github.com/shawnphoffman/shared-contacts/commit/12f7fb316d2c18370b444401bc272ddcabd045c6))
+* cover certificate dumpers resetting signing key permissions ([fb4b990](https://github.com/shawnphoffman/shared-contacts/commit/fb4b990f9f59d7ceeba30f713b51e10bf6aece7d))
+
+### Miscellaneous
+
+* allow unwrapped commit bodies and footers ([f1084b4](https://github.com/shawnphoffman/shared-contacts/commit/f1084b4a7a6c6945819264f6e769efe9dd8a316b))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.12.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.11.0...v1.12.0)
+
+- ✨ Feature(ui): add scheduled backups to disk with retention [`e38834c`](https://github.com/shawnphoffman/shared-contacts/commit/e38834c720d67dbd1f5187a470ab9d929f7b291a)
+- ✨ Feature(ui): rename and delete contact lists [`63fdd9a`](https://github.com/shawnphoffman/shared-contacts/commit/63fdd9a02e2574abefb34693461905689bd8bbf2)
+- 🐛 Fix(ui): preserve country code on international phone entry [`f1bf02b`](https://github.com/shawnphoffman/shared-contacts/commit/f1bf02bc9c9a7ae5fffeca1d999073ac4558a2fe)
+- 🐛 Fix(sync): sweep only cards with no live contact [`70be1cd`](https://github.com/shawnphoffman/shared-contacts/commit/70be1cd4980ec61923e61fce95779c28158262c6)
+- ✨ Feature(docker): run the services as an unprivileged user [`11c0848`](https://github.com/shawnphoffman/shared-contacts/commit/11c084827ece6d5a35bc0a474accb29a38da65fd)
+- 🐛 Fix(sync): store contact timestamps with a time zone [`3500c07`](https://github.com/shawnphoffman/shared-contacts/commit/3500c074b45f93c5728d22581685feb49f31405e)
+- 📝 Docs: cover certificate dumpers resetting signing key permissions [`fb4b990`](https://github.com/shawnphoffman/shared-contacts/commit/fb4b990f9f59d7ceeba30f713b51e10bf6aece7d)
+- 🐛 Fix(ui): activate the server directory and raise the body limit [`1b46ee8`](https://github.com/shawnphoffman/shared-contacts/commit/1b46ee8e93ceaa010c5cc1ee5aaefe83e607db27)
+- 🔧 Chore: allow unwrapped commit bodies and footers [`f1084b4`](https://github.com/shawnphoffman/shared-contacts/commit/f1084b4a7a6c6945819264f6e769efe9dd8a316b)
+
 #### [v1.11.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.10.0...v1.11.0)
+
+> 10 August 2026
 
 - ✨ Feature(sync): sync carddav group cards as lists [`9bc5be8`](https://github.com/shawnphoffman/shared-contacts/commit/9bc5be8b9c6ec5c01744cc75c7a7146372f781ea)
 - 🐛 Fix(sync): propagate creates and deletes to every subscriber [`86fc7a9`](https://github.com/shawnphoffman/shared-contacts/commit/86fc7a943795fb4e3ec61bdfe4b8cbd52c9fc550)
 - ✨ Feature(ui): show list membership and hide group cards [`8684eea`](https://github.com/shawnphoffman/shared-contacts/commit/8684eea9e8f22759369cd3874fc6e8854efe64ab)
+- 🔧 Chore: release v1.11.0 [`5e85b84`](https://github.com/shawnphoffman/shared-contacts/commit/5e85b84e37aaa27cdaeba681c43d7ddd3c8e2642)
 - 📝 Docs: document contact lists [`12f7fb3`](https://github.com/shawnphoffman/shared-contacts/commit/12f7fb316d2c18370b444401bc272ddcabd045c6)
 
 #### [v1.10.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.9.0...v1.10.0)
