@@ -16,6 +16,7 @@ import { getAddressBooksForSync } from './address-books'
 import { calculateVCardHash, detectConflict, resolveConflict } from './conflict'
 import {
 	getAddressBookPath,
+	getAddressBookPathForUser,
 	ensureDirectoryExists,
 	ensureAddressBookProps,
 	extractVCardId,
@@ -85,6 +86,16 @@ export async function syncDbToRadicale(): Promise<void> {
 			}
 		}
 
+		// True only when every subscriber of every target book already holds a copy
+		// of this card. Existence only, see the call site for why hashing each
+		// per-user copy would be wasted I/O.
+		const allUserCopiesExist = (vcardId: string, targetBooks: Array<AddressBook>): boolean =>
+			targetBooks.every(book =>
+				Array.from(usersByBookId.get(book.id) || []).every(username =>
+					fs.existsSync(path.join(getAddressBookPathForUser(username, book.id), `${vcardId}.vcf`))
+				)
+			)
+
 		const contactBookEntries = await getContactAddressBookEntries()
 		const contactBookIdsByContactId = new Map<string, Set<string>>()
 		for (const entry of contactBookEntries) {
@@ -152,7 +163,16 @@ export async function syncDbToRadicale(): Promise<void> {
 					const existingHash = calculateVCardHash(existingVCardContent)
 					const fileMtime = getFileModificationTime(primaryFilePath)
 
-					if (newHash === existingHash && contact.vcard_hash === newHash) {
+					// The master copy matching is not enough to call this contact synced:
+					// a card that a CardDAV client created in its own collection is
+					// copied straight to master by radicale-to-db, which leaves master,
+					// vcard_data and vcard_hash all in agreement while every *other*
+					// subscriber's collection still lacks the file. Skipping here left
+					// those subscribers permanently missing the card. Content staleness
+					// is already covered by the hash comparison above (any edit changes
+					// vcard_hash and forces a full rewrite), so a cheap existence check
+					// is all the per-user copies need.
+					if (newHash === existingHash && contact.vcard_hash === newHash && allUserCopiesExist(contact.vcard_id, booksToSync)) {
 						await updateSyncMetadata(contact.id, {
 							last_synced_to_radicale_at: new Date(),
 							vcard_hash: newHash,
@@ -192,7 +212,15 @@ export async function syncDbToRadicale(): Promise<void> {
 				last_synced_to_radicale_at: new Date(),
 				vcard_hash: newHash,
 				radicale_file_mtime: fileMtime,
-				sync_source: contact.sync_source === 'api' ? 'api' : 'db',
+				// sync_source records where the contact came from, not which
+				// direction last wrote it. Writing 'db' here erased the fact that a
+				// card originated in a CardDAV client, and the three deletion checks
+				// (watcher unlink, and the sweep in radicale-to-db) only honour a
+				// client-side delete when sync_source is still 'radicale'. Once it had
+				// been overwritten, deleting a contact or a list on a device did not
+				// remove it: it was written straight back out. Preserve both
+				// non-'db' origins.
+				sync_source: contact.sync_source === 'api' || contact.sync_source === 'radicale' ? contact.sync_source : 'db',
 			})
 
 			synced++

@@ -1,6 +1,7 @@
 import * as path from 'path'
 import { watch } from 'chokidar'
 import {
+	AddressBook,
 	getAddressBookById,
 	getAddressBookBySlug,
 	getAddressBooksForUser,
@@ -10,11 +11,17 @@ import {
 	deleteContact,
 	setContactAddressBooks,
 } from '../db'
-import { getUsers } from '../htpasswd'
+import { getUsers, getCompositeUsername, isCompositeUsername } from '../htpasswd'
 import { logger } from '../logger'
 import { FILE_WATCHER_DEBOUNCE_MS } from './constants'
 import { getAddressBooksForSync } from './address-books'
-import { getAddressBookPath, getAddressBookPathForUser, ensureDirectoryExists, extractBookPathSegmentFromPath } from './radicale-fs'
+import {
+	getAddressBookPath,
+	getAddressBookPathForUser,
+	ensureDirectoryExists,
+	extractBookPathSegmentFromPath,
+	deleteVCardFile,
+} from './radicale-fs'
 import { syncRadicaleToDb } from './radicale-to-db'
 
 /**
@@ -42,6 +49,21 @@ export async function startWatchingRadicale(): Promise<void> {
 	}
 
 	logger.info({ debounceMs: FILE_WATCHER_DEBOUNCE_MS }, 'File watcher debounce configured')
+
+	// Composite usernames of everyone whose collection holds a copy of this
+	// book, matching how db-to-radicale fans writes out.
+	const subscriberUsernames = async (book: AddressBook): Promise<Array<string>> => {
+		const usernames: Array<string> = []
+		for (const user of await getUsers()) {
+			if (user.username.startsWith('ro-')) continue
+			if (isCompositeUsername(user.username)) continue
+			const accessibleBooks = await getAddressBooksForUser(user.username)
+			if (accessibleBooks.some(accessible => accessible.id === book.id)) {
+				usernames.push(getCompositeUsername(user.username, book.id))
+			}
+		}
+		return usernames
+	}
 
 	try {
 		const users = await getUsers()
@@ -152,6 +174,13 @@ export async function startWatchingRadicale(): Promise<void> {
 								if (currentBookIds.size === 0 && contact.sync_source === 'radicale') {
 									logger.info({ vcardId }, 'Deleting contact from DB (deleted from all address books)')
 									await deleteContact(contact.id)
+									// The book is shared, so a delete on one device is a delete
+									// for everyone subscribed to it. Clear the other collections
+									// now rather than leaving it to the orphan sweep in
+									// db-to-radicale: the debounced inbound sync below runs
+									// first, and it would restore the contact from a peer's
+									// still-present copy before the sweep ever ran.
+									await deleteVCardFile(book, vcardId, await subscriberUsernames(book))
 								} else if (contact.sync_source !== 'radicale') {
 									logger.info({ vcardId }, 'Contact deleted from Radicale but keeping in DB (will be recreated)')
 								}

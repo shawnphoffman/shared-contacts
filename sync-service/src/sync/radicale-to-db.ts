@@ -435,6 +435,20 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 						const duplicateContact = await getContactByVcardIdIncludingDeleted(vcardId)
 						if (duplicateContact) {
 							if (duplicateContact.deleted_at) {
+								// The master directory is this service's own mirror, not a
+								// client collection. When someone deletes a card on a device,
+								// the watcher soft-deletes the row but the mirror still holds a
+								// copy, and restoring from it resurrected the contact before the
+								// orphan sweep in db-to-radicale could clear the mirror, so
+								// deletes made on a device never stuck. Leave the row deleted
+								// and let that sweep remove the mirror and the other
+								// subscribers' copies. A card the user genuinely re-adds
+								// arrives in a user collection and still restores.
+								if (pathIsMaster) {
+									logger.info({ vcardId }, 'Card is deleted and only the master mirror remains; leaving it deleted')
+									skipped++
+									continue
+								}
 								await restoreContact(duplicateContact.id)
 								logger.info({ vcardId }, 'Restored soft-deleted contact during sync')
 							}
