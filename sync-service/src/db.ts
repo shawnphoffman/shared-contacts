@@ -560,7 +560,7 @@ export async function getContactsNeedingRadicaleSync(): Promise<Contact[]> {
 		WHERE vcard_id IS NOT NULL
 		AND deleted_at IS NULL
 		AND (
-			updated_at > COALESCE(last_synced_to_radicale_at, '1970-01-01'::timestamp)
+			updated_at > COALESCE(last_synced_to_radicale_at, '1970-01-01'::timestamptz)
 			OR sync_source != 'radicale'
 			OR last_synced_to_radicale_at IS NULL
 		)

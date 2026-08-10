@@ -73,6 +73,14 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 4. **Regular backups** of database and Radicale data
 5. **Keep Docker images updated**
 
+## Timezone
+
+The app container runs in UTC, pinned in the Dockerfile and in both compose files. Leave it that way.
+
+Conflict resolution compares `contacts.updated_at` (written by a Postgres trigger, in the database session's zone) against vCard file mtimes, and `getContactsNeedingRadicaleSync` compares that same column against a watermark the app writes as a JS `Date`. Since `22_contacts_timestamptz.sql` those columns carry a time zone, so the two writers agree on an instant regardless of process zone. Before that migration they did not, and an app container on a non-UTC zone put the two an offset apart in the same row: the database copy won every conflict, so **no edit made in a CardDAV client ever survived** - it was reverted on the next sync.
+
+If your deployment platform injects a `TZ` for containers, override it to `UTC` for this one.
+
 ## Contact lists (groups)
 
 Apple Contacts lets you nest **lists** under an address book to group people. A list is not a server-side object: it is an ordinary vCard stored in the same collection, marked `X-ADDRESSBOOKSERVER-KIND:group`, naming its members by UID. vCard 4 clients use the unprefixed `KIND:group` / `MEMBER` spelling instead; both are accepted, and profiles are always written back in the Apple spelling that Contacts reads.

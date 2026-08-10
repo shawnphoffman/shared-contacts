@@ -60,6 +60,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/sharedcontacts
       SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
+      # Must match the Postgres session zone. See migrations/22_contacts_timestamptz.sql.
+      TZ: UTC
     volumes:
       - radicale_data:/data
     ports:
@@ -95,6 +97,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sharedcontacts}:${POSTGRES_PASSWORD:-sharedcontacts}@postgres:5432/sharedcontacts
       NODE_ENV: development # needed?
+      TZ: UTC
       SYNC_SERVICE_URL: http://sync-service:3001
       RADICALE_URL: http://radicale:5232
       PORT: 3030

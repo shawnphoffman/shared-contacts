@@ -52,6 +52,14 @@ USER root
 RUN apk add --no-cache nodejs npm netcat-openbsd openssl && \
 	rm -rf /var/cache/apk/*
 
+# Run the app in UTC, matching the Postgres session. node-postgres serializes a
+# JS Date in the process's local zone, so when the two disagreed the timestamps
+# the app wrote and the ones the update_contacts_updated_at trigger wrote landed
+# an offset apart in the same row. 22_contacts_timestamptz.sql makes the columns
+# carry a zone so this can no longer corrupt a comparison; pinning it here keeps
+# logs and any zone-less column honest too. Override only if you mean it.
+ENV TZ=UTC
+
 # Create directories for services
 # Note: the base Radicale image declares VOLUME /var/lib/radicale which
 # creates an anonymous volume at runtime. We intentionally do NOT symlink

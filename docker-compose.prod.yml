@@ -33,6 +33,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@shared-contacts-postgres:5432/sharedcontacts
       NODE_ENV: production
       SYNC_INTERVAL: ${SYNC_INTERVAL:-30000}
+      # Pinned, not defaulted from the host: the app and Postgres have to agree
+      # on a zone, and a deployment platform injecting a local TZ here is what
+      # put the two seven hours apart in the same row. Not ${TZ:-UTC} for that
+      # reason. See migrations/22_contacts_timestamptz.sql.
+      TZ: UTC
       # Optional: Public URLs for CardDAV connection page (used for convenience only)
       # If not set, URLs will be derived from the current location
       # PUBLIC_UI_URL: https://contacts.example.com

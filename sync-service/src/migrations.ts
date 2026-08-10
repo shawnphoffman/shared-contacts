@@ -51,6 +51,7 @@ function getMigrationFiles(): string[] {
 		'19_drop_user_encrypted_passwords.sql',
 		'20_relationships.sql',
 		'21_contact_groups.sql',
+		'22_contacts_timestamptz.sql',
 	]
 }
 
