@@ -33,6 +33,7 @@ import { Skeleton } from '../components/ui/skeleton'
 import { ContactAvatar } from '../components/ContactAvatar'
 import { DeduplicateButton } from '../components/DeduplicateButton'
 import { MergeButton } from '../components/MergeButton'
+import { restoreContacts } from '../lib/trash'
 import type { ColumnDef, SortingState } from '@tanstack/react-table'
 import type { Contact } from '../lib/db'
 
@@ -549,10 +550,27 @@ function ContactsIndexPage() {
 				})
 			)
 			const failed = results.filter(result => result.status === 'rejected')
+			const deletedIds = selectedContactIds.filter((_, index) => results[index].status === 'fulfilled')
 			if (failed.length > 0) {
 				toast.error(`Failed to delete ${failed.length} contact${failed.length === 1 ? '' : 's'}.`)
 			} else {
-				toast.success(`Deleted ${total} contact${total === 1 ? '' : 's'}`)
+				// Soft deletes, so offer the way back here rather than making
+				// someone go looking for the Trash page to undo a misclick.
+				toast.success(`Moved ${total} contact${total === 1 ? '' : 's'} to trash`, {
+					action: {
+						label: 'Undo',
+						onClick: () => {
+							void restoreContacts(deletedIds).then(async ({ restored, failed: restoreFailed }) => {
+								if (restoreFailed > 0) {
+									toast.error(`Could not restore ${restoreFailed} contact${restoreFailed === 1 ? '' : 's'}`)
+								} else {
+									toast.success(`Restored ${restored} contact${restored === 1 ? '' : 's'}`)
+								}
+								await refetch()
+							})
+						},
+					},
+				})
 			}
 		} catch (err) {
 			console.error('Error deleting contacts:', err)
@@ -902,7 +920,7 @@ function ContactsIndexPage() {
 				open={isBulkDeleteDialogOpen}
 				onOpenChange={setIsBulkDeleteDialogOpen}
 				title={`Delete ${selectedContactIds.length} contact${selectedContactIds.length === 1 ? '' : 's'}?`}
-				description="This cannot be undone."
+				description={`${selectedContactIds.length === 1 ? 'It moves' : 'They move'} to the trash, and can be restored from there.`}
 				confirmLabel={`Delete ${selectedContactIds.length}`}
 				pendingLabel="Deleting…"
 				onConfirm={handleBulkDelete}

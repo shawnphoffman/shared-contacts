@@ -10,6 +10,7 @@ import { useContactForm } from '../components/contact-form/useContactForm'
 import { Button } from '../components/ui/button'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { PageContainer } from '../components/ui/page-container'
+import { restoreContacts } from '../lib/trash'
 import type { ContactPayload } from '../components/contact-form/useContactForm'
 import type { Contact } from '../lib/db'
 
@@ -111,6 +112,24 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['contacts'] })
 			navigate({ to: '/', search: { book: undefined } })
+			// A delete is a soft delete, so offer the way back straight away
+			// rather than making someone find the Trash page to undo a misclick.
+			toast.success(`${displayName} moved to trash`, {
+				action: {
+					label: 'Undo',
+					onClick: () => {
+						void restoreContacts([contact.id]).then(({ failed }) => {
+							if (failed > 0) {
+								toast.error('Could not restore the contact')
+								return
+							}
+							queryClient.invalidateQueries({ queryKey: ['contacts'] })
+							queryClient.invalidateQueries({ queryKey: ['trash'] })
+							toast.success(`${displayName} restored`)
+						})
+					},
+				},
+			})
 		},
 	})
 
@@ -209,7 +228,7 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 				open={showDeleteDialog}
 				onOpenChange={setShowDeleteDialog}
 				title="Delete Contact"
-				description={`Are you sure you want to delete ${contact.full_name || 'this contact'}? This action cannot be undone.`}
+				description={`${contact.full_name || 'This contact'} will be moved to the trash. You can restore it from there.`}
 				confirmLabel="Delete"
 				pendingLabel="Deleting…"
 				onConfirm={() => deleteMutation.mutate()}

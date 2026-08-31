@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { RotateCcw, Trash2 } from 'lucide-react'
+import { trashAction } from '../lib/trash'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { PageContainer } from '@/components/ui/page-container'
@@ -29,17 +30,6 @@ async function fetchDeletedContacts(): Promise<Array<DeletedContact>> {
 		throw new Error('Failed to fetch deleted contacts')
 	}
 	return response.json()
-}
-
-async function trashAction(action: string, id?: string): Promise<void> {
-	const response = await fetch('/api/contacts/trash', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ action, id }),
-	})
-	if (!response.ok) {
-		throw new Error('Failed to perform trash action')
-	}
 }
 
 function TrashPage() {
