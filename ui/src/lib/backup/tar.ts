@@ -1,7 +1,7 @@
-import { gzipSync } from 'node:zlib'
+import { gunzipSync, gzipSync } from 'node:zlib'
 
 /**
- * Minimal writer for the ustar subset we need: a handful of small regular
+ * Minimal reader/writer for the ustar subset we need: a handful of small regular
  * files under one directory, with short ASCII names. Deliberately not a
  * general-purpose tar implementation — anything it can't represent exactly
  * (long names, huge files, links, sparse files) throws rather than silently
@@ -121,4 +121,70 @@ export function createTar(entries: Array<TarEntry>): Buffer {
 /** Build a gzipped tar archive. */
 export function createTarGz(entries: Array<TarEntry>): Buffer {
 	return gzipSync(createTar(entries), { level: 9 })
+}
+
+export interface TarFile {
+	name: string
+	data: Buffer
+}
+
+function readAscii(block: Buffer, offset: number, size: number): string {
+	const field = block.subarray(offset, offset + size)
+	const end = field.indexOf(0)
+	return field
+		.subarray(0, end === -1 ? field.length : end)
+		.toString('utf-8')
+		.trim()
+}
+
+function readOctal(block: Buffer, offset: number, size: number): number {
+	const text = readAscii(block, offset, size)
+	if (text === '') return 0
+	const value = parseInt(text, 8)
+	if (!Number.isFinite(value)) throw new Error(`Malformed tar numeric field at offset ${offset}`)
+	return value
+}
+
+/**
+ * Read the regular files out of an uncompressed tar archive, in archive order.
+ * Directory entries are skipped. Anything outside the subset createTar writes
+ * (long-name extensions, links, sparse files) is rejected rather than guessed
+ * at, so a foreign archive fails loudly instead of restoring nonsense.
+ */
+export function readTar(archive: Buffer): Array<TarFile> {
+	const files: Array<TarFile> = []
+	let offset = 0
+
+	while (offset + BLOCK_SIZE <= archive.length) {
+		const header = archive.subarray(offset, offset + BLOCK_SIZE)
+		// Two zero blocks end the archive; one is enough to stop on.
+		if (header.every(byte => byte === 0)) break
+
+		const name = readAscii(header, 0, NAME_FIELD_SIZE)
+		const size = readOctal(header, 124, 12)
+		const type = header[156]
+		offset += BLOCK_SIZE
+
+		if (type !== TYPE_FILE && type !== TYPE_DIRECTORY && type !== 0) {
+			throw new Error(`Unsupported tar entry type ${String.fromCharCode(type)} for "${name}"`)
+		}
+		if (offset + size > archive.length) {
+			throw new Error(`Truncated tar entry "${name}": wanted ${size} bytes`)
+		}
+
+		if (type !== TYPE_DIRECTORY && !name.endsWith('/')) {
+			files.push({ name, data: archive.subarray(offset, offset + size) })
+		}
+
+		offset += size
+		const remainder = size % BLOCK_SIZE
+		if (remainder !== 0) offset += BLOCK_SIZE - remainder
+	}
+
+	return files
+}
+
+/** Read the regular files out of a gzipped tar archive. */
+export function readTarGz(archive: Buffer): Array<TarFile> {
+	return readTar(gunzipSync(archive))
 }

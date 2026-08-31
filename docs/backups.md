@@ -74,9 +74,25 @@ A manual run landing on top of a scheduled one shares the in-flight run instead 
 
 ## Restoring
 
-There is no one-click restore yet. For contacts alone, `contacts.vcf` or `contacts.csv` can go straight through the **Import** page.
+For contacts alone, `contacts.vcf` or `contacts.csv` can go straight through the **Import** page.
 
-For a fuller restore, `snapshot.json` holds each table under `tables.<table_name>` as an array of rows, in an order that satisfies the foreign keys front-to-back. Inspect it with:
+For everything else there is a restore importer, `restoreFromArchive` in `ui/src/lib/backup/restore.ts`. It reads `snapshot.json` out of an archive and rebuilds every table it covers inside one transaction, so a failure part-way leaves the database as it was rather than half-wiped. An integration test backs up, empties the database and restores, then diffs a fresh snapshot against the original, so the archives are known to be restorable rather than merely written.
+
+It is **destructive**: the tables in the snapshot are emptied and rebuilt, so what you get back is the state at backup time, not a merge with what is there now.
+
+Nothing in the app calls it. There is no restore button and no route, on purpose - the admin API has no login, so a one-click "replace everything" would be reachable by anyone who can reach the UI. Restore is a deliberate act, run from a checkout against the target database:
+
+```bash
+cd ui && ARCHIVE=/backups/shared-contacts-backup-2026-08-10T12-00-00Z.tar.gz DATABASE_URL="$DATABASE_URL" npx tsx --eval "
+import { readFileSync } from 'node:fs'
+import { restoreFromArchive } from './src/lib/backup/restore.ts'
+restoreFromArchive(readFileSync(process.env.ARCHIVE)).then(result => { console.log(result.counts); process.exit(0) })
+"
+```
+
+Point `ARCHIVE` at the archive and `DATABASE_URL` at the database you are restoring into, and take a backup of the current state first - the restore replaces it. The callback form is not stylistic: `tsx --eval` compiles as CommonJS, where a top-level `await` fails.
+
+To look inside an archive rather than restore it, `snapshot.json` holds each table under `tables.<table_name>` as an array of rows, in an order that satisfies the foreign keys front-to-back:
 
 ```bash
 tar -xzf shared-contacts-backup-2026-08-10T12-00-00Z.tar.gz
