@@ -101,15 +101,53 @@ describe('actorFromRequest', () => {
 		expect(result.actor).toBe('bob')
 	})
 
-	it('extracts the leftmost IP from x-forwarded-for', () => {
+	it('ignores forwarding headers unless a proxy is trusted', () => {
+		// There is no login here, so an untrusted X-Forwarded-For would let any
+		// caller stamp an address of its choosing on the audit record.
 		const result = actorFromRequest(
 			new Request('http://localhost/api/anything', { headers: { 'x-forwarded-for': '203.0.113.1, 198.51.100.1' } })
 		)
-		expect(result.clientIp).toBe('203.0.113.1')
+		expect(result.clientIp).toBeNull()
+	})
+
+	it('extracts the leftmost IP from x-forwarded-for when a proxy is trusted', () => {
+		const previous = process.env.TRUST_PROXY_HEADERS
+		process.env.TRUST_PROXY_HEADERS = 'true'
+		try {
+			const result = actorFromRequest(
+				new Request('http://localhost/api/anything', { headers: { 'x-forwarded-for': '203.0.113.1, 198.51.100.1' } })
+			)
+			expect(result.clientIp).toBe('203.0.113.1')
+		} finally {
+			process.env.TRUST_PROXY_HEADERS = previous
+		}
+	})
+
+	it('drops a forwarded value that is not an address', () => {
+		const previous = process.env.TRUST_PROXY_HEADERS
+		process.env.TRUST_PROXY_HEADERS = 'true'
+		try {
+			const result = actorFromRequest(new Request('http://localhost/api/anything', { headers: { 'x-real-ip': 'not an ip' } }))
+			expect(result.clientIp).toBeNull()
+		} finally {
+			process.env.TRUST_PROXY_HEADERS = previous
+		}
 	})
 
 	it('honors x-source override', () => {
 		const result = actorFromRequest(new Request('http://localhost/api/anything', { headers: { 'x-source': 'import' } }))
 		expect(result.source).toBe('import')
+	})
+
+	it('falls back to web when x-source is not a known source', () => {
+		// It used to be cast into the union unchecked, so any string landed in
+		// the source column.
+		const result = actorFromRequest(new Request('http://localhost/api/anything', { headers: { 'x-source': 'totally-made-up' } }))
+		expect(result.source).toBe('web')
+	})
+
+	it('drops an actor that is too long or carries control characters', () => {
+		expect(actorFromRequest(new Request('http://localhost/api/x', { headers: { 'x-actor': 'a'.repeat(257) } })).actor).toBeNull()
+		expect(actorFromRequest(new Request('http://localhost/api/x', { headers: { 'x-actor': '  ' } })).actor).toBeNull()
 	})
 })

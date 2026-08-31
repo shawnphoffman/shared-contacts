@@ -16,7 +16,11 @@ export type HistoryOperation =
 	| 'relationship_update'
 	| 'relationship_remove'
 
-export type HistorySource = 'web' | 'api' | 'carddav' | 'sync' | 'import' | 'merge' | 'dedup' | 'system'
+export const HISTORY_SOURCES = ['web', 'api', 'carddav', 'sync', 'import', 'merge', 'dedup', 'system'] as const
+
+export type HistorySource = (typeof HISTORY_SOURCES)[number]
+
+const HISTORY_SOURCE_SET = new Set<string>(HISTORY_SOURCES)
 
 export interface HistoryEntryInput {
 	contactId: string | null
@@ -87,10 +91,49 @@ export function diffContacts(prev: Record<string, unknown> | null, next: Record<
 	return changed
 }
 
+const MAX_HEADER_FIELD_LENGTH = 256
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
+
+/**
+ * Forwarding headers are only believable if something in front of us is known
+ * to set them. Nothing does by default, and this app has no login, so any
+ * caller could otherwise stamp an address of its choosing on the one
+ * accountability record the system keeps. Set TRUST_PROXY_HEADERS=true when
+ * the UI sits behind a reverse proxy that overwrites X-Forwarded-For.
+ */
+function trustsProxyHeaders(): boolean {
+	return /^(1|true|yes)$/i.test(process.env.TRUST_PROXY_HEADERS || '')
+}
+
+/** Trim and bound a self-asserted header value; null if it is unusable. */
+function cleanHeaderField(value: string | null): string | null {
+	if (!value) return null
+	const trimmed = value.trim()
+	if (!trimmed || trimmed.length > MAX_HEADER_FIELD_LENGTH || CONTROL_CHARS.test(trimmed)) return null
+	return trimmed
+}
+
+/** Loose literal check: enough to keep prose and injected markup out of the column. */
+function cleanClientIp(value: string | null): string | null {
+	const candidate = cleanHeaderField(value)
+	if (!candidate || candidate.length > 45) return null
+	return /^[0-9a-fA-F.:]+$/.test(candidate) ? candidate : null
+}
+
+export function isHistorySource(value: unknown): value is HistorySource {
+	return typeof value === 'string' && HISTORY_SOURCE_SET.has(value)
+}
+
 /**
  * Pull actor / source / user-agent metadata off an incoming Request. Falls
- * back to "web" because the only authenticated path through the UI today is
- * the browser hitting our API routes; consumers can override the source.
+ * back to "web" because the only path through the UI today is the browser
+ * hitting our API routes; consumers can override the source.
+ *
+ * Every field here is self-asserted by the caller — there is no login to check
+ * it against — so the job is to keep it to values that are at least well
+ * formed: an unrecognized x-source used to be written straight into the
+ * source column on a cast alone.
  */
 export function actorFromRequest(request: Request): {
 	actor: string | null
@@ -100,17 +143,19 @@ export function actorFromRequest(request: Request): {
 	source: HistorySource
 } {
 	const headers = request.headers
-	const actor = headers.get('x-actor') || headers.get('x-user-name') || null
-	const userAgent = headers.get('user-agent') || null
-	const forwardedFor = headers.get('x-forwarded-for')
-	const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : headers.get('x-real-ip')
-	const sourceHeader = (headers.get('x-source') as HistorySource | null) || 'web'
+	const actor = cleanHeaderField(headers.get('x-actor') || headers.get('x-user-name'))
+	const userAgent = cleanHeaderField(headers.get('user-agent'))
+	const trustProxy = trustsProxyHeaders()
+	const forwardedFor = trustProxy ? headers.get('x-forwarded-for') : null
+	const realIp = trustProxy ? headers.get('x-real-ip') : null
+	const clientIp = cleanClientIp(forwardedFor ? forwardedFor.split(',')[0] : realIp)
+	const sourceHeader = headers.get('x-source')
 	return {
 		actor,
 		actorType: actor ? 'user' : null,
 		userAgent,
 		clientIp,
-		source: sourceHeader,
+		source: isHistorySource(sourceHeader) ? sourceHeader : 'web',
 	}
 }
 
