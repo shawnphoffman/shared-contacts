@@ -128,7 +128,7 @@ export function parseCSV(csvText: string): Array<Record<string, string>> {
 
 			// Remove surrounding quotes if present
 			const cleanValue = value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value
-			const trimmed = cleanValue.trim()
+			const trimmed = stripCsvFormulaGuard(cleanValue.trim())
 
 			if (!trimmed) continue
 			if (!row[canonical]) {
@@ -239,13 +239,29 @@ export const CSV_COLUMNS = [
 	'maiden_name',
 ] as const
 
+// Excel, Numbers and Sheets read a cell beginning with any of these as a
+// formula, so a contact whose name or notes field starts with one turns into
+// executable content the moment someone opens the export (this file's output is
+// also what lands in a backup's contacts.csv). Prefixing with an apostrophe is
+// the standard neutralizer; stripCsvFormulaGuard undoes it on import so our own
+// export still round-trips.
+const FORMULA_TRIGGER = /^[=+\-@\t\r]/
+
 export function escapeCsvField(value: string | null | undefined): string {
 	if (value == null || value === '') return ''
-	const str = String(value)
+	let str = String(value)
+	if (FORMULA_TRIGGER.test(str)) {
+		str = `'${str}`
+	}
 	if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
 		return `"${str.replace(/"/g, '""')}"`
 	}
 	return str
+}
+
+/** Inverse of the guard escapeCsvField adds; leaves any other apostrophe alone. */
+export function stripCsvFormulaGuard(value: string): string {
+	return value.startsWith("'") && FORMULA_TRIGGER.test(value.slice(1)) ? value.slice(1) : value
 }
 
 export function contactsToCsv(contacts: Array<Contact>): string {

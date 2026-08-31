@@ -7,6 +7,7 @@ import {
 	normalizeHeader,
 	parseCSV,
 	parseCSVLine,
+	stripCsvFormulaGuard,
 	toCanonicalHeader,
 } from './csv'
 import type { Contact } from './db'
@@ -316,5 +317,49 @@ describe('contactsToCsv', () => {
 		] as unknown as Array<Contact>
 		const csv = contactsToCsv(contacts)
 		expect(csv).toContain('"Alice ""The Great"""')
+	})
+})
+
+// ---------------------------------------------------------------------------
+// Spreadsheet formula injection
+// ---------------------------------------------------------------------------
+describe('csv formula injection', () => {
+	it('neutralizes every character a spreadsheet reads as a formula', () => {
+		expect(escapeCsvField('=1+1')).toBe("'=1+1")
+		expect(escapeCsvField('+15551234567')).toBe("'+15551234567")
+		expect(escapeCsvField('-1')).toBe("'-1")
+		expect(escapeCsvField('@SUM(A1)')).toBe("'@SUM(A1)")
+		expect(escapeCsvField('\tcmd')).toBe("'\tcmd")
+	})
+
+	it('neutralizes the payload shape before quoting it', () => {
+		// =HYPERLINK(...) and friends contain commas, so the guard has to go on
+		// before the field is wrapped, not after.
+		expect(escapeCsvField('=HYPERLINK("http://evil.example","click")')).toBe('"\'=HYPERLINK(""http://evil.example"",""click"")"')
+	})
+
+	it('leaves ordinary values untouched', () => {
+		expect(escapeCsvField('Shawn Hoffman')).toBe('Shawn Hoffman')
+		expect(escapeCsvField("O'Brien")).toBe("O'Brien")
+		expect(escapeCsvField('(555) 123-4567')).toBe('(555) 123-4567')
+	})
+
+	it('round-trips an escaped value back to the original on import', () => {
+		for (const value of ['=1+1', '+15551234567', '-1', '@SUM(A1)']) {
+			expect(stripCsvFormulaGuard(escapeCsvField(value))).toBe(value)
+		}
+	})
+
+	it('leaves an apostrophe that is not a guard alone', () => {
+		expect(stripCsvFormulaGuard("O'Brien")).toBe("O'Brien")
+		expect(stripCsvFormulaGuard("'quoted'")).toBe("'quoted'")
+	})
+
+	it('strips the guard when parsing a whole exported row', () => {
+		const contact = { full_name: '=cmd|calc', phone: '+15551234567' } as unknown as Contact
+		const csv = contactsToCsv([contact])
+		const parsed = parseCSV(csv)
+		expect(parsed[0].full_name).toBe('=cmd|calc')
+		expect(parsed[0].phone).toBe('+15551234567')
 	})
 })
