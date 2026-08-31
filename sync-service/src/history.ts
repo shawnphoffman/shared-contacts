@@ -100,6 +100,72 @@ async function ensureTableExists(): Promise<boolean> {
 	return tableExists
 }
 
+export interface ConflictDiscardInput {
+	contactId: string
+	vcardId: string
+	bookId: string
+	/** Which side's edit was thrown away. */
+	discarded: 'db' | 'carddav'
+	summary: string
+	dbUpdatedAt?: Date | null
+	radicaleFileMtime?: Date | null
+	dbHash: string | null
+	radicaleHash: string | null
+}
+
+/**
+ * Record that last-write-wins threw an edit away.
+ *
+ * Written once per conflict, not once per pass that notices it: an unresolved
+ * conflict is re-detected on every sync until one side changes or the winning
+ * version reaches the other, and the outbound pass sees the same conflict the
+ * inbound one did. Both would otherwise pile up identical rows - every 30
+ * seconds, for as long as it takes - and bury the contact's real history. The
+ * pair of hashes identifies the conflict, so the same pair means the same one.
+ *
+ * Deliberately no state snapshots: a vcard_data payload with an embedded photo
+ * runs to megabytes and the row would carry it twice.
+ */
+export async function recordConflictDiscard(input: ConflictDiscardInput): Promise<string | null> {
+	try {
+		if (!(await ensureTableExists())) return null
+
+		const pool = getPool()
+		const existing = await pool.query(
+			`SELECT 1 FROM contact_history
+			 WHERE contact_id = $1
+			   AND operation = 'conflict_discard'
+			   AND metadata->>'dbHash' IS NOT DISTINCT FROM $2
+			   AND metadata->>'radicaleHash' IS NOT DISTINCT FROM $3
+			 LIMIT 1`,
+			[input.contactId, input.dbHash, input.radicaleHash]
+		)
+		if (existing.rows.length > 0) return null
+
+		return await recordHistory({
+			contactId: input.contactId,
+			operation: 'conflict_discard',
+			source: 'sync',
+			actor: null,
+			actorType: 'system',
+			summary: input.summary,
+			metadata: {
+				vcardId: input.vcardId,
+				bookId: input.bookId,
+				discarded: input.discarded,
+				dbUpdatedAt: input.dbUpdatedAt?.toISOString() ?? null,
+				radicaleFileMtime: input.radicaleFileMtime?.toISOString() ?? null,
+				dbHash: input.dbHash,
+				radicaleHash: input.radicaleHash,
+			},
+		})
+	} catch (error) {
+		// Same contract as recordHistory: logging must not break the sync.
+		logger.error({ err: error, contactId: input.contactId }, 'Failed to record conflict discard')
+		return null
+	}
+}
+
 export async function recordHistory(entry: HistoryEntryInput): Promise<string | null> {
 	try {
 		if (!(await ensureTableExists())) {

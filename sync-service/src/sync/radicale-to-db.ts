@@ -17,7 +17,7 @@ import {
 import { parseVCard, GROUP_KIND, INDIVIDUAL_KIND } from '../vcard'
 import { getUsers, getCompositeUsername, isCompositeUsername, parseCompositeUsername } from '../htpasswd'
 import { atomicWriteFileSync } from '../fs-utils'
-import { recordHistory } from '../history'
+import { recordHistory, recordConflictDiscard } from '../history'
 import { logger } from '../logger'
 import { getAddressBooksForSync } from './address-books'
 import { calculateVCardHash, detectConflict, resolveConflict } from './conflict'
@@ -232,30 +232,27 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 							// DB version wins, skip updating from Radicale
 							logger.info({ vcardId }, 'Conflict detected: DB version is newer, skipping Radicale update')
 							// Last-write-wins means somebody's edit is gone, and a log line
-							// was the only trace of it. Record the loss where the rest of
-							// the contact's history lives. Deliberately no state snapshots:
-							// a vcard_data payload with an embedded photo is multi-MB, and
-							// this row would carry it twice.
-							await recordHistory({
+							// was the only trace of it.
+							await recordConflictDiscard({
 								contactId: existingContact.id,
-								operation: 'conflict_discard',
-								source: 'sync',
-								actor: null,
-								actorType: 'system',
+								vcardId,
+								bookId: book.id,
+								discarded: 'carddav',
 								summary: `Conflict on ${existingContact.full_name || vcardId}: kept the database version, discarded the CardDAV edit`,
-								metadata: {
-									vcardId,
-									bookId: book.id,
-									discarded: 'carddav',
-									dbUpdatedAt: existingContact.updated_at?.toISOString(),
-									radicaleFileMtime: fileMtime?.toISOString(),
-									dbHash: existingContact.vcard_hash,
-									radicaleHash: vcardHash,
-								},
+								dbUpdatedAt: existingContact.updated_at,
+								radicaleFileMtime: fileMtime,
+								dbHash: existingContact.vcard_hash,
+								radicaleHash: vcardHash,
 							})
-							// Update metadata to reflect we saw the Radicale file
+							// Record that we saw the file, but do NOT move
+							// last_synced_from_radicale_at: that is the watermark for what
+							// has been *ingested*, and this pass deliberately ingested
+							// nothing. Moving it made the guard above (updated_at > that
+							// column) false on the following pass, so the conflict stopped
+							// being visible and the row that had just won was overwritten
+							// from the file - silently, and only when no outbound pass got
+							// in between to write the winning version to disk.
 							await updateSyncMetadata(existingContact.id, {
-								last_synced_from_radicale_at: new Date(),
 								radicale_file_mtime: fileMtime,
 							})
 							skipped++

@@ -186,6 +186,43 @@ describe('an edit that loses a conflict', () => {
 		expect(nameIn(userCard(book.id))).toBe('Edited In The App')
 	})
 
+	it('holds the line when no outbound pass gets in between', async () => {
+		// The failure this guards: deferring to the database used to stamp
+		// last_synced_from_radicale_at, which made the inbound conflict guard
+		// (updated_at > that column) false next time round. The conflict stopped
+		// being visible and the row that had just won was overwritten from the
+		// file. It only showed up when the outbound half never ran - a failing
+		// write, or the watcher firing inbound twice - because outbound writing
+		// the winner to disk otherwise hid it.
+		const book = await createBookWithCard()
+		await loosenWatermarks()
+		editOnDevice(book.id, 'Edited On The Phone', minutesAgo(1))
+		await editInApp('Edited In The App')
+
+		await syncRadicaleToDb(true)
+		await syncRadicaleToDb(true)
+		await syncRadicaleToDb(true)
+
+		expect(await nameInDb()).toBe('Edited In The App')
+	})
+
+	it('records one row for a conflict, not one per pass', async () => {
+		// An unresolved conflict is re-detected every sync. Without dedup, an
+		// outbound outage would write a row every 30 seconds and bury the
+		// contact's real history.
+		const book = await createBookWithCard()
+		await loosenWatermarks()
+		editOnDevice(book.id, 'Edited On The Phone', minutesAgo(1))
+		await editInApp('Edited In The App')
+
+		await syncRadicaleToDb(true)
+		await syncRadicaleToDb(true)
+		await syncRadicaleToDb(true)
+
+		const records = await discardRecords()
+		expect(records).toHaveLength(1)
+	})
+
 	it('records the discarded device edit rather than only logging it', async () => {
 		const book = await createBookWithCard()
 		await loosenWatermarks()
