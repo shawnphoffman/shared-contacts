@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table'
 import {
@@ -229,7 +229,17 @@ function ContactsIndexPage() {
 							</span>
 							<ContactAvatar contact={contact} className="h-8 w-8 text-xs" />
 							<div className="min-w-0">
-								<div className="font-medium">{firstName || 'Unnamed Contact'}</div>
+								{/* A real link, so the row is reachable by keyboard, announced as
+								    a link, and openable in a new tab. The row's own click
+								    handler is a mouse convenience on top of this. */}
+								<Link
+									to="/$id"
+									params={{ id: contact.id }}
+									onClick={event => event.stopPropagation()}
+									className="font-medium outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+								>
+									{contact.full_name?.trim() || firstName || 'Unnamed Contact'}
+								</Link>
 								{contact.nickname && <div className="text-sm text-muted-foreground">{contact.nickname}</div>}
 							</div>
 						</div>
@@ -832,15 +842,7 @@ function ContactsIndexPage() {
 											key={row.id}
 											data-state={row.getIsSelected() && 'selected'}
 											onClick={() => navigate({ to: '/$id', params: { id: contact.id } })}
-											onKeyDown={e => {
-												if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-													e.preventDefault()
-													navigate({ to: '/$id', params: { id: contact.id } })
-												}
-											}}
-											tabIndex={0}
-											aria-label={`View ${contact.full_name || 'contact'}`}
-											className="group cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
+											className="group cursor-pointer"
 										>
 											{row.getVisibleCells().map(cell => (
 												<TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
