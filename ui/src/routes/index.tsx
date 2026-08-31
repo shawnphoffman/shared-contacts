@@ -44,6 +44,9 @@ declare module '@tanstack/react-table' {
 	}
 }
 
+/** Which contacts an export covers. */
+type ExportScope = 'all' | 'filtered' | 'selected'
+
 export const Route = createFileRoute('/')({
 	component: ContactsIndexPage,
 	validateSearch: (search: Record<string, unknown>) => ({
@@ -84,6 +87,9 @@ function ContactsIndexPage() {
 	const [addressBooks, setAddressBooks] = useState<Array<{ id: string; name: string }>>([])
 	const [selectedBookId, setSelectedBookId] = useState<string>(bookFromUrl ?? 'all')
 	const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false)
+	// What the export covers. It used to be everything, always, whatever was on
+	// screen.
+	const [exportScope, setExportScope] = useState<ExportScope>('all')
 	const [activeFilters, setActiveFilters] = useState<Map<FieldFilterKey, FieldFilterState>>(new Map())
 	const showBookCount = addressBooks.length > 1
 
@@ -496,6 +502,8 @@ function ContactsIndexPage() {
 	})
 
 	const selectedContactIds = Object.keys(rowSelection).filter(id => rowSelection[id])
+	// The rows the current search and filters leave visible, in display order.
+	const visibleContactIds = table.getRowModel().rows.map(row => row.original.id)
 
 	const handleBulkBooksSubmit = async () => {
 		if (selectedContactIds.length === 0 || (bulkAddToBookIds.size === 0 && bulkRemoveFromBookIds.size === 0) || isBulkBooksSubmitting) {
@@ -527,6 +535,33 @@ function ContactsIndexPage() {
 			toast.error(e instanceof Error ? e.message : 'Failed to update address books')
 		} finally {
 			setIsBulkBooksSubmitting(false)
+		}
+	}
+
+	// The dialog's "all" option stays a plain download link. A subset travels in
+	// a POST body, because a filtered export can name more contacts than a query
+	// string can carry.
+	const downloadSubset = async (format: 'csv' | 'vcf', ids: Array<string>) => {
+		setIsDownloadDialogOpen(false)
+		try {
+			const response = await fetch('/api/contacts/export', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ format, ids }),
+			})
+			if (!response.ok) throw new Error('Export failed')
+			const blob = await response.blob()
+			const url = URL.createObjectURL(blob)
+			const link = document.createElement('a')
+			link.href = url
+			link.download = `contacts.${format}`
+			document.body.appendChild(link)
+			link.click()
+			link.remove()
+			URL.revokeObjectURL(url)
+		} catch (exportError) {
+			console.error('Error exporting contacts:', exportError)
+			toast.error('Failed to export contacts.')
 		}
 	}
 
@@ -661,7 +696,15 @@ function ContactsIndexPage() {
 						<Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} aria-label="Refresh contacts">
 							<RefreshCw className={isFetching ? 'size-4 animate-spin' : 'size-4'} />
 						</Button>
-						<Button variant="outline" onClick={() => setIsDownloadDialogOpen(true)}>
+						<Button
+							variant="outline"
+							onClick={() => {
+								// Open on whatever the person is most likely to mean: their
+								// selection, else the filter they have applied, else everything.
+								setExportScope(selectedContactIds.length > 0 ? 'selected' : visibleContactIds.length < contacts.length ? 'filtered' : 'all')
+								setIsDownloadDialogOpen(true)
+							}}
+						>
 							<Download className="size-4" />
 							Export
 						</Button>
@@ -823,27 +866,75 @@ function ContactsIndexPage() {
 				<DialogContent className="max-w-sm">
 					<DialogHeader>
 						<DialogTitle>Export Contacts</DialogTitle>
-						<DialogDescription>Download all contacts in your preferred format.</DialogDescription>
+						<DialogDescription>
+							{exportScope === 'selected'
+								? `Download the ${selectedContactIds.length} selected contact${selectedContactIds.length === 1 ? '' : 's'}.`
+								: exportScope === 'filtered'
+									? `Download the ${visibleContactIds.length} contact${visibleContactIds.length === 1 ? '' : 's'} matching the current filter.`
+									: `Download all ${contacts.length} contacts.`}
+						</DialogDescription>
 					</DialogHeader>
+					{(selectedContactIds.length > 0 || visibleContactIds.length < contacts.length) && (
+						<div className="flex flex-wrap gap-1 pt-1">
+							{(
+								[
+									['all', `All (${contacts.length})`],
+									...(visibleContactIds.length < contacts.length
+										? ([['filtered', `Filtered (${visibleContactIds.length})`]] as const)
+										: []),
+									...(selectedContactIds.length > 0 ? ([['selected', `Selected (${selectedContactIds.length})`]] as const) : []),
+								] as Array<[ExportScope, string]>
+							).map(([scope, label]) => (
+								<button
+									key={scope}
+									type="button"
+									aria-pressed={exportScope === scope}
+									onClick={() => setExportScope(scope)}
+									className={`rounded-full px-2.5 py-1 text-xs outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+										exportScope === scope ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground'
+									}`}
+								>
+									{label}
+								</button>
+							))}
+						</div>
+					)}
 					<div className="flex flex-col gap-3 py-2">
-						<Button variant="outline" className="justify-start h-auto py-3" asChild>
-							<a href="/api/contacts/export?format=csv" download="contacts.csv" onClick={() => setIsDownloadDialogOpen(false)}>
-								<FileDown className="size-5 mr-3" />
-								<div className="text-left">
-									<div className="font-medium">CSV</div>
-									<div className="text-xs text-muted-foreground font-normal">Spreadsheet-compatible format</div>
-								</div>
-							</a>
-						</Button>
-						<Button variant="outline" className="justify-start h-auto py-3" asChild>
-							<a href="/api/contacts/export?format=vcf" download="contacts.vcf" onClick={() => setIsDownloadDialogOpen(false)}>
-								<FileDown className="size-5 mr-3" />
-								<div className="text-left">
-									<div className="font-medium">vCard (VCF)</div>
-									<div className="text-xs text-muted-foreground font-normal">Standard contact exchange format</div>
-								</div>
-							</a>
-						</Button>
+						{(
+							[
+								['csv', 'CSV', 'Spreadsheet-compatible format'],
+								['vcf', 'vCard (VCF)', 'Standard contact exchange format'],
+							] as Array<['csv' | 'vcf', string, string]>
+						).map(([format, title, blurb]) =>
+							exportScope === 'all' ? (
+								<Button key={format} variant="outline" className="h-auto justify-start py-3" asChild>
+									<a
+										href={`/api/contacts/export?format=${format}`}
+										download={`contacts.${format}`}
+										onClick={() => setIsDownloadDialogOpen(false)}
+									>
+										<FileDown className="mr-3 size-5" />
+										<div className="text-left">
+											<div className="font-medium">{title}</div>
+											<div className="text-xs font-normal text-muted-foreground">{blurb}</div>
+										</div>
+									</a>
+								</Button>
+							) : (
+								<Button
+									key={format}
+									variant="outline"
+									className="h-auto justify-start py-3"
+									onClick={() => void downloadSubset(format, exportScope === 'selected' ? selectedContactIds : visibleContactIds)}
+								>
+									<FileDown className="mr-3 size-5" />
+									<div className="text-left">
+										<div className="font-medium">{title}</div>
+										<div className="text-xs font-normal text-muted-foreground">{blurb}</div>
+									</div>
+								</Button>
+							)
+						)}
 					</div>
 				</DialogContent>
 			</Dialog>
