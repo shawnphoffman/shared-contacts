@@ -1,5 +1,5 @@
 import { getPool } from './db'
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { logger } from './logger'
 
@@ -53,6 +53,21 @@ function getMigrationFiles(): string[] {
 		'21_contact_groups.sql',
 		'22_contacts_timestamptz.sql',
 	]
+}
+
+/**
+ * Migration files sitting in the directory that the list above doesn't mention.
+ *
+ * The list is the authority on order, so a file missing from it never runs -
+ * silently, and only on databases created after it was added. Startup fails
+ * instead.
+ */
+export function findUnlistedMigrations(dir: string = getMigrationsDir()): Array<string> {
+	const listed = new Set(getMigrationFiles())
+	return readdirSync(dir)
+		.filter(name => name.endsWith('.sql'))
+		.filter(name => !listed.has(name))
+		.sort()
 }
 
 /**
@@ -149,9 +164,11 @@ async function runMigration(filename: string): Promise<void> {
 		logger.info({ filename }, 'Applied migration')
 	} catch (error) {
 		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-			// Migration file doesn't exist - this is okay for optional migrations
-			logger.info({ filename }, 'Migration file not found (skipping)')
-			return
+			// A missing file used to be treated as an optional migration and
+			// skipped, and the caller then marked it applied - so the schema change
+			// never ran and never would, even once the file came back. There are no
+			// optional migrations; a missing one means a broken deployment.
+			throw new Error(`Migration file ${filename} is missing from ${migrationsDir}`)
 		}
 		throw error
 	}
@@ -163,6 +180,15 @@ async function runMigration(filename: string): Promise<void> {
 export async function runMigrations(): Promise<void> {
 	try {
 		logger.info('Checking database migrations...')
+
+		// Fail before touching the database if the directory and the list have
+		// drifted apart.
+		const unlisted = findUnlistedMigrations()
+		if (unlisted.length > 0) {
+			throw new Error(
+				`Migration files are not listed in getMigrationFiles(): ${unlisted.join(', ')}. Add them to the list so they run, in a defined order.`
+			)
+		}
 
 		// Ensure migrations table exists
 		await ensureMigrationsTable()
