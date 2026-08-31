@@ -71,6 +71,25 @@ jobs:
           (cd sync-service && npm audit --audit-level=high) || true
           (cd ui && npm audit --audit-level=high) || true
 
+  integration-tests:
+    # The deletion, orphan-sweep, group and conflict suites cover the code with
+    # the worst incident history in this repo, and none of it ran in CI.
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sync-service/package-lock.json
+
+      - name: Install sync-service dependencies
+        run: cd sync-service && npm ci
+
+      - name: Run integration suite
+        run: bash scripts/test-integration.sh
+
   docker-smoke:
     runs-on: ubuntu-latest
     needs: unit-tests
