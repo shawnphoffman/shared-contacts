@@ -22,7 +22,18 @@ export function setStartupError(error: unknown) {
 	}
 }
 
-app.use(cors())
+// This API has no authentication and is only ever called server-side, by the
+// UI's Node process over the compose network, so no browser needs to reach it.
+// A wildcard CORS header on an unauthenticated API let any page the operator
+// happened to visit drive user creation and password changes. Default to no
+// cross-origin access; set SYNC_API_ALLOWED_ORIGINS (comma-separated) if a
+// browser genuinely has to call it.
+const allowedOrigins = (process.env.SYNC_API_ALLOWED_ORIGINS || '')
+	.split(',')
+	.map(origin => origin.trim())
+	.filter(Boolean)
+
+app.use(cors({ origin: allowedOrigins.length > 0 ? allowedOrigins : false }))
 app.use(express.json({ limit: '1mb' }))
 app.use(httpLogger)
 

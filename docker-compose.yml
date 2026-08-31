@@ -64,8 +64,11 @@ services:
       TZ: UTC
     volumes:
       - radicale_data:/data
-    ports:
-      - '3001:3001' # needed?
+    # No published port: the sync API has no authentication, and the UI reaches
+    # it over the compose network. Publishing it exposed user CRUD to anything
+    # that could reach the host.
+    # ports:
+    #   - '3001:3001'
     networks:
       - shared-contacts-network
     depends_on:
