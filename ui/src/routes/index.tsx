@@ -236,9 +236,12 @@ function ContactsIndexPage() {
 									to="/$id"
 									params={{ id: contact.id }}
 									onClick={event => event.stopPropagation()}
+									// The column shows the first name; the label carries the whole
+									// one so the link makes sense read on its own.
+									aria-label={contact.full_name?.trim() || firstName || 'Unnamed contact'}
 									className="font-medium outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
 								>
-									{contact.full_name?.trim() || firstName || 'Unnamed Contact'}
+									{firstName || 'Unnamed Contact'}
 								</Link>
 								{contact.nickname && <div className="text-sm text-muted-foreground">{contact.nickname}</div>}
 							</div>

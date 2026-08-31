@@ -503,7 +503,7 @@ export interface SyncActivity {
 	lastSyncedToRadicaleAt: string | null
 	/** Newest read back in from Radicale across all contacts. */
 	lastSyncedFromRadicaleAt: string | null
-	/** Contacts edited here that have not been written out yet. */
+	/** Contacts edited here whose new state has not been written out yet. */
 	pendingOutbound: number
 	/** Edits last-write-wins discarded in the last day. */
 	recentConflicts: number
@@ -521,9 +521,18 @@ export async function getSyncActivity(): Promise<SyncActivity> {
 			`SELECT MAX(last_synced_to_radicale_at) AS to_radicale, MAX(last_synced_from_radicale_at) AS from_radicale
 			 FROM contacts WHERE deleted_at IS NULL`
 		),
+		// Every write path here nulls last_synced_to_radicale_at to force a sync,
+		// and the sync service fills it back in once the card is on disk, so a
+		// null is exactly "edited here, not yet written out".
+		//
+		// Comparing updated_at against that column instead does not work: the
+		// BEFORE UPDATE trigger restamps updated_at during the very statement
+		// that records the sync, and it keeps microseconds where the column
+		// stores milliseconds, so updated_at is always a hair later and every
+		// contact reads as permanently pending.
 		dbPool.query(
 			`SELECT COUNT(*)::int AS pending FROM contacts
-			 WHERE deleted_at IS NULL AND (last_synced_to_radicale_at IS NULL OR updated_at > last_synced_to_radicale_at)`
+			 WHERE deleted_at IS NULL AND vcard_id IS NOT NULL AND last_synced_to_radicale_at IS NULL`
 		),
 		(await tableExists('contact_history'))
 			? dbPool.query(
