@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import {
 	BookOpen,
 	ContactRound,
+	Copy,
 	DatabaseBackup,
 	Heart,
 	HelpCircle,
@@ -88,6 +89,13 @@ export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
 					<Link to="/import" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Upload className="size-4 shrink-0" />
 						Import
+					</Link>
+					{/* The only way here used to be a button on the contact list that
+					    hides itself once every group has been reviewed, which left the
+					    page unreachable. */}
+					<Link to="/duplicates" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
+						<Copy className="size-4 shrink-0" />
+						Duplicates
 					</Link>
 					<Link to="/trash" className={navLinkClass} activeProps={{ className: navLinkActiveClass }} onClick={onNavigate}>
 						<Trash2 className="size-4 shrink-0" />
