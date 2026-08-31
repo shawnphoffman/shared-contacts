@@ -8,7 +8,9 @@ import {
 	backfillSharedContactsForUser,
 	isPathSafeUsername,
 	isValidNewUsername,
+	isAcceptablePassword,
 	USERNAME_RULE,
+	PASSWORD_RULE,
 } from './htpasswd'
 import { logger, httpLogger } from './logger'
 
@@ -97,6 +99,10 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
 			return res.status(400).json({ error: 'Username and password are required' })
 		}
 
+		if (!isAcceptablePassword(password)) {
+			return res.status(400).json({ error: PASSWORD_RULE })
+		}
+
 		if (!isValidNewUsername(username)) {
 			return res.status(400).json({ error: `${USERNAME_RULE}, and must not use a reserved 'ro-' or per-book account name` })
 		}
@@ -138,8 +144,8 @@ app.put('/api/radicale-users/:username', async (req: Request, res: Response) => 
 			return res.status(400).json({ error: USERNAME_RULE })
 		}
 
-		if (!password) {
-			return res.status(400).json({ error: 'Password is required' })
+		if (!isAcceptablePassword(password)) {
+			return res.status(400).json({ error: PASSWORD_RULE })
 		}
 
 		await updateUserPassword(username, password)

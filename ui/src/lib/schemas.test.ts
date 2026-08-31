@@ -6,10 +6,12 @@ import {
 	CreateContactSchema,
 	CreateRadicaleUserSchema,
 	CustomFieldSchema,
+	MIN_RADICALE_PASSWORD_LENGTH,
 	MergeContactsSchema,
 	PaginationSchema,
 	UpdateAddressBookSchema,
 	UpdateContactSchema,
+	UpdateRadicaleUserSchema,
 } from './schemas'
 
 // ---------------------------------------------------------------------------
@@ -284,9 +286,23 @@ describe('CreateRadicaleUserSchema', () => {
 	it('accepts valid username and password', () => {
 		const result = CreateRadicaleUserSchema.safeParse({
 			username: 'alice',
-			password: 'secret123',
+			password: 'correct-horse-battery',
 		})
 		expect(result.success).toBe(true)
+	})
+
+	it('rejects a password under the minimum length', () => {
+		const result = CreateRadicaleUserSchema.safeParse({
+			username: 'alice',
+			password: 'x'.repeat(MIN_RADICALE_PASSWORD_LENGTH - 1),
+		})
+		expect(result.success).toBe(false)
+	})
+
+	it('rejects a username that could not be a collection path segment', () => {
+		for (const username of ['../etc', 'has space', 'a/b', 'x'.repeat(65)]) {
+			expect(CreateRadicaleUserSchema.safeParse({ username, password: 'correct-horse-battery' }).success).toBe(false)
+		}
 	})
 
 	it('rejects missing username', () => {
@@ -306,9 +322,23 @@ describe('CreateRadicaleUserSchema', () => {
 	it('rejects empty username', () => {
 		const result = CreateRadicaleUserSchema.safeParse({
 			username: '',
-			password: 'secret',
+			password: 'correct-horse-battery',
 		})
 		expect(result.success).toBe(false)
+	})
+})
+
+// ---------------------------------------------------------------------------
+// UpdateRadicaleUserSchema
+// ---------------------------------------------------------------------------
+describe('UpdateRadicaleUserSchema', () => {
+	it('accepts a long enough password', () => {
+		expect(UpdateRadicaleUserSchema.safeParse({ password: 'correct-horse-battery' }).success).toBe(true)
+	})
+
+	it('rejects the short password the update path used to wave through', () => {
+		expect(UpdateRadicaleUserSchema.safeParse({ password: 'x' }).success).toBe(false)
+		expect(UpdateRadicaleUserSchema.safeParse({}).success).toBe(false)
 	})
 })
 

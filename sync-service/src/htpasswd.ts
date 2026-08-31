@@ -53,6 +53,16 @@ const MAX_DERIVED_USERNAME_LENGTH = 128
 export const MAX_USERNAME_LENGTH = 64
 export const USERNAME_RULE = 'Username must be 1-64 chars of letters, numbers, dot, underscore, or hyphen'
 
+// CardDAV credentials are long-lived, nothing rate-limits Radicale, and one
+// hash is propagated to every per-book account a user holds (see
+// updateUserPassword), so a weak one is weak everywhere at once.
+export const MIN_PASSWORD_LENGTH = 12
+export const PASSWORD_RULE = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
+
+export function isAcceptablePassword(password: unknown): password is string {
+	return typeof password === 'string' && password.length >= MIN_PASSWORD_LENGTH
+}
+
 /** Safe to use as a path segment and as an htpasswd field. */
 export function isPathSafeUsername(username: unknown): username is string {
 	if (typeof username !== 'string') return false

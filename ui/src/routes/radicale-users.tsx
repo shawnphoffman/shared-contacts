@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
+import { MIN_RADICALE_PASSWORD_LENGTH, RADICALE_PASSWORD_RULE } from '@/lib/schemas'
 
 export const Route = createFileRoute('/radicale-users')({
 	component: RadicaleUsersPage,
@@ -264,6 +265,10 @@ function RadicaleUsersPage() {
 			setError('Username and password are required')
 			return
 		}
+		if (formData.password.length < MIN_RADICALE_PASSWORD_LENGTH) {
+			setError(RADICALE_PASSWORD_RULE)
+			return
+		}
 		createMutation.mutate({
 			username: formData.username,
 			password: formData.password,
@@ -274,6 +279,10 @@ function RadicaleUsersPage() {
 		setError(null)
 		if (!selectedUser || !formData.password) {
 			setError('Password is required')
+			return
+		}
+		if (formData.password.length < MIN_RADICALE_PASSWORD_LENGTH) {
+			setError(RADICALE_PASSWORD_RULE)
 			return
 		}
 		updateMutation.mutate({
@@ -315,6 +324,10 @@ function RadicaleUsersPage() {
 	const handleBulkCreate = async () => {
 		if (!bulkCreateInput.trim() || !bulkCreatePassword.trim()) {
 			setError('Usernames and password are required')
+			return
+		}
+		if (bulkCreatePassword.length < MIN_RADICALE_PASSWORD_LENGTH) {
+			setError(RADICALE_PASSWORD_RULE)
 			return
 		}
 		setIsBulkCreating(true)
@@ -511,7 +524,7 @@ function RadicaleUsersPage() {
 									type="password"
 									value={formData.password}
 									onChange={e => setFormData({ ...formData, password: e.target.value })}
-									placeholder="Enter password"
+									placeholder={`At least ${MIN_RADICALE_PASSWORD_LENGTH} characters`}
 								/>
 							</FieldContent>
 						</Field>
@@ -613,7 +626,7 @@ function RadicaleUsersPage() {
 									type="password"
 									value={formData.password}
 									onChange={e => setFormData({ ...formData, password: e.target.value })}
-									placeholder="Enter new password"
+									placeholder={`At least ${MIN_RADICALE_PASSWORD_LENGTH} characters`}
 								/>
 							</FieldContent>
 						</Field>
@@ -684,7 +697,7 @@ function RadicaleUsersPage() {
 									type="password"
 									value={bulkCreatePassword}
 									onChange={e => setBulkCreatePassword(e.target.value)}
-									placeholder="Enter password for all users"
+									placeholder={`At least ${MIN_RADICALE_PASSWORD_LENGTH} characters, shared by all`}
 								/>
 							</FieldContent>
 						</Field>

@@ -115,9 +115,30 @@ export const UpdateAddressBookSchema = z.object({
 // Radicale users (proxied to sync-service)
 // ---------------------------------------------------------------------------
 
+// A CardDAV password is typed into a device once and then reused indefinitely,
+// there is no rate limiting in front of Radicale, and one hash is propagated to
+// every per-book account the user holds. So the floor is higher than a login
+// form's would be.
+export const MIN_RADICALE_PASSWORD_LENGTH = 12
+export const RADICALE_PASSWORD_RULE = `Password must be at least ${MIN_RADICALE_PASSWORD_LENGTH} characters`
+
+const RadicalePasswordSchema = z.string().min(MIN_RADICALE_PASSWORD_LENGTH, RADICALE_PASSWORD_RULE)
+
+// Mirrors the sync service's allowlist; it owns the reserved-namespace rules
+// and reports those itself.
+const RadicaleUsernameSchema = z
+	.string()
+	.min(1, 'Username is required')
+	.max(64, 'Username must be at most 64 characters')
+	.regex(/^[a-zA-Z0-9._-]+$/, 'Username may only contain letters, numbers, dot, underscore, or hyphen')
+
 export const CreateRadicaleUserSchema = z.object({
-	username: z.string().min(1, 'Username is required'),
-	password: z.string().min(1, 'Password is required'),
+	username: RadicaleUsernameSchema,
+	password: RadicalePasswordSchema,
+})
+
+export const UpdateRadicaleUserSchema = z.object({
+	password: RadicalePasswordSchema,
 })
 
 // ---------------------------------------------------------------------------

@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
 import { proxyRequest } from '../../lib/sync-service'
+import { zodError } from '../../lib/contact-helpers'
+import { UpdateRadicaleUserSchema } from '../../lib/schemas'
 
 export const Route = createFileRoute('/api/radicale-users/$username')({
 	server: {
@@ -10,10 +12,12 @@ export const Route = createFileRoute('/api/radicale-users/$username')({
 				try {
 					const { username } = params
 					const body = await request.json()
+					const parsed = UpdateRadicaleUserSchema.safeParse(body)
+					if (!parsed.success) return zodError(parsed.error)
 					const { data, status } = await proxyRequest(`/api/radicale-users/${encodeURIComponent(username)}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify(body),
+						body: JSON.stringify(parsed.data),
 					})
 					return json(data, { status })
 				} catch (error: any) {
