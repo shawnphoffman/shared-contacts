@@ -88,6 +88,18 @@ docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup
 
 The container's services run as an unprivileged user (`PUID`/`PGID`, default `1000`), not as root. Set them to your host account so bind-mounted files belong to you: see [docs/permissions.md](docs/permissions.md).
 
+### Security settings
+
+All three default to the safe behaviour, so a stock deployment needs none of them.
+
+| Variable                   | Service      | Default | What it does                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------------- | ------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TRUST_PROXY_HEADERS`      | UI           | off     | Whether to believe `X-Forwarded-For` / `X-Real-IP` when recording who made a change. Off means `contact_history.client_ip` stays empty. Turn it on **only** when a reverse proxy you control overwrites those headers - the app has no login, so an untrusted value lets any caller stamp an address of its choosing on the audit trail.                              |
+| `UI_ALLOWED_ORIGINS`       | UI           | empty   | Extra origins allowed to make state-changing requests, comma-separated (`https://contacts.example.com`). Every non-GET request is rejected unless its `Origin` matches the host it arrived on, which is what stops another site the browser has open from driving this one. Needed only when a proxy rewrites `Host` to something other than the address people type. |
+| `SYNC_API_ALLOWED_ORIGINS` | sync-service | empty   | Origins allowed to call the internal sync API from a browser, comma-separated. Empty means no browser can: the API has no authentication and is only meant to be reached by the UI's server process over the internal network.                                                                                                                                        |
+
+If you run the UI behind a reverse proxy (Traefik, Caddy, nginx, a Cloudflare tunnel), the usual setup is `TRUST_PROXY_HEADERS=true` and nothing else, since a proxy that forwards `Host` unchanged already satisfies the origin check.
+
 ## Timezone
 
 The app container runs in UTC, pinned in the Dockerfile and in both compose files. Leave it that way.
