@@ -1,6 +1,15 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
-import { getUsers, createUser, updateUserPassword, deleteUser, backfillSharedContactsForUser } from './htpasswd'
+import {
+	getUsers,
+	createUser,
+	updateUserPassword,
+	deleteUser,
+	backfillSharedContactsForUser,
+	isPathSafeUsername,
+	isValidNewUsername,
+	USERNAME_RULE,
+} from './htpasswd'
 import { logger, httpLogger } from './logger'
 
 const app = express()
@@ -88,11 +97,8 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
 			return res.status(400).json({ error: 'Username and password are required' })
 		}
 
-		// Allowlist usernames: they become htpasswd entries and Radicale collection
-		// path segments, so restrict to a safe character set rather than only
-		// blocking a couple of characters.
-		if (!/^[a-zA-Z0-9._-]{1,64}$/.test(username)) {
-			return res.status(400).json({ error: 'Username must be 1-64 chars of letters, numbers, dot, underscore, or hyphen' })
+		if (!isValidNewUsername(username)) {
+			return res.status(400).json({ error: `${USERNAME_RULE}, and must not use a reserved 'ro-' or per-book account name` })
 		}
 
 		await createUser(username, password)
@@ -110,6 +116,9 @@ app.post('/api/radicale-users', async (req: Request, res: Response) => {
 app.post('/api/radicale-users/backfill/:username', async (req: Request, res: Response) => {
 	try {
 		const { username } = req.params
+		if (!isPathSafeUsername(username)) {
+			return res.status(400).json({ error: USERNAME_RULE })
+		}
 		logger.info({ username }, 'backfilling user')
 		await backfillSharedContactsForUser(username)
 		res.json({ success: true })
@@ -124,6 +133,10 @@ app.put('/api/radicale-users/:username', async (req: Request, res: Response) => 
 	try {
 		const { username } = req.params
 		const { password } = req.body
+
+		if (!isPathSafeUsername(username)) {
+			return res.status(400).json({ error: USERNAME_RULE })
+		}
 
 		if (!password) {
 			return res.status(400).json({ error: 'Password is required' })
@@ -144,6 +157,9 @@ app.put('/api/radicale-users/:username', async (req: Request, res: Response) => 
 app.delete('/api/radicale-users/:username', async (req: Request, res: Response) => {
 	try {
 		const { username } = req.params
+		if (!isPathSafeUsername(username)) {
+			return res.status(400).json({ error: USERNAME_RULE })
+		}
 		await deleteUser(username)
 		res.json({ success: true })
 	} catch (error: unknown) {

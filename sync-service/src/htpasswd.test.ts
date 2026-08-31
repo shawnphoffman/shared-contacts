@@ -10,7 +10,7 @@ vi.mock('./logger', () => ({
 	logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }))
 
-import { getCompositeUsername, parseCompositeUsername, isCompositeUsername } from './htpasswd'
+import { getCompositeUsername, parseCompositeUsername, isCompositeUsername, isPathSafeUsername, isValidNewUsername } from './htpasswd'
 
 // ─── Pure function tests ───────────────────────────────────────────────────────
 
@@ -190,5 +190,48 @@ describe('password propagation to composite users', () => {
 			'mary-jane-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee:$2b$10$newhash',
 			'mary:$2b$10$other_hash',
 		])
+	})
+})
+
+// ─── Username validation ──────────────────────────────────────────────────────
+
+describe('isPathSafeUsername', () => {
+	it('accepts plain and derived account names', () => {
+		expect(isPathSafeUsername('shawn')).toBe(true)
+		expect(isPathSafeUsername('mary-jane')).toBe(true)
+		expect(isPathSafeUsername('shawn.hoffman_1')).toBe(true)
+		expect(isPathSafeUsername('shawn-7f68f4c5-2d66-498d-b9d7-538bba770483')).toBe(true)
+		expect(isPathSafeUsername('ro-7f68f4c5-2d66-498d-b9d7-538bba770483')).toBe(true)
+	})
+
+	it('rejects anything that could steer a collection path or an htpasswd line', () => {
+		expect(isPathSafeUsername('../../etc/passwd')).toBe(false)
+		expect(isPathSafeUsername('..')).toBe(false)
+		expect(isPathSafeUsername('a/b')).toBe(false)
+		expect(isPathSafeUsername('a\\b')).toBe(false)
+		expect(isPathSafeUsername('user:hash')).toBe(false)
+		expect(isPathSafeUsername('user\nadmin')).toBe(false)
+		expect(isPathSafeUsername('')).toBe(false)
+		expect(isPathSafeUsername('x'.repeat(129))).toBe(false)
+		expect(isPathSafeUsername(undefined)).toBe(false)
+	})
+})
+
+describe('isValidNewUsername', () => {
+	it('accepts an ordinary new account', () => {
+		expect(isValidNewUsername('shawn')).toBe(true)
+		expect(isValidNewUsername('mary-jane')).toBe(true)
+	})
+
+	it('rejects the namespaces the service derives for itself', () => {
+		// The read-only sweep deletes every ro-* user whose suffix is not a live
+		// book id, so a real account here would be removed behind the user's back.
+		expect(isValidNewUsername('ro-anything')).toBe(false)
+		expect(isValidNewUsername('shawn-7f68f4c5-2d66-498d-b9d7-538bba770483')).toBe(false)
+	})
+
+	it('holds new accounts to the shorter bound', () => {
+		expect(isValidNewUsername('x'.repeat(64))).toBe(true)
+		expect(isValidNewUsername('x'.repeat(65))).toBe(false)
 	})
 })

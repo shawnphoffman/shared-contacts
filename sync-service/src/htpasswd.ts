@@ -43,6 +43,47 @@ export function isCompositeUsername(username: string): boolean {
 	return parseCompositeUsername(username) !== null
 }
 
+// Usernames become htpasswd entries and Radicale collection path segments, so
+// they are allowlisted rather than merely checked for a couple of characters.
+// Derived accounts (`user-<book uuid>` composites, `ro-<book uuid>` read-only
+// subscriptions) are longer than a user could create, hence the wider bound
+// here than on the create path.
+const USERNAME_CHARSET = /^[a-zA-Z0-9._-]+$/
+const MAX_DERIVED_USERNAME_LENGTH = 128
+export const MAX_USERNAME_LENGTH = 64
+export const USERNAME_RULE = 'Username must be 1-64 chars of letters, numbers, dot, underscore, or hyphen'
+
+/** Safe to use as a path segment and as an htpasswd field. */
+export function isPathSafeUsername(username: unknown): username is string {
+	if (typeof username !== 'string') return false
+	if (username.length === 0 || username.length > MAX_DERIVED_USERNAME_LENGTH) return false
+	// '.' and '..' pass the charset but are the two path segments that move the
+	// collection root somewhere else.
+	if (/^\.+$/.test(username)) return false
+	return USERNAME_CHARSET.test(username)
+}
+
+export function assertPathSafeUsername(username: string): void {
+	if (!isPathSafeUsername(username)) {
+		throw new Error(`Invalid username: ${JSON.stringify(username)}`)
+	}
+}
+
+/**
+ * Additionally rejects the two namespaces the service derives for itself, so a
+ * hand-created account cannot collide with them: `ro-*` because the read-only
+ * sweep deletes every `ro-` user whose suffix is not a live book id, and the
+ * composite shape because those accounts are auto-managed and hidden from the
+ * UI.
+ */
+export function isValidNewUsername(username: unknown): username is string {
+	if (!isPathSafeUsername(username)) return false
+	if (username.length > MAX_USERNAME_LENGTH) return false
+	if (username.startsWith('ro-')) return false
+	if (isCompositeUsername(username)) return false
+	return true
+}
+
 function getAddressBookPathForUser(username: string, bookId: string): string {
 	return path.join(RADICALE_STORAGE_PATH, 'collection-root', username, bookId)
 }
@@ -78,6 +119,7 @@ async function ensurePrincipalProps(principalPath: string, username: string): Pr
 
 /** Ensure principal path and props exist for a user (so PROPFIND on /username/ returns a displayname). Call on user create and during sync. */
 export async function ensurePrincipalPropsForUser(username: string): Promise<void> {
+	assertPathSafeUsername(username)
 	const principalPath = getPrincipalPath(username)
 	await ensureDirectoryExists(principalPath)
 	await ensurePrincipalProps(principalPath, username)
@@ -101,6 +143,7 @@ async function ensureAddressBookProps(userPath: string, name: string): Promise<v
 }
 
 export async function backfillSharedContactsForUser(username: string): Promise<void> {
+	assertPathSafeUsername(username)
 	await ensurePrincipalPropsForUser(username)
 
 	const books = await getAddressBooks()
@@ -189,6 +232,7 @@ export async function userExists(username: string): Promise<boolean> {
  * Create a new user with a password
  */
 export async function createUser(username: string, password: string): Promise<void> {
+	assertPathSafeUsername(username)
 	return htpasswdLock.withLock(async () => {
 		if (await userExists(username)) {
 			throw new Error(`User ${username} already exists`)
@@ -224,6 +268,7 @@ export async function createUser(username: string, password: string): Promise<vo
  * so CardDAV clients using composite usernames stay authenticated.
  */
 export async function updateUserPassword(username: string, password: string): Promise<void> {
+	assertPathSafeUsername(username)
 	return htpasswdLock.withLock(async () => {
 		if (!(await userExists(username))) {
 			throw new Error(`User ${username} does not exist`)
@@ -577,6 +622,7 @@ async function cleanupOldNestedDirectories(): Promise<void> {
  * Does not run backfill.
  */
 export async function setUserHash(username: string, hash: string): Promise<void> {
+	assertPathSafeUsername(username)
 	return htpasswdLock.withLock(async () => {
 		let content = ''
 		try {
@@ -611,6 +657,7 @@ export async function setUserHash(username: string, hash: string): Promise<void>
  * Delete a user
  */
 export async function deleteUser(username: string): Promise<void> {
+	assertPathSafeUsername(username)
 	return htpasswdLock.withLock(async () => {
 		if (!(await userExists(username))) {
 			throw new Error(`User ${username} does not exist`)
