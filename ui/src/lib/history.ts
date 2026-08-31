@@ -15,6 +15,8 @@ export type HistoryOperation =
 	| 'relationship_add'
 	| 'relationship_update'
 	| 'relationship_remove'
+	// Written by the sync service when last-write-wins discarded an edit.
+	| 'conflict_discard'
 
 export const HISTORY_SOURCES = ['web', 'api', 'carddav', 'sync', 'import', 'merge', 'dedup', 'system'] as const
 

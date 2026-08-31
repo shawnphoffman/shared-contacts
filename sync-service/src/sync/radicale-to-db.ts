@@ -231,6 +231,28 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 						if (resolution === 'db') {
 							// DB version wins, skip updating from Radicale
 							logger.info({ vcardId }, 'Conflict detected: DB version is newer, skipping Radicale update')
+							// Last-write-wins means somebody's edit is gone, and a log line
+							// was the only trace of it. Record the loss where the rest of
+							// the contact's history lives. Deliberately no state snapshots:
+							// a vcard_data payload with an embedded photo is multi-MB, and
+							// this row would carry it twice.
+							await recordHistory({
+								contactId: existingContact.id,
+								operation: 'conflict_discard',
+								source: 'sync',
+								actor: null,
+								actorType: 'system',
+								summary: `Conflict on ${existingContact.full_name || vcardId}: kept the database version, discarded the CardDAV edit`,
+								metadata: {
+									vcardId,
+									bookId: book.id,
+									discarded: 'carddav',
+									dbUpdatedAt: existingContact.updated_at?.toISOString(),
+									radicaleFileMtime: fileMtime?.toISOString(),
+									dbHash: existingContact.vcard_hash,
+									radicaleHash: vcardHash,
+								},
+							})
 							// Update metadata to reflect we saw the Radicale file
 							await updateSyncMetadata(existingContact.id, {
 								last_synced_from_radicale_at: new Date(),

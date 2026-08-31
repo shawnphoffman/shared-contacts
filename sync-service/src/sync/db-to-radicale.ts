@@ -12,6 +12,7 @@ import {
 import { generateVCard } from '../vcard'
 import { getUsers, getCompositeUsername, isCompositeUsername } from '../htpasswd'
 import { logger } from '../logger'
+import { recordHistory } from '../history'
 import { RADICALE_STORAGE_PATH } from './constants'
 import { getAddressBooksForSync } from './address-books'
 import { calculateVCardHash, detectConflict, resolveConflict } from './conflict'
@@ -216,6 +217,26 @@ export async function syncDbToRadicale(): Promise<void> {
 							const resolution = resolveConflict(conflict)
 							if (resolution === 'radicale') {
 								logger.info({ vcardId: contact.vcard_id }, 'Conflict detected: Radicale version is newer, skipping sync')
+								// See the matching call in radicale-to-db: last-write-wins
+								// discards someone's edit, and a log line was the only record
+								// of it. No state snapshots here either, for the same reason.
+								await recordHistory({
+									contactId: contact.id,
+									operation: 'conflict_discard',
+									source: 'sync',
+									actor: null,
+									actorType: 'system',
+									summary: `Conflict on ${contact.full_name || contact.vcard_id}: kept the CardDAV version, discarded the edit made here`,
+									metadata: {
+										vcardId: contact.vcard_id,
+										bookId: primaryBook.id,
+										discarded: 'db',
+										dbUpdatedAt: contact.updated_at?.toISOString(),
+										radicaleFileMtime: fileMtime?.toISOString(),
+										dbHash: newHash,
+										radicaleHash: existingHash,
+									},
+								})
 								await updateSyncMetadata(contact.id, {
 									last_synced_to_radicale_at: new Date(),
 									radicale_file_mtime: fileMtime,
@@ -224,6 +245,25 @@ export async function syncDbToRadicale(): Promise<void> {
 								continue
 							}
 							logger.info({ vcardId: contact.vcard_id }, 'Conflict detected: DB version is newer, overwriting Radicale')
+							// The mirror image of the branch above: this one overwrites the
+							// file, so the edit made on the device is the one that goes.
+							await recordHistory({
+								contactId: contact.id,
+								operation: 'conflict_discard',
+								source: 'sync',
+								actor: null,
+								actorType: 'system',
+								summary: `Conflict on ${contact.full_name || contact.vcard_id}: kept the version edited here, overwrote the CardDAV edit`,
+								metadata: {
+									vcardId: contact.vcard_id,
+									bookId: primaryBook.id,
+									discarded: 'carddav',
+									dbUpdatedAt: contact.updated_at?.toISOString(),
+									radicaleFileMtime: fileMtime?.toISOString(),
+									dbHash: newHash,
+									radicaleHash: existingHash,
+								},
+							})
 						}
 					}
 				}

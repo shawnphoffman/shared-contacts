@@ -1,7 +1,19 @@
 import { getPool, Contact } from './db'
 import { logger } from './logger'
 
-export type HistoryOperation = 'create' | 'update' | 'delete' | 'restore' | 'permanent_delete' | 'merge' | 'unmerge' | 'import' | 'undo'
+export type HistoryOperation =
+	| 'create'
+	| 'update'
+	| 'delete'
+	| 'restore'
+	| 'permanent_delete'
+	| 'merge'
+	| 'unmerge'
+	| 'import'
+	| 'undo'
+	// An edit that last-write-wins threw away. Not a change to the contact, a
+	// record that one was dropped.
+	| 'conflict_discard'
 
 export type HistorySource = 'web' | 'api' | 'carddav' | 'sync' | 'import' | 'merge' | 'dedup' | 'system'
 
