@@ -12,8 +12,11 @@ vi.mock('./constants', async importOriginal => ({
 const syncDbToRadicale = vi.fn().mockResolvedValue(undefined)
 const syncRadicaleToDb = vi.fn().mockResolvedValue(undefined)
 
+const refreshRadicaleWatchers = vi.fn().mockResolvedValue(0)
+
 vi.mock('./db-to-radicale', () => ({ syncDbToRadicale: (...args: Array<unknown>) => syncDbToRadicale(...args) }))
 vi.mock('./radicale-to-db', () => ({ syncRadicaleToDb: (...args: Array<unknown>) => syncRadicaleToDb(...args) }))
+vi.mock('./watcher', () => ({ refreshRadicaleWatchers: () => refreshRadicaleWatchers() }))
 
 import { startPeriodicSync } from './scheduler'
 
@@ -26,6 +29,7 @@ beforeEach(() => {
 	vi.useFakeTimers()
 	syncDbToRadicale.mockClear().mockResolvedValue(undefined)
 	syncRadicaleToDb.mockClear().mockResolvedValue(undefined)
+	refreshRadicaleWatchers.mockClear().mockResolvedValue(0)
 })
 
 afterEach(() => {
@@ -43,6 +47,25 @@ describe('the periodic sync tick', () => {
 		expect(syncRadicaleToDb).toHaveBeenCalledTimes(1)
 		expect(syncDbToRadicale).toHaveBeenCalledTimes(1)
 		expect(syncRadicaleToDb.mock.invocationCallOrder[0]).toBeLessThan(syncDbToRadicale.mock.invocationCallOrder[0])
+	})
+
+	it('picks up collections created since the last tick', async () => {
+		// Watching was a one-shot at boot, so a book or account created later was
+		// never watched at all.
+		startPeriodicSync()
+		await tick()
+
+		expect(refreshRadicaleWatchers).toHaveBeenCalledTimes(1)
+		expect(refreshRadicaleWatchers.mock.invocationCallOrder[0]).toBeLessThan(syncRadicaleToDb.mock.invocationCallOrder[0])
+	})
+
+	it('still syncs when the watcher refresh fails', async () => {
+		refreshRadicaleWatchers.mockRejectedValueOnce(new Error('cannot read collection root'))
+		startPeriodicSync()
+		await tick()
+
+		expect(syncRadicaleToDb).toHaveBeenCalledTimes(1)
+		expect(syncDbToRadicale).toHaveBeenCalledTimes(1)
 	})
 
 	it('keeps writing cards out when the inbound pass fails', async () => {

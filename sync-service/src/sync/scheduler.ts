@@ -2,6 +2,7 @@ import { logger } from '../logger'
 import { SYNC_INTERVAL } from './constants'
 import { syncDbToRadicale } from './db-to-radicale'
 import { syncRadicaleToDb } from './radicale-to-db'
+import { refreshRadicaleWatchers } from './watcher'
 
 /**
  * Start periodic sync
@@ -17,6 +18,18 @@ export function startPeriodicSync(): void {
 			return
 		}
 		isSyncing = true
+
+		// Pick up collections that appeared since the last tick. Watching used to
+		// be a one-shot at boot, so a book or CardDAV account created later was
+		// never watched and edits made there were invisible until a restart.
+		try {
+			const added = await refreshRadicaleWatchers()
+			if (added > 0) {
+				logger.info({ added }, 'Started watching new Radicale collections')
+			}
+		} catch (error) {
+			logger.error({ err: error }, 'Could not refresh Radicale watchers')
+		}
 
 		// Inbound first, the same order the startup pass uses. This tick used to
 		// run outbound only, which left inbound reconciliation to startup and to
