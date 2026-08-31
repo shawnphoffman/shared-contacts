@@ -7,6 +7,7 @@ import { useContactForm } from '../components/contact-form/useContactForm'
 import { Button } from '../components/ui/button'
 import { PageContainer } from '../components/ui/page-container'
 import { PageHeader } from '../components/ui/page-header'
+import { UnsavedChangesGuard } from '../components/UnsavedChangesGuard'
 import type { ContactPayload } from '../components/contact-form/useContactForm'
 import type { Contact } from '../lib/db'
 
@@ -63,6 +64,9 @@ function NewContactPage() {
 
 	return (
 		<PageContainer width="wide">
+			{/* Creating navigates to the new contact on purpose, so it must not be blocked. */}
+			<UnsavedChangesGuard when={form.isDirty} disabled={createMutation.isPending || createMutation.isSuccess} />
+
 			<PageHeader title="New Contact" description="Fill in the details and watch the live preview update as you type." />
 
 			{/* 1 : 1 columns, matching the editor */}

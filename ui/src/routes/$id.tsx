@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { ContactEditPane } from '../components/ContactEditPane'
 import { ContactHistoryPanel } from '../components/ContactHistoryPanel'
 import { ContactPreview } from '../components/ContactPreview'
+import { UnsavedChangesGuard } from '../components/UnsavedChangesGuard'
 import { RelationshipPanel } from '../components/relationships/RelationshipPanel'
 import { useContactForm } from '../components/contact-form/useContactForm'
 import { Button } from '../components/ui/button'
@@ -215,6 +216,9 @@ function ContactEditor({ contact, onDiscard }: { contact: Contact; onDiscard: ()
 					<div>{tab === 'edit' ? <ContactEditPane form={form} /> : <ContactHistoryPanel contactId={contact.id} />}</div>
 				</div>
 			)}
+
+			{/* Deleting navigates away on purpose, so it must not be blocked. */}
+			<UnsavedChangesGuard when={form.isDirty} disabled={deleteMutation.isPending || deleteMutation.isSuccess} />
 
 			<ConfirmDialog
 				open={showDeleteDialog}
