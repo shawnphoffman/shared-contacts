@@ -31,15 +31,25 @@ export function startPeriodicSync(): void {
 			logger.error({ err: error }, 'Could not refresh Radicale watchers')
 		}
 
-		// Inbound first, the same order the startup pass uses. This tick used to
-		// run outbound only, which left inbound reconciliation to startup and to
-		// the file watcher alone: a chokidar event that never arrived — a dropped
-		// event, a collection created after boot and so never watched — stranded
-		// that client's edit until someone restarted the service.
+		// Inbound first. The outbound pass decides conflicts by comparing the row
+		// against the *master mirror*, which is stale for a card a client has
+		// edited but nothing has ingested yet — precisely the case this tick was
+		// extended to cover. Running outbound first would overwrite that edit from
+		// the stale mirror before inbound ever read it.
 		//
-		// The two directions are guarded separately so a failing inbound pass
-		// (say a transient DB error mid-sweep) doesn't also stop cards being
-		// written out for the rest of the outage.
+		// The tick used to run outbound only, so inbound reconciliation happened
+		// at startup and on file-watcher events alone: a chokidar event that never
+		// arrived — a dropped event, or a collection created after boot and
+		// therefore never watched — stranded that client's edit until someone
+		// restarted the service.
+		//
+		// The directions are guarded separately so a failure in one doesn't stop
+		// the other for the rest of the outage. One caveat comes with that: when
+		// inbound defers to the database it stamps last_synced_from_radicale_at,
+		// which switches off its own conflict guard next time round, so the
+		// outbound half is what makes that resolution stick by writing the winning
+		// version to disk. While outbound is failing, a database-side edit that
+		// keeps conflicting will eventually lose to the file.
 		try {
 			await syncRadicaleToDb(true)
 		} catch (error) {

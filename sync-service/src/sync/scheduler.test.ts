@@ -46,6 +46,16 @@ describe('the periodic sync tick', () => {
 
 		expect(syncRadicaleToDb).toHaveBeenCalledTimes(1)
 		expect(syncDbToRadicale).toHaveBeenCalledTimes(1)
+	})
+
+	it('reads in before writing back out', async () => {
+		// Not cosmetic. The outbound pass decides conflicts against the master
+		// mirror, which is stale for a card a client edited but nothing has
+		// ingested yet - the case this tick exists to cover - so going outbound
+		// first would overwrite that edit before inbound ever read it.
+		startPeriodicSync()
+		await tick()
+
 		expect(syncRadicaleToDb.mock.invocationCallOrder[0]).toBeLessThan(syncDbToRadicale.mock.invocationCallOrder[0])
 	})
 
