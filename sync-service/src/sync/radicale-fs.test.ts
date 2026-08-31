@@ -27,7 +27,14 @@ vi.mock('./address-books', () => ({
 
 vi.mock('../db', () => ({}))
 
-import { getAddressBookPath, extractVCardId, extractBookPathSegmentFromPath } from './radicale-fs'
+import {
+	getAddressBookPath,
+	extractVCardId,
+	extractBookPathSegmentFromPath,
+	isSafeVCardId,
+	getVCardFilePath,
+	UnsafeVCardIdError,
+} from './radicale-fs'
 
 // ---------------------------------------------------------------------------
 // getAddressBookPath
@@ -94,5 +101,49 @@ describe('extractBookPathSegmentFromPath', () => {
 		const filePath = '/data/collections/collection-root/alice-book123/contact.vcf'
 		const result = extractBookPathSegmentFromPath(filePath)
 		expect(result).toBe('book123')
+	})
+})
+
+// ---------------------------------------------------------------------------
+// isSafeVCardId / getVCardFilePath
+// ---------------------------------------------------------------------------
+describe('isSafeVCardId', () => {
+	it('accepts the id shapes real clients emit', () => {
+		expect(isSafeVCardId('3f2504e0-4f89-11d3-9a0c-0305e82c3301')).toBe(true)
+		expect(isSafeVCardId('urn:uuid:3f2504e0-4f89-11d3-9a0c-0305e82c3301')).toBe(true)
+		expect(isSafeVCardId('1736451200-ab12cd34')).toBe(true)
+		expect(isSafeVCardId('contact@example.com')).toBe(true)
+	})
+
+	it('rejects ids that could steer a path', () => {
+		expect(isSafeVCardId('../../etc/passwd')).toBe(false)
+		expect(isSafeVCardId('../shawn-book/keeper')).toBe(false)
+		expect(isSafeVCardId('a/b')).toBe(false)
+		expect(isSafeVCardId('a\\b')).toBe(false)
+		expect(isSafeVCardId('has space')).toBe(false)
+		expect(isSafeVCardId('with\u0000null')).toBe(false)
+		expect(isSafeVCardId('')).toBe(false)
+		expect(isSafeVCardId('x'.repeat(129))).toBe(false)
+		expect(isSafeVCardId(null)).toBe(false)
+		expect(isSafeVCardId(undefined)).toBe(false)
+	})
+})
+
+describe('getVCardFilePath', () => {
+	it('builds the card path inside the collection', () => {
+		expect(getVCardFilePath('/data/collections/collection-root/book-123', 'abc-123')).toBe(
+			path.join('/data/collections/collection-root/book-123', 'abc-123.vcf')
+		)
+	})
+
+	it('throws rather than returning a path outside the collection', () => {
+		expect(() => getVCardFilePath('/data/collections/collection-root/mallory-book', '../shawn-book/keeper')).toThrow(UnsafeVCardIdError)
+		expect(() => getVCardFilePath('/data/collections/collection-root/mallory-book', '../../escaped')).toThrow(UnsafeVCardIdError)
+	})
+
+	it('keeps dot-only ids inside the collection', () => {
+		const dir = '/data/collections/collection-root/book-123'
+		expect(path.dirname(getVCardFilePath(dir, '..'))).toBe(dir)
+		expect(path.dirname(getVCardFilePath(dir, '.'))).toBe(dir)
 	})
 })

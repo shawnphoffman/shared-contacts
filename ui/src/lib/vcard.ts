@@ -359,7 +359,19 @@ export function generateVCard(contact: {
 /**
  * Extract UID from vCard string
  */
+// Mirrors the sync service's allowlist (sync-service/src/sync/radicale-fs.ts):
+// a UID becomes the name of the file written into every subscriber's Radicale
+// collection, so an id carrying path separators must never reach the database.
+const SAFE_VCARD_ID = /^[A-Za-z0-9._:@-]{1,128}$/
+
+export function isSafeVCardId(vcardId: string | null | undefined): vcardId is string {
+	return typeof vcardId === 'string' && SAFE_VCARD_ID.test(vcardId)
+}
+
+/** Returns null for a missing or unsafe UID so callers fall back to a generated one. */
 export function extractUID(vcardString: string): string | null {
 	const uidMatch = vcardString.match(/^UID:(.+)$/m)
-	return uidMatch ? uidMatch[1].trim() : null
+	if (!uidMatch) return null
+	const uid = uidMatch[1].trim()
+	return isSafeVCardId(uid) ? uid : null
 }

@@ -24,6 +24,8 @@ import {
 	readVCardFile,
 	writeVCardFile,
 	deleteVCardFile,
+	getVCardFilePath,
+	isSafeVCardId,
 	getFileModificationTime,
 } from './radicale-fs'
 
@@ -93,7 +95,7 @@ export async function syncDbToRadicale(): Promise<void> {
 		const allUserCopiesExist = (vcardId: string, targetBooks: Array<AddressBook>): boolean =>
 			targetBooks.every(book =>
 				Array.from(usersByBookId.get(book.id) || []).every(username =>
-					fs.existsSync(path.join(getAddressBookPathForUser(username, book.id), `${vcardId}.vcf`))
+					fs.existsSync(getVCardFilePath(getAddressBookPathForUser(username, book.id), vcardId))
 				)
 			)
 
@@ -140,6 +142,14 @@ export async function syncDbToRadicale(): Promise<void> {
 				continue
 			}
 
+			// Rows predating id validation (or written by a client that slipped one
+			// past it) would name a file outside the collection; skip rather than
+			// abort the pass for every other contact.
+			if (!isSafeVCardId(contact.vcard_id)) {
+				logger.warn({ contactId: contact.id, vcardId: contact.vcard_id }, 'Contact has an unsafe vcard_id, skipping')
+				continue
+			}
+
 			let bookIds = contactBookIdsByContactId.get(contact.id) || new Set<string>()
 			if (bookIds.size === 0 && hasAddressBooks && defaultBook) {
 				bookIds = new Set<string>([defaultBook.id])
@@ -171,7 +181,7 @@ export async function syncDbToRadicale(): Promise<void> {
 			const newHash = calculateVCardHash(vcardData)
 			const primaryMasterPath = getAddressBookPath(primaryBook.id)
 			ensureDirectoryExists(primaryMasterPath)
-			const primaryFilePath = path.join(primaryMasterPath, `${contact.vcard_id}.vcf`)
+			const primaryFilePath = getVCardFilePath(primaryMasterPath, contact.vcard_id)
 			const radicaleFileExists = fs.existsSync(primaryFilePath)
 
 			if (radicaleFileExists) {
@@ -257,6 +267,10 @@ export async function syncDbToRadicale(): Promise<void> {
 				const vcardContent = readVCardFile(filePath)
 				if (!vcardContent) continue
 				const vcardId = extractVCardId(filePath, vcardContent)
+				if (vcardId && !isSafeVCardId(vcardId)) {
+					logger.warn({ filePath, vcardId }, 'Orphan sweep found an unsafe vCard id, skipping')
+					continue
+				}
 				if (vcardId && !existingVCardIds.has(vcardId)) {
 					logger.info({ bookId: book.id, vcardId }, 'Deleting orphaned vCard file')
 					await deleteVCardFile(book, vcardId, usernames)

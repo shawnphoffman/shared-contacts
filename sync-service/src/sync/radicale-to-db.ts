@@ -30,6 +30,8 @@ import {
 	getFileModificationTime,
 	ensureDirectoryExists,
 	ensureAddressBookProps,
+	getVCardFilePath,
+	isSafeVCardId,
 } from './radicale-fs'
 
 // Cap inbound photo size so a hostile or oversized vCard PHOTO cannot OOM the
@@ -151,6 +153,15 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			const vcardId = vcardData.uid || extractVCardId(filePath, vcardContent)
 			if (!vcardId) {
 				logger.warn({ filePath }, 'Could not extract vCard ID, skipping')
+				continue
+			}
+
+			// The UID is attacker-controlled: it comes out of a card any CardDAV
+			// user can write, and it names the file we mirror into every other
+			// subscriber's collection. Reject it here so an unsafe id never reaches
+			// the database, let alone a path.
+			if (!isSafeVCardId(vcardId)) {
+				logger.warn({ filePath, vcardId }, 'Unsafe vCard ID, skipping')
 				continue
 			}
 
@@ -421,7 +432,7 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					})
 
 					const masterPath = getAddressBookPath(book.id)
-					const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
+					const masterFilePath = getVCardFilePath(masterPath, vcardId)
 					if (!fs.existsSync(masterFilePath)) {
 						ensureDirectoryExists(masterPath)
 						ensureAddressBookProps(masterPath, book)

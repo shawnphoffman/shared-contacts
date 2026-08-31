@@ -7,6 +7,36 @@ import { logger } from '../logger'
 import { RADICALE_STORAGE_PATH, getErrorCode } from './constants'
 import { getAddressBooksForSync } from './address-books'
 
+// A card's UID becomes the file name we write into every subscriber's
+// collection, and it arrives from whatever a CardDAV client put in the vCard.
+// A UID carrying path separators would let one user's card be written into (or
+// deleted from) another user's collection, so ids are allowlisted here and the
+// resolved path is re-checked against its directory before every write.
+const SAFE_VCARD_ID = /^[A-Za-z0-9._:@-]{1,128}$/
+
+export class UnsafeVCardIdError extends Error {
+	constructor(vcardId: string) {
+		super(`Unsafe vCard id for a Radicale path: ${JSON.stringify(vcardId)}`)
+		this.name = 'UnsafeVCardIdError'
+	}
+}
+
+export function isSafeVCardId(vcardId: string | null | undefined): vcardId is string {
+	return typeof vcardId === 'string' && SAFE_VCARD_ID.test(vcardId)
+}
+
+/**
+ * Build the path of a card inside a collection directory.
+ * Throws rather than returning a path that escapes `collectionPath`.
+ */
+export function getVCardFilePath(collectionPath: string, vcardId: string): string {
+	if (!isSafeVCardId(vcardId)) throw new UnsafeVCardIdError(String(vcardId))
+	const dir = path.resolve(collectionPath)
+	const target = path.resolve(dir, `${vcardId}.vcf`)
+	if (path.dirname(target) !== dir) throw new UnsafeVCardIdError(vcardId)
+	return target
+}
+
 /**
  * Get the path to an address book in Radicale for a specific user.
  * For composite usernames (username-bookid), returns the composite user's root directory.
@@ -189,7 +219,7 @@ export async function writeVCardFile(book: AddressBook, vcardId: string, vcardDa
 	const masterPath = getAddressBookPath(book.id)
 	ensureDirectoryExists(masterPath)
 	ensureAddressBookProps(masterPath, book)
-	const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
+	const masterFilePath = getVCardFilePath(masterPath, vcardId)
 	atomicWriteFileSync(masterFilePath, vcardData, 'utf-8')
 
 	try {
@@ -199,7 +229,7 @@ export async function writeVCardFile(book: AddressBook, vcardId: string, vcardDa
 			const userPath = getAddressBookPathForUser(username, book.id)
 			ensureDirectoryExists(userPath)
 			ensureAddressBookProps(userPath, book)
-			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
+			const userFilePath = getVCardFilePath(userPath, vcardId)
 			atomicWriteFileSync(userFilePath, vcardData, 'utf-8')
 		}
 	} catch (error) {
@@ -213,7 +243,7 @@ export async function writeVCardFile(book: AddressBook, vcardId: string, vcardDa
  */
 export async function deleteVCardFile(book: AddressBook, vcardId: string, usernames: Array<string>): Promise<void> {
 	const masterPath = getAddressBookPath(book.id)
-	const masterFilePath = path.join(masterPath, `${vcardId}.vcf`)
+	const masterFilePath = getVCardFilePath(masterPath, vcardId)
 	if (fs.existsSync(masterFilePath)) {
 		fs.unlinkSync(masterFilePath)
 	}
@@ -222,7 +252,7 @@ export async function deleteVCardFile(book: AddressBook, vcardId: string, userna
 		for (const username of usernames) {
 			// For composite usernames, book.id is already in the username
 			const userPath = getAddressBookPathForUser(username, book.id)
-			const userFilePath = path.join(userPath, `${vcardId}.vcf`)
+			const userFilePath = getVCardFilePath(userPath, vcardId)
 			if (fs.existsSync(userFilePath)) {
 				fs.unlinkSync(userFilePath)
 			}
