@@ -11,7 +11,7 @@ export const Route = createFileRoute('/import')({
 function ImportPage() {
 	return (
 		<PageContainer width="narrow" className="space-y-6">
-			<PageHeader icon={<Upload />} title="Import" description="Bring contacts in from a CSV file." />
+			<PageHeader icon={<Upload />} title="Import" description="Bring contacts in from a CSV or vCard file." />
 			<CSVUpload />
 		</PageContainer>
 	)

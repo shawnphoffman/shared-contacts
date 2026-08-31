@@ -15,7 +15,10 @@ interface ImportResult {
 	errors?: Array<{ row: number; error: string }>
 }
 
-async function importCSV(file: File): Promise<ImportResult> {
+/** Extensions the import route accepts. */
+const ACCEPTED_EXTENSIONS = ['.csv', '.vcf', '.vcard']
+
+async function importContacts(file: File): Promise<ImportResult> {
 	const formData = new FormData()
 	formData.append('file', file)
 
@@ -26,7 +29,7 @@ async function importCSV(file: File): Promise<ImportResult> {
 
 	if (!response.ok) {
 		const error = await response.json()
-		throw new Error(error.error || 'Failed to import CSV')
+		throw new Error(error.error || 'Failed to import contacts')
 	}
 
 	return response.json()
@@ -39,7 +42,7 @@ export function CSVUpload() {
 	const queryClient = useQueryClient()
 
 	const importMutation = useMutation({
-		mutationFn: importCSV,
+		mutationFn: importContacts,
 		onSuccess: data => {
 			// Invalidate contacts query to refresh the list
 			queryClient.invalidateQueries({ queryKey: ['contacts'] })
@@ -54,10 +57,11 @@ export function CSVUpload() {
 
 	const selectFile = (selectedFile: File | undefined) => {
 		if (!selectedFile) return
-		if (selectedFile.name.toLowerCase().endsWith('.csv')) {
+		const name = selectedFile.name.toLowerCase()
+		if (ACCEPTED_EXTENSIONS.some(extension => name.endsWith(extension))) {
 			setFile(selectedFile)
 		} else {
-			toast.error('Please select a CSV file')
+			toast.error('Please select a CSV or vCard (.vcf) file')
 		}
 	}
 
@@ -90,7 +94,7 @@ export function CSVUpload() {
 				ref={inputRef}
 				id="csv-upload"
 				type="file"
-				accept=".csv"
+				accept={ACCEPTED_EXTENSIONS.join(',')}
 				onChange={handleFileChange}
 				className="sr-only"
 				disabled={importMutation.isPending}
@@ -100,7 +104,7 @@ export function CSVUpload() {
 			<div
 				role="button"
 				tabIndex={0}
-				aria-label="Choose a CSV file or drop one here"
+				aria-label="Choose a CSV or vCard file, or drop one here"
 				aria-disabled={importMutation.isPending}
 				onClick={() => !importMutation.isPending && openPicker()}
 				onKeyDown={e => {
@@ -127,9 +131,9 @@ export function CSVUpload() {
 						{file.name}
 					</div>
 				) : (
-					<p className="text-sm font-medium">Drop a CSV file here, or click to choose</p>
+					<p className="text-sm font-medium">Drop a CSV or vCard file here, or click to choose</p>
 				)}
-				<p className="text-xs text-muted-foreground">CSV files only</p>
+				<p className="text-xs text-muted-foreground">.csv or .vcf</p>
 			</div>
 
 			<div className="flex items-center justify-end gap-2">
