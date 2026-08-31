@@ -18,6 +18,7 @@ import {
 	Users,
 } from 'lucide-react'
 
+import { SyncStatus } from './SyncStatus'
 import { ThemeToggle } from './ThemeToggle'
 import { PhosphorToggle } from './PhosphorToggle'
 import { SupportDialog } from './SupportDialog'
@@ -148,6 +149,7 @@ export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
 
 			{/* Footer */}
 			<div className="space-y-1 px-3 py-3">
+				<SyncStatus />
 				<div className="flex items-center justify-between">
 					<PhosphorToggle />
 					<ThemeToggle />

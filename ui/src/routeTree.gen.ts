@@ -37,6 +37,7 @@ import { Route as ApiRelationshipPlaceholdersRouteImport } from './routes/api/re
 import { Route as ApiRelationshipsRouteImport } from './routes/api/relationships'
 import { Route as ApiRuntimeConfigRouteImport } from './routes/api/runtime-config'
 import { Route as ApiSettingsRouteImport } from './routes/api/settings'
+import { Route as ApiSyncStatusRouteImport } from './routes/api/sync-status'
 import { Route as ApiUserBookAssignmentsRouteImport } from './routes/api/user-book-assignments'
 import { Route as ApiAddressBooksIdRouteImport } from './routes/api/address-books.$id'
 import { Route as ApiAddressBooksMembershipsRouteImport } from './routes/api/address-books.memberships'
@@ -198,6 +199,11 @@ const ApiSettingsRoute = ApiSettingsRouteImport.update({
   path: '/api/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncStatusRoute = ApiSyncStatusRouteImport.update({
+  id: '/api/sync-status',
+  path: '/api/sync-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUserBookAssignmentsRoute = ApiUserBookAssignmentsRouteImport.update({
   id: '/api/user-book-assignments',
   path: '/api/user-book-assignments',
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
+  '/api/sync-status': typeof ApiSyncStatusRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
@@ -376,6 +383,7 @@ export interface FileRoutesByTo {
   '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
+  '/api/sync-status': typeof ApiSyncStatusRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
@@ -426,6 +434,7 @@ export interface FileRoutesById {
   '/api/relationships': typeof ApiRelationshipsRouteWithChildren
   '/api/runtime-config': typeof ApiRuntimeConfigRoute
   '/api/settings': typeof ApiSettingsRoute
+  '/api/sync-status': typeof ApiSyncStatusRoute
   '/api/user-book-assignments': typeof ApiUserBookAssignmentsRoute
   '/api/address-books/$id': typeof ApiAddressBooksIdRoute
   '/api/address-books/memberships': typeof ApiAddressBooksMembershipsRoute
@@ -477,6 +486,7 @@ export interface FileRouteTypes {
     | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
+    | '/api/sync-status'
     | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
@@ -526,6 +536,7 @@ export interface FileRouteTypes {
     | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
+    | '/api/sync-status'
     | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
@@ -575,6 +586,7 @@ export interface FileRouteTypes {
     | '/api/relationships'
     | '/api/runtime-config'
     | '/api/settings'
+    | '/api/sync-status'
     | '/api/user-book-assignments'
     | '/api/address-books/$id'
     | '/api/address-books/memberships'
@@ -625,6 +637,7 @@ export interface RootRouteChildren {
   ApiRelationshipsRoute: typeof ApiRelationshipsRouteWithChildren
   ApiRuntimeConfigRoute: typeof ApiRuntimeConfigRoute
   ApiSettingsRoute: typeof ApiSettingsRoute
+  ApiSyncStatusRoute: typeof ApiSyncStatusRoute
   ApiUserBookAssignmentsRoute: typeof ApiUserBookAssignmentsRoute
 }
 
@@ -824,6 +837,13 @@ declare module '@tanstack/react-router' {
       path: '/api/settings'
       fullPath: '/api/settings'
       preLoaderRoute: typeof ApiSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sync-status': {
+      id: '/api/sync-status'
+      path: '/api/sync-status'
+      fullPath: '/api/sync-status'
+      preLoaderRoute: typeof ApiSyncStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/user-book-assignments': {
@@ -1118,6 +1138,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRelationshipsRoute: ApiRelationshipsRouteWithChildren,
   ApiRuntimeConfigRoute: ApiRuntimeConfigRoute,
   ApiSettingsRoute: ApiSettingsRoute,
+  ApiSyncStatusRoute: ApiSyncStatusRoute,
   ApiUserBookAssignmentsRoute: ApiUserBookAssignmentsRoute,
 }
 export const routeTree = rootRouteImport

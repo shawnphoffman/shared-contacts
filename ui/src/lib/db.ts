@@ -498,6 +498,51 @@ export async function getAllContactsPaginated({
 	return { data, total, limit: clampedLimit, offset: clampedOffset }
 }
 
+export interface SyncActivity {
+	/** Newest write out to Radicale across all contacts. */
+	lastSyncedToRadicaleAt: string | null
+	/** Newest read back in from Radicale across all contacts. */
+	lastSyncedFromRadicaleAt: string | null
+	/** Contacts edited here that have not been written out yet. */
+	pendingOutbound: number
+	/** Edits last-write-wins discarded in the last day. */
+	recentConflicts: number
+}
+
+/**
+ * What the sync has actually been doing, for the status indicator. Nothing in
+ * the UI showed whether sync was alive, so a stalled sync service looked
+ * exactly like a quiet one.
+ */
+export async function getSyncActivity(): Promise<SyncActivity> {
+	const dbPool = getPool()
+	const [watermarks, pending, conflicts] = await Promise.all([
+		dbPool.query(
+			`SELECT MAX(last_synced_to_radicale_at) AS to_radicale, MAX(last_synced_from_radicale_at) AS from_radicale
+			 FROM contacts WHERE deleted_at IS NULL`
+		),
+		dbPool.query(
+			`SELECT COUNT(*)::int AS pending FROM contacts
+			 WHERE deleted_at IS NULL AND (last_synced_to_radicale_at IS NULL OR updated_at > last_synced_to_radicale_at)`
+		),
+		(await tableExists('contact_history'))
+			? dbPool.query(
+					`SELECT COUNT(*)::int AS conflicts FROM contact_history
+					 WHERE operation = 'conflict_discard' AND created_at > NOW() - interval '1 day'`
+				)
+			: Promise.resolve({ rows: [{ conflicts: 0 }] }),
+	])
+
+	const toRadicale = watermarks.rows[0]?.to_radicale as Date | null
+	const fromRadicale = watermarks.rows[0]?.from_radicale as Date | null
+	return {
+		lastSyncedToRadicaleAt: toRadicale ? new Date(toRadicale).toISOString() : null,
+		lastSyncedFromRadicaleAt: fromRadicale ? new Date(fromRadicale).toISOString() : null,
+		pendingOutbound: pending.rows[0]?.pending ?? 0,
+		recentConflicts: conflicts.rows[0]?.conflicts ?? 0,
+	}
+}
+
 export async function getContactById(id: string, includeDeleted = false): Promise<Contact | null> {
 	const dbPool = getPool()
 	const deletedClause = includeDeleted ? '' : ' AND deleted_at IS NULL'
