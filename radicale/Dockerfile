@@ -5,8 +5,13 @@ FROM ghcr.io/kozea/radicale:latest
 # Switch to root to create init script
 USER root
 
-# Copy custom config if needed
+# Copy custom config if needed. The rights file has to come with it: the config
+# points at /config/rights, and docker-compose.test.yml mounts nothing over
+# /config, so without this the container dies at startup and the integration
+# suite never gets to run. Dev compose still bind-mounts ./radicale/config over
+# both for live edits.
 COPY config/config /config/config
+COPY config/rights /config/rights
 
 # Copy init script to handle users file creation
 COPY scripts/init-radicale.sh /init-radicale.sh
