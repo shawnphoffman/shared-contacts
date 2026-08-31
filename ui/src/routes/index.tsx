@@ -728,7 +728,6 @@ function ContactsIndexPage() {
 					</span>
 					{showBookCount && <span>{addressBooks.length} books</span>}
 					{selectedContactIds.length > 0 && <span className="text-primary">{selectedContactIds.length} selected</span>}
-					<span className="ml-auto hidden select-none sm:inline">↑↓ navigate · ⏎ open · ⌫ delete</span>
 				</div>
 				{selectedContactIds.length >= 1 && (
 					<div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
