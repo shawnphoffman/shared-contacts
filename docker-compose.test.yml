@@ -8,7 +8,9 @@ services:
       POSTGRES_PASSWORD: testpass
       POSTGRES_DB: testdb
     ports:
-      - '5433:5432'
+      # Overridable: 5433 is a common default and may already be taken by
+      # another project's database on a developer machine.
+      - '${TEST_POSTGRES_PORT:-5433}:5432'
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:

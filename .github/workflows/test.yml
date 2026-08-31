@@ -82,10 +82,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: sync-service/package-lock.json
+          cache-dependency-path: |
+            sync-service/package-lock.json
+            ui/package-lock.json
 
       - name: Install sync-service dependencies
         run: cd sync-service && npm ci
+
+      - name: Install UI dependencies
+        run: cd ui && npm ci
 
       - name: Run integration suite
         run: bash scripts/test-integration.sh
