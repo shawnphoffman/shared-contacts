@@ -72,6 +72,7 @@ beforeEach(async () => {
 	await pool.query('DELETE FROM contact_address_books')
 	await pool.query('DELETE FROM contacts')
 	await pool.query('DELETE FROM address_books')
+	await pool.query('DELETE FROM purged_vcards')
 	fs.rmSync(collectionRoot(), { recursive: true, force: true })
 	fs.mkdirSync(collectionRoot(), { recursive: true })
 	mockUsers.length = 0
@@ -103,6 +104,25 @@ async function seedList(book: { id: string }) {
 	await syncDbToRadicale()
 	return ownerDir
 }
+
+const personCard = (uid: string, name: string) =>
+	['BEGIN:VCARD', 'VERSION:3.0', `N:${name};;;;`, `FN:${name}`, `UID:${uid}`, 'END:VCARD'].join('\r\n')
+
+/** What the Trash page does: tombstone the id, then drop the row. */
+async function purge(vcardId: string) {
+	await pool.query('INSERT INTO purged_vcards (vcard_id) VALUES ($1) ON CONFLICT (vcard_id) DO UPDATE SET purged_at = NOW()', [vcardId])
+	await pool.query('DELETE FROM contact_address_books WHERE contact_id IN (SELECT id FROM contacts WHERE vcard_id = $1)', [vcardId])
+	await pool.query('DELETE FROM contacts WHERE vcard_id = $1', [vcardId])
+}
+
+const cardsOnDisk = (vcardId: string) =>
+	fs.readdirSync(collectionRoot(), { recursive: true }).filter(entry => String(entry).endsWith(`${vcardId}.vcf`)).length
+
+const rowCount = async (vcardId: string) =>
+	Number((await pool.query('SELECT COUNT(*)::int AS n FROM contacts WHERE vcard_id = $1', [vcardId])).rows[0].n)
+
+const tombstoneCount = async (vcardId: string) =>
+	Number((await pool.query('SELECT COUNT(*)::int AS n FROM purged_vcards WHERE vcard_id = $1', [vcardId])).rows[0].n)
 
 describe('deleting a card from a CardDAV client', () => {
 	it('keeps the card marked as Radicale-authored after it is written back out', async () => {
@@ -156,4 +176,82 @@ describe('deleting a card from a CardDAV client', () => {
 		expect(fs.existsSync(subscriberCard)).toBe(false)
 		expect(fs.existsSync(path.join(collectionRoot(), book.id, 'group-1.vcf'))).toBe(false)
 	}, 20000)
+})
+
+/**
+ * Emptying the trash removes the row, but the cards sit in Radicale until the
+ * outbound sweep clears them. Anything reading disk in between - the inbound
+ * half of the tick, or the startup pass after a restart - saw a card with no
+ * row behind it and read it as a new contact, so the purged contact came back.
+ */
+describe('permanently deleting a contact', () => {
+	async function seedPerson(book: { id: string }) {
+		const ownerDir = userCollection(OWNER, book.id)
+		fs.mkdirSync(ownerDir, { recursive: true })
+		fs.writeFileSync(path.join(ownerDir, 'person-1.vcf'), personCard('person-1', 'Shawn Hoffman'), 'utf-8')
+		await syncRadicaleToDb(true)
+		await syncDbToRadicale()
+		return ownerDir
+	}
+
+	it('does not come back on the next inbound pass', async () => {
+		const book = await createBook({ withSubscriber: true })
+		await seedPerson(book)
+		expect(cardsOnDisk('person-1')).toBeGreaterThan(0)
+
+		await purge('person-1')
+		await syncRadicaleToDb(true)
+
+		expect(await rowCount('person-1')).toBe(0)
+	})
+
+	it('comes back without the tombstone, which is the whole point of it', async () => {
+		// Pins the mechanism: the same purge with no tombstone recreates the row,
+		// which is what the Trash page used to do.
+		const book = await createBook({ withSubscriber: true })
+		await seedPerson(book)
+
+		await pool.query('DELETE FROM contact_address_books WHERE contact_id IN (SELECT id FROM contacts WHERE vcard_id = $1)', ['person-1'])
+		await pool.query('DELETE FROM contacts WHERE vcard_id = $1', ['person-1'])
+		await syncRadicaleToDb(true)
+
+		expect(await rowCount('person-1')).toBe(1)
+	})
+
+	it('clears the cards from every collection, then forgets the tombstone', async () => {
+		const book = await createBook({ withSubscriber: true })
+		await seedPerson(book)
+
+		await purge('person-1')
+		await syncRadicaleToDb(true)
+
+		// Still on disk, so the tombstone has to stay: dropping it here would let
+		// the very next pass resurrect the contact.
+		expect(cardsOnDisk('person-1')).toBeGreaterThan(0)
+		expect(await tombstoneCount('person-1')).toBe(1)
+
+		await syncDbToRadicale()
+		expect(cardsOnDisk('person-1')).toBe(0)
+
+		// Nothing left to resurrect, so the tombstone retires rather than
+		// accumulating - and a UID reused later is not blocked forever.
+		await syncRadicaleToDb(true)
+		expect(await tombstoneCount('person-1')).toBe(0)
+		expect(await rowCount('person-1')).toBe(0)
+	})
+
+	it('survives a restart with the purge already done', async () => {
+		// The case that predates the periodic inbound pass: purge while the sync
+		// service is down, then start it, and the startup pass reads disk first.
+		const book = await createBook({ withSubscriber: true })
+		await seedPerson(book)
+		await purge('person-1')
+
+		await syncRadicaleToDb(true)
+		await syncDbToRadicale()
+		await syncRadicaleToDb(true)
+
+		expect(await rowCount('person-1')).toBe(0)
+		expect(cardsOnDisk('person-1')).toBe(0)
+	})
 })

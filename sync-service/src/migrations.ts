@@ -52,6 +52,7 @@ function getMigrationFiles(): string[] {
 		'20_relationships.sql',
 		'21_contact_groups.sql',
 		'22_contacts_timestamptz.sql',
+		'23_purged_vcards.sql',
 	]
 }
 

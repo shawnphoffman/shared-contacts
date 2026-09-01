@@ -553,6 +553,40 @@ export async function updateSyncMetadata(id: string, metadata: SyncMetadata): Pr
  * - OR sync_source != 'radicale' (change didn't come from Radicale)
  * - OR last_synced_to_radicale_at IS NULL (never synced)
  */
+/**
+ * vCard ids the UI purged on purpose.
+ *
+ * A purge deletes the row while the cards are still on disk, and this pass
+ * reads a card with no row behind it as one a client just added - so the
+ * contact came back. These say otherwise. They are dropped again by
+ * forgetPurgedVcardIds once the card is gone from disk, so the table holds
+ * only deletions still working their way out.
+ */
+export async function getPurgedVcardIds(): Promise<Set<string>> {
+	const pool = getPool()
+	try {
+		const result = await pool.query('SELECT vcard_id FROM purged_vcards')
+		return new Set(result.rows.map((row: { vcard_id: string }) => row.vcard_id))
+	} catch (error) {
+		// Older database, before the tombstone table existed.
+		if (error instanceof Error && 'code' in error && (error as { code?: string }).code === '42P01') {
+			return new Set()
+		}
+		throw error
+	}
+}
+
+export async function forgetPurgedVcardIds(vcardIds: Array<string>): Promise<void> {
+	if (vcardIds.length === 0) return
+	const pool = getPool()
+	try {
+		await pool.query('DELETE FROM purged_vcards WHERE vcard_id = ANY($1::text[])', [vcardIds])
+	} catch (error) {
+		if (error instanceof Error && 'code' in error && (error as { code?: string }).code === '42P01') return
+		throw error
+	}
+}
+
 export async function getContactsNeedingRadicaleSync(): Promise<Contact[]> {
 	const pool = getPool()
 	const result = await pool.query(

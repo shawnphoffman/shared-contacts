@@ -1,7 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
 import { logger } from '../../lib/logger'
-import { emptyTrash, getContactById, getDeletedContacts, permanentlyDeleteContact, restoreContact } from '../../lib/db'
+import {
+	emptyTrash,
+	getContactById,
+	getDeletedContacts,
+	permanentlyDeleteContact,
+	recordPurgedVcardIds,
+	restoreContact,
+} from '../../lib/db'
 import { actorFromRequest, recordHistory } from '../../lib/history'
 import { contactEdgeNeighborIds, deleteOrphanPlaceholders, refreshRelatedNamesVcards } from '../../lib/relationships'
 
@@ -70,6 +77,9 @@ export const Route = createFileRoute('/api/contacts/trash')({
 					if (action === 'permanent-delete' && id) {
 						const before = await getContactById(id, true)
 						const neighborIds = await neighborsBeforePurge([id])
+						// Before the row goes: the card may still be on disk, and the
+						// inbound sync would read it as a new contact and put it back.
+						await recordPurgedVcardIds([before?.vcard_id])
 						await permanentlyDeleteContact(id)
 						await cleanupAfterPurge(neighborIds)
 						await recordHistory({
@@ -90,6 +100,7 @@ export const Route = createFileRoute('/api/contacts/trash')({
 					if (action === 'empty') {
 						const trashed = await getDeletedContacts()
 						const neighborIds = await neighborsBeforePurge(trashed.map(contact => contact.id))
+						await recordPurgedVcardIds(trashed.map(contact => contact.vcard_id))
 						const count = await emptyTrash()
 						await cleanupAfterPurge(neighborIds)
 						await recordHistory({

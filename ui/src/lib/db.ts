@@ -1,4 +1,5 @@
 import { Pool, types } from 'pg'
+import { logger } from './logger'
 
 // Return DATE columns (e.g. birthday) as the raw "YYYY-MM-DD" string instead of
 // a JS Date. Parsing a date-only value into a Date and reading it back with
@@ -951,4 +952,32 @@ export async function emptyTrash(): Promise<number> {
 	const dbPool = getPool()
 	const result = await dbPool.query('DELETE FROM contacts WHERE deleted_at IS NOT NULL')
 	return result.rowCount ?? 0
+}
+
+/**
+ * Mark vCard ids as deleted on purpose.
+ *
+ * A purge removes the row, but the cards live on in Radicale until the outbound
+ * sweep clears them, and the inbound pass reads a card with no row behind it as
+ * one a client just added - so the contact came straight back. Recording the id
+ * before the row goes tells the sync service the difference. The sync service
+ * drops the tombstone once the card is gone from disk.
+ *
+ * Best-effort: failing to write a tombstone must not fail the delete the user
+ * asked for.
+ */
+export async function recordPurgedVcardIds(vcardIds: Array<string | null | undefined>): Promise<void> {
+	const ids = vcardIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
+	if (ids.length === 0) return
+
+	try {
+		if (!(await tableExists('purged_vcards'))) return
+		const dbPool = getPool()
+		await dbPool.query(
+			`INSERT INTO purged_vcards (vcard_id) SELECT unnest($1::text[]) ON CONFLICT (vcard_id) DO UPDATE SET purged_at = NOW()`,
+			[ids]
+		)
+	} catch (error) {
+		logger.error({ err: error, count: ids.length }, 'Could not record purged vCard ids; a purged contact may be resynced')
+	}
 }

@@ -9,6 +9,8 @@ import {
 	getAllContacts,
 	getContactAddressBookEntries,
 	getContactByVcardIdIncludingDeleted,
+	getPurgedVcardIds,
+	forgetPurgedVcardIds,
 	restoreContact,
 	setContactAddressBooks,
 	updateContact,
@@ -69,6 +71,12 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			existing.add(entry.address_book_id)
 			contactBookIdsByContactId.set(entry.contact_id, existing)
 		}
+
+		// Cards the UI purged on purpose. Their rows are already gone and their
+		// files are waiting on the outbound sweep, so anything found on disk for
+		// one of these is a leftover, not a new contact.
+		const purgedVcardIds = await getPurgedVcardIds()
+		const purgedStillOnDisk = new Set<string>()
 
 		const users = await getUsers()
 		const usersByBookId = new Map<string, Set<string>>()
@@ -162,6 +170,14 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 			// the database, let alone a path.
 			if (!isSafeVCardId(vcardId)) {
 				logger.warn({ filePath, vcardId }, 'Unsafe vCard ID, skipping')
+				continue
+			}
+
+			if (purgedVcardIds.has(vcardId)) {
+				// Recreating this is exactly the resurrection the tombstone exists to
+				// stop. Note that the file is still here so the tombstone is kept.
+				purgedStillOnDisk.add(vcardId)
+				logger.info({ vcardId, filePath }, 'Skipping a card that was permanently deleted; waiting for the sweep to clear it')
 				continue
 			}
 
@@ -549,6 +565,16 @@ export async function syncRadicaleToDb(silent: boolean = false): Promise<void> {
 					previousState: contact,
 				})
 			}
+		}
+
+		// A tombstone whose card is no longer anywhere on disk has done its job:
+		// the sweep cleared it, and nothing is left to resurrect. Dropping it keeps
+		// the table to in-flight deletions, and means a UID legitimately reused
+		// later is not blocked forever.
+		const settled = Array.from(purgedVcardIds).filter(vcardId => !purgedStillOnDisk.has(vcardId))
+		if (settled.length > 0) {
+			await forgetPurgedVcardIds(settled)
+			logger.info({ count: settled.length }, 'Cleared tombstones for cards that are gone from disk')
 		}
 
 		if (created > 0 || updated > 0 || skipped > 0 || conflicts > 0) {

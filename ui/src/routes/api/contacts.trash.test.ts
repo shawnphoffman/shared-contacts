@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { emptyTrash, getContactById, getDeletedContacts, permanentlyDeleteContact } from '../../lib/db'
+import { emptyTrash, getContactById, getDeletedContacts, permanentlyDeleteContact, recordPurgedVcardIds } from '../../lib/db'
 import { contactEdgeNeighborIds, deleteOrphanPlaceholders, refreshRelatedNamesVcards } from '../../lib/relationships'
 
 vi.mock('../../lib/db', () => ({
@@ -8,6 +8,7 @@ vi.mock('../../lib/db', () => ({
 	getContactById: vi.fn(),
 	getDeletedContacts: vi.fn(),
 	permanentlyDeleteContact: vi.fn(),
+	recordPurgedVcardIds: vi.fn(),
 	restoreContact: vi.fn(),
 }))
 
@@ -68,6 +69,34 @@ describe('POST /api/contacts/trash', () => {
 		)
 		expect(deleteOrphanPlaceholders).toHaveBeenCalled()
 		expect(refreshRelatedNamesVcards).toHaveBeenCalledWith(['neighbor-1'])
+	})
+
+	it('tombstones the vCard id before the row goes', async () => {
+		// The cards outlive the row until the outbound sweep clears them, and the
+		// inbound sync reads a card with no row behind it as a new contact - so a
+		// purge without this put the contact straight back.
+		vi.mocked(getContactById).mockResolvedValue({ id: 'id-1', full_name: 'Alice', vcard_id: 'alice-uid' } as never)
+
+		const handlers = await getHandler()
+		await handlers.POST({ request: trashRequest({ action: 'permanent-delete', id: 'id-1' }) })
+
+		expect(recordPurgedVcardIds).toHaveBeenCalledWith(['alice-uid'])
+		expect(vi.mocked(recordPurgedVcardIds).mock.invocationCallOrder[0]).toBeLessThan(
+			vi.mocked(permanentlyDeleteContact).mock.invocationCallOrder[0]
+		)
+	})
+
+	it('tombstones every card when the trash is emptied', async () => {
+		vi.mocked(getDeletedContacts).mockResolvedValue([
+			{ id: 'id-1', vcard_id: 'alice-uid' },
+			{ id: 'id-2', vcard_id: 'bob-uid' },
+		] as never)
+
+		const handlers = await getHandler()
+		await handlers.POST({ request: trashRequest({ action: 'empty' }) })
+
+		expect(recordPurgedVcardIds).toHaveBeenCalledWith(['alice-uid', 'bob-uid'])
+		expect(vi.mocked(recordPurgedVcardIds).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(emptyTrash).mock.invocationCallOrder[0])
 	})
 
 	it('skips the vCard refresh when the purged contact had no edges', async () => {
