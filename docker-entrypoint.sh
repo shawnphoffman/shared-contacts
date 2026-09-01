@@ -131,7 +131,7 @@ ensure_account
 if [ ! -f /data/users ]; then
     log "Creating empty users file..."
     touch /data/users 2>/dev/null || true
-    log "Users file created. Add users with: docker exec -it <container> htpasswd -B /data/users username"
+    log "Users file created. Add CardDAV users on the Book Users page in the web UI."
 fi
 
 # /data holds the Radicale collections and the htpasswd file; BACKUP_DIR holds

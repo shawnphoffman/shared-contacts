@@ -45,6 +45,68 @@ I also have a large extended family that I'd love to stay in touch with as much 
 >
 > **AI Model:** Claude Opus 4
 
+## Quick start
+
+You need Docker with the Compose plugin. Everything else runs in containers.
+
+**1. Make a directory and fetch the compose file.**
+
+```bash
+mkdir shared-contacts && cd shared-contacts
+curl -O https://raw.githubusercontent.com/shawnphoffman/shared-contacts/main/docker-compose.prod.yml
+```
+
+**2. Set the database credentials.** Compose refuses to start without them.
+
+```bash
+printf 'POSTGRES_USER=sharedcontacts\nPOSTGRES_PASSWORD=%s\nBACKUP_ENABLED=true\n' "$(openssl rand -hex 24)" > .env
+```
+
+`BACKUP_ENABLED` is off in the compose file so an upgrade never starts writing archives on someone unannounced, but a new install should have it on: it writes a daily archive to `./backups` and keeps the newest seven. See [docs/backups.md](docs/backups.md) to change the interval or retention.
+
+> Keep the password to URL-safe characters if you pick your own. It is interpolated into a `postgresql://` connection string, so a `/`, `@`, `#` or `?` in it breaks the URL and the sync service fails to start with a parse error rather than anything that names the password.
+
+**3. Publish the UI port.** The compose file ships with it commented out, because the UI and its admin API have no login of their own. Uncomment it only if the host is on a trusted network; otherwise leave it closed and put the app behind your reverse proxy (there are Traefik labels in the file to start from).
+
+```bash
+sed -i.bak "s|# ports:|ports:|; s|#   - '\${UI_PORT:-3030}:3030'|  - '\${UI_PORT:-3030}:3030'|" docker-compose.prod.yml
+```
+
+**4. Start it.**
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The first start creates the database, applies the migrations and brings up Radicale, the sync service and the UI inside one container. Watch it come up with `docker compose -f docker-compose.prod.yml logs -f`.
+
+**5. Open the UI** at <http://localhost:3030>. The sidebar shows a sync status; it turns green once the sync service answers.
+
+**6. Create your first CardDAV user.** Go to **Book Users** in the sidebar, then **Create User**. Passwords are at least 12 characters, and the username becomes part of the CardDAV URL, so keep it to letters, numbers, dot, underscore or hyphen.
+
+> There is no command-line path for this. Radicale reads an htpasswd file, but the image ships no `htpasswd` binary, so the UI is how accounts are made.
+
+**7. Connect a device.** The **CardDAV Config** page shows the URL and, on Apple platforms, offers a `.mobileconfig` profile. In iOS or macOS Settings, add a CardDAV account with that URL and the credentials from step 6.
+
+Contacts added on a device sync to the database within `SYNC_INTERVAL` (30 seconds by default), and contacts added in the UI sync back out the same way.
+
+## Upgrading
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Migrations run automatically at startup, and the service refuses to start rather than run with a schema it cannot account for, so check the logs if a container does not come back.
+
+Take a backup first. The **Backups** page has a "Run backup now" button, or use the `pg_dump` recipe below.
+
+To stay on a known release instead of following `latest`, set `APP_VERSION` in `.env`:
+
+```bash
+echo 'APP_VERSION=v1.12.0' >> .env
+```
+
 ## Backup and Restore
 
 ### Scheduled backups (recommended)
@@ -59,24 +121,35 @@ BACKUP_KEEP=14
 
 See [docs/backups.md](docs/backups.md) for what is and isn't covered, where the files land, and how to restore.
 
-### Backup Database
+### Backup the database by hand
+
+Run from the directory holding `docker-compose.prod.yml`. The credentials are read inside the container from the environment Compose already gives it, so there is nothing to substitute.
 
 ```bash
-docker-compose exec postgres pg_dump -U sharedcontacts sharedcontacts > backup.sql
+docker compose -f docker-compose.prod.yml exec -T shared-contacts-postgres sh -c 'pg_dump --clean --if-exists -U "$POSTGRES_USER" sharedcontacts' > backup.sql
 ```
 
-### Restore Database
+`--clean` matters: without it the dump only knows how to build a database from nothing, so restoring it over a database that already has tables fails on every statement and leaves the old data in place.
+
+### Restore the database
+
+> This overwrites the contacts currently in the database. Take a backup first.
 
 ```bash
-docker-compose exec -T postgres psql -U sharedcontacts sharedcontacts < backup.sql
+docker compose -f docker-compose.prod.yml exec -T shared-contacts-postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" sharedcontacts' < backup.sql
 ```
 
-### Backup Radicale Data
+`ON_ERROR_STOP=1` makes a failed restore stop and report a non-zero exit rather than skipping the statement it choked on and leaving you with a half-restored database that looks like it worked.
+
+### Backup the Radicale data
+
+The CardDAV collections and the `htpasswd` file live in the app container, in the volume mounted at `/data`. That file holds the CardDAV credentials and is not in the scheduled archives, so it is worth keeping a copy.
 
 ```bash
-docker-compose exec radicale tar czf /tmp/radicale-backup.tar.gz /data
-docker cp shared-contacts-radicale:/tmp/radicale-backup.tar.gz ./radicale-backup.tar.gz
+docker compose -f docker-compose.prod.yml exec -T shared-contacts-app tar czf - /data > radicale-data.tar.gz
 ```
+
+> These use the production service names. In the development stack (`docker-compose.yml`) the services are `postgres` and `radicale`, and Radicale runs in its own container rather than inside the app.
 
 ## Security Notes
 
