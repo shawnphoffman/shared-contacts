@@ -12,6 +12,13 @@
 
 A self-hostable CardDAV server for managing shared contacts with a modern web-based management interface.
 
+## Contents
+
+- [Why?](#why) · [Features](#features) · [Screenshots](#screenshots) · [AI Contribution Disclosure](#ai-contribution-disclosure)
+- **Running it:** [Quick start](#quick-start) · [Upgrading](#upgrading) · [Backup and Restore](#backup-and-restore)
+- **Configuration:** [Security Notes](#security-notes) · [Timezone](#timezone) · [Contact lists (groups)](#contact-lists-groups) · [Mobileconfig profiles and signing](#mobileconfig-profiles-and-signing)
+- [License](#license) · [Contributing](#contributing)
+
 ## Why?
 
 I've been waiting for Apple to create a shared address book feature for iCloud for ages and I finally decided to make a personal one for myself. I rely on my contacts for the usual things but also birthdays and notes. I didn't want a full-blown CRM but something more lightweight.
