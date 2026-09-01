@@ -1,7 +1,7 @@
 name: shared-contacts
 services:
   shared-contacts-postgres:
-    image: postgres:15-alpine
+    image: postgres:15.15-alpine
     container_name: shared-contacts-postgres
     restart: unless-stopped
     environment:
@@ -24,9 +24,19 @@ services:
         max-size: 10m
         max-file: 3
         compress: 'true'
+    # A ceiling so one container cannot take the host down with it. Deliberately
+    # generous rather than tight: too low a limit shows up as the OOM killer
+    # ending a process mid-write, which is worse than no limit at all. Raise
+    # them for a large address book.
+    deploy:
+      resources:
+        limits:
+          memory: ${POSTGRES_MEMORY_LIMIT:-1g}
 
   shared-contacts-app:
-    image: ghcr.io/shawnphoffman/shared-contacts:latest
+    # Overridable so a deployment can pin a known-good release instead of
+    # following whatever :latest points at: APP_VERSION=v1.12.0 docker compose up -d
+    image: ghcr.io/shawnphoffman/shared-contacts:${APP_VERSION:-latest}
     container_name: shared-contacts-app
     restart: unless-stopped
     environment:
@@ -80,6 +90,13 @@ services:
         max-size: 10m
         max-file: 3
         compress: 'true'
+    # See the note on the database above. This one runs three services and holds
+    # whole vCards in memory during an import, including base64 photos, so it
+    # gets the larger share.
+    deploy:
+      resources:
+        limits:
+          memory: ${APP_MEMORY_LIMIT:-2g}
     # labels:
     #   # TRAEFIK
     #   - traefik.enable=true

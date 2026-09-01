@@ -1,6 +1,10 @@
 # Using the official Radicale Docker image
 # This Dockerfile is kept for potential customizations
-FROM ghcr.io/kozea/radicale:latest
+#
+# Pinned to the same stable release as the production image. :latest is a
+# nightly build, so dev and prod were running different Radicale versions
+# depending on when each was last pulled.
+FROM ghcr.io/kozea/radicale:3.5.7
 
 # Switch to root to create init script
 USER root

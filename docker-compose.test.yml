@@ -1,7 +1,7 @@
 name: shared-contacts-test
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15.15-alpine
     container_name: shared-contacts-test-db
     environment:
       POSTGRES_USER: testuser

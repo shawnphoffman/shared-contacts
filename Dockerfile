@@ -1,5 +1,5 @@
 # Stage 1: Build sync-service
-FROM node:22-alpine AS sync-builder
+FROM node:22.23-alpine AS sync-builder
 
 WORKDIR /app/sync-service
 
@@ -20,7 +20,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Stage 2: Build ui
-FROM node:22-alpine AS ui-builder
+FROM node:22.23-alpine AS ui-builder
 
 WORKDIR /app/ui
 
@@ -40,7 +40,11 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Stage 3: Production runtime - based on Radicale with Node.js
-FROM ghcr.io/kozea/radicale:latest
+# Pinned to a stable release, not :latest. That tag is a nightly build
+# (labelled nightly-20260810 when this was written), so the CardDAV server was
+# moving underneath every rebuild with no way to tell which build a running
+# deployment had.
+FROM ghcr.io/kozea/radicale:3.5.7
 
 # Switch to root to install Node.js and set up services
 USER root
