@@ -6,71 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.13.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.12.0...v1.13.0) (2026-09-01)
-
-### Features
-
-* require a real password for radicale accounts ([b2f1d0d](https://github.com/shawnphoffman/shared-contacts/commit/b2f1d0dc934d0b9f8d5fc2d05ba08448c5078b5d))
-* **sync:** record the edit that loses a conflict ([0e8dd52](https://github.com/shawnphoffman/shared-contacts/commit/0e8dd52cb4be8d802aeecd48ae8a599134f0b026))
-* **ui:** ask before leaving unsaved edits ([4a1a48e](https://github.com/shawnphoffman/shared-contacts/commit/4a1a48e55e453c61868ae2f6cc4a6b47098de37c))
-* **ui:** export what is on screen, not always everything ([720d013](https://github.com/shawnphoffman/shared-contacts/commit/720d01314db1373d8e8becdbdc884e23228170b8))
-* **ui:** import vcards, not just csv ([25e0cbf](https://github.com/shawnphoffman/shared-contacts/commit/25e0cbfa7c5b58eab476aed46eca7ca573ce936d))
-* **ui:** reject cross-origin writes ([f50139b](https://github.com/shawnphoffman/shared-contacts/commit/f50139b4db5fa1387b78110aa5795bedf0409055))
-* **ui:** restore a backup archive into the database ([f1d8d61](https://github.com/shawnphoffman/shared-contacts/commit/f1d8d61f7edd0420d53edb665775728f8797def1))
-* **ui:** show whether contacts are actually syncing ([9762aac](https://github.com/shawnphoffman/shared-contacts/commit/9762aacd25a352abdf976b6fbd3a47520122800c))
+## [1.13.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.13.0...v1.13.1) (2026-11-17)
 
 ### Bug Fixes
 
-* **docker:** ship the rights file in the dev radicale image ([e9b2c22](https://github.com/shawnphoffman/shared-contacts/commit/e9b2c2294bbbdacc0283343fe95c02995f74701e))
-* **sync:** fail on a missing or unlisted migration ([3b70ee5](https://github.com/shawnphoffman/shared-contacts/commit/3b70ee52c302d3dd082bb7a3ac730375f27ac93e))
-* **sync:** keep watching collections created after boot ([49bec00](https://github.com/shawnphoffman/shared-contacts/commit/49bec00b3d0ed016e267136ca494fdd4ae277c2e))
-* **sync:** reconcile inbound on the periodic tick ([9eb7fed](https://github.com/shawnphoffman/shared-contacts/commit/9eb7fed8d359af00872cb972df036098cac015ee))
-* **sync:** reject vcard uids that can steer a filesystem path ([a43efc6](https://github.com/shawnphoffman/shared-contacts/commit/a43efc65a61b3e557fb39c1adef405ce9650f016))
-* **sync:** stop erasing the conflict signal when the database wins ([6753269](https://github.com/shawnphoffman/shared-contacts/commit/6753269fe9754b349660d5e6e5361c5a8fff1663))
-* **sync:** stop exposing the unauthenticated admin api to browsers and the host ([5bd671a](https://github.com/shawnphoffman/shared-contacts/commit/5bd671a40191a626f20e4ec9cab2049208c49914))
-* **sync:** stop permanently deleted contacts coming back ([b76c705](https://github.com/shawnphoffman/shared-contacts/commit/b76c705feb4842408a4205a43f56702b590759bf))
-* **sync:** validate the username on every route that takes one ([8e3d1ea](https://github.com/shawnphoffman/shared-contacts/commit/8e3d1eaa17b95041dcdcaf3b621d947e62db602a))
-* **ui:** count the request body instead of trusting content-length ([6e711a5](https://github.com/shawnphoffman/shared-contacts/commit/6e711a5725a8fa25407caaa68c6b086aa7dfbd8c))
-* **ui:** give each contact row a real link ([744e157](https://github.com/shawnphoffman/shared-contacts/commit/744e15727307b21113adb0d04e5b23d297379bff))
-* **ui:** make the duplicates page reachable ([3fdd086](https://github.com/shawnphoffman/shared-contacts/commit/3fdd086179885c9af58892c20a4040ba9bbd65b5))
-* **ui:** neutralize spreadsheet formulas in csv export ([df173df](https://github.com/shawnphoffman/shared-contacts/commit/df173df6c229872456ddee36be5468243da3c95b))
-* **ui:** remove keyboard hints for shortcuts that do not exist ([30ddac2](https://github.com/shawnphoffman/shared-contacts/commit/30ddac261657030ed6f2065e5e81b934217deb2a))
-* **ui:** stop telling people a delete cannot be undone ([f6c18e9](https://github.com/shawnphoffman/shared-contacts/commit/f6c18e968bd3b2bf2c28c04ff4e59fa7712b5347))
-* **ui:** stop writing unvalidated headers into the audit trail ([fb7c42e](https://github.com/shawnphoffman/shared-contacts/commit/fb7c42ecacfb44baf2046c7de6c86c022a28b0b3))
-* **ui:** three defects only running the app could surface ([ee31962](https://github.com/shawnphoffman/shared-contacts/commit/ee319629a1a59728746bd7619637c694962ea5b0))
-
-### Performance Improvements
-
-* **ui:** virtualize the contact list ([ab11e2f](https://github.com/shawnphoffman/shared-contacts/commit/ab11e2f5a2df5dbe55770c462511cc2440fe44d0))
-
-### Documentation
-
-* add a quick start, and fix the recipes that did not work ([0ad4541](https://github.com/shawnphoffman/shared-contacts/commit/0ad45416b48c7dbf38406a2d52c434d8df8d2b62))
-* add a table of contents ([0b43539](https://github.com/shawnphoffman/shared-contacts/commit/0b43539ff3f330cdaeb54d62a2c23a8607bbf5d4))
-* document the new security settings ([0b52bf8](https://github.com/shawnphoffman/shared-contacts/commit/0b52bf85fc0613bfe2786d789c3166f7e4b1e249))
-
-### Miscellaneous
-
-* **sync:** redact credential headers from logs ([c57c28d](https://github.com/shawnphoffman/shared-contacts/commit/c57c28db309ea678fbd9b7f6f338736415dcec34))
-
-### Tests
-
-* run the ui integration suites from the integration script ([144c702](https://github.com/shawnphoffman/shared-contacts/commit/144c7020cfaaf348e42e2eec5ee603a7dddc9736))
-* **sync:** pin the order of the periodic tick ([084cff4](https://github.com/shawnphoffman/shared-contacts/commit/084cff431766adc11407170a0b17a89440ae2ab1))
-
-### Build System
-
-* **docker:** pin the base images and cap container memory ([8bee0c7](https://github.com/shawnphoffman/shared-contacts/commit/8bee0c784767dd6e8a9d6daa5cd3f81657101fb3))
-
-### CI/CD
-
-* run the integration suite ([30e0616](https://github.com/shawnphoffman/shared-contacts/commit/30e0616e62fe50badcf430e5e19b67eaf4aff90e))
+* **sync:** stop sync bookkeeping counting as an edit ([e107b0e](https://github.com/shawnphoffman/shared-contacts/commit/e107b0efe2abc75f4720d0e0657316bca61a80ad))
 
 ### Changelog
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.13.1](https://github.com/shawnphoffman/shared-contacts/compare/v1.13.0...v1.13.1)
+
+- 🐛 Fix(sync): stop sync bookkeeping counting as an edit [`e107b0e`](https://github.com/shawnphoffman/shared-contacts/commit/e107b0efe2abc75f4720d0e0657316bca61a80ad)
+
 #### [v1.13.0](https://github.com/shawnphoffman/shared-contacts/compare/v1.12.0...v1.13.0)
+
+> 1 September 2026
 
 - ✨ Feature(ui): import vcards, not just csv [`25e0cbf`](https://github.com/shawnphoffman/shared-contacts/commit/25e0cbfa7c5b58eab476aed46eca7ca573ce936d)
 - ✨ Feature(ui): restore a backup archive into the database [`f1d8d61`](https://github.com/shawnphoffman/shared-contacts/commit/f1d8d61f7edd0420d53edb665775728f8797def1)
@@ -86,6 +38,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - ⚡ Performance(ui): virtualize the contact list [`ab11e2f`](https://github.com/shawnphoffman/shared-contacts/commit/ab11e2f5a2df5dbe55770c462511cc2440fe44d0)
 - 🐛 Fix(ui): stop writing unvalidated headers into the audit trail [`fb7c42e`](https://github.com/shawnphoffman/shared-contacts/commit/fb7c42ecacfb44baf2046c7de6c86c022a28b0b3)
 - ✨ Feature: require a real password for radicale accounts [`b2f1d0d`](https://github.com/shawnphoffman/shared-contacts/commit/b2f1d0dc934d0b9f8d5fc2d05ba08448c5078b5d)
+- 🔧 Chore: release v1.13.0 [`f20b696`](https://github.com/shawnphoffman/shared-contacts/commit/f20b6963c3da70a95ae767b89f7497b80b3d16b1)
 - 🐛 Fix(sync): reconcile inbound on the periodic tick [`9eb7fed`](https://github.com/shawnphoffman/shared-contacts/commit/9eb7fed8d359af00872cb972df036098cac015ee)
 - 📝 Docs: add a quick start, and fix the recipes that did not work [`0ad4541`](https://github.com/shawnphoffman/shared-contacts/commit/0ad45416b48c7dbf38406a2d52c434d8df8d2b62)
 - 🐛 Fix(ui): stop telling people a delete cannot be undone [`f6c18e9`](https://github.com/shawnphoffman/shared-contacts/commit/f6c18e968bd3b2bf2c28c04ff4e59fa7712b5347)
