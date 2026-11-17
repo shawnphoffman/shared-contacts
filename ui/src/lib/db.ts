@@ -526,11 +526,11 @@ export async function getSyncActivity(): Promise<SyncActivity> {
 		// and the sync service fills it back in once the card is on disk, so a
 		// null is exactly "edited here, not yet written out".
 		//
-		// Comparing updated_at against that column instead does not work: the
-		// BEFORE UPDATE trigger restamps updated_at during the very statement
-		// that records the sync, and it keeps microseconds where the column
-		// stores milliseconds, so updated_at is always a hair later and every
-		// contact reads as permanently pending.
+		// Comparing updated_at against that column instead is the weaker signal:
+		// the two are stamped by different clocks (Postgres NOW() and the sync
+		// service's JS Date), and before migration 24 the trigger restamped
+		// updated_at on the very statement that recorded the sync, so every
+		// contact read as permanently pending.
 		dbPool.query(
 			`SELECT COUNT(*)::int AS pending FROM contacts
 			 WHERE deleted_at IS NULL AND vcard_id IS NOT NULL AND last_synced_to_radicale_at IS NULL`

@@ -20,6 +20,7 @@ import { Pool } from 'pg'
 import { syncRadicaleToDb } from './radicale-to-db'
 import { syncDbToRadicale } from './db-to-radicale'
 import { applyMigrations } from '../test-support/migrations'
+import { updateSyncMetadata } from '../db'
 
 const { STORAGE_PATH, mockUsers } = vi.hoisted(() => {
 	process.env.TZ = 'UTC'
@@ -253,5 +254,53 @@ describe('an edit that loses a conflict', () => {
 		expect(records.length).toBe(1)
 		expect(records[0].metadata.discarded).toBe('db')
 		expect(records[0].summary).toContain('discarded the edit made here')
+	})
+})
+
+describe('sync bookkeeping', () => {
+	const updatedAt = async () => (await pool.query('SELECT updated_at FROM contacts')).rows[0].updated_at as Date
+	const contactId = async () => (await pool.query('SELECT id FROM contacts')).rows[0].id as string
+
+	it('does not move updated_at, while a real edit does', async () => {
+		await createBookWithCard()
+		const before = await updatedAt()
+
+		await updateSyncMetadata(await contactId(), {
+			last_synced_to_radicale_at: new Date(),
+			last_synced_from_radicale_at: new Date(),
+			radicale_file_mtime: new Date(),
+			vcard_hash: 'a-different-hash',
+			sync_source: 'db',
+		})
+		expect((await updatedAt()).getTime()).toBe(before.getTime())
+
+		await editInApp('Edited In The App')
+		expect((await updatedAt()).getTime()).toBeGreaterThan(before.getTime())
+	})
+
+	it('does not cost a device its edit', async () => {
+		// The failure this guards: the trigger restamped updated_at on the sync
+		// service's own watermark writes, so a row nobody had touched read as
+		// edited here. A card saved on a device just before one of those writes
+		// lost the "conflict" to it, and lost again on every later pass because
+		// the next write was always newer than the file. The device and the
+		// server never converged.
+		const book = await createBookWithCard()
+		// A settled row: last changed before either watermark.
+		await pool.query(
+			`UPDATE contacts
+			 SET updated_at = NOW() - interval '11 minutes',
+			     last_synced_from_radicale_at = NOW() - interval '10 minutes',
+			     last_synced_to_radicale_at = NOW() - interval '10 minutes'`
+		)
+		editOnDevice(book.id, 'Edited On The Phone', minutesAgo(1))
+		// An outbound pass noting that it looked at the row, after the device saved.
+		await updateSyncMetadata(await contactId(), { last_synced_to_radicale_at: new Date() })
+
+		await periodicTick()
+
+		expect(await nameInDb()).toBe('Edited On The Phone')
+		expect(nameIn(masterCard(book.id))).toBe('Edited On The Phone')
+		expect(await discardRecords()).toHaveLength(0)
 	})
 })
